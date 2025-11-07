@@ -1,17 +1,36 @@
 import "./index.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-// Mock data for demonstration - adjusted to test the 500-10k likes slider
-const mockPosts = [
+// Type for our post data structure
+interface Post {
+  id: string;
+  author: string;
+  content: string;
+  likes: number;
+  timestamp: string;
+  replies: Reply[];
+}
+
+interface Reply {
+  id: string;
+  author: string;
+  content: string;
+  likes: number;
+  isRatio: boolean;
+  isBrutalRatio: boolean;
+}
+
+// Mock data for demonstration - used as fallback
+const mockPosts: Post[] = [
   {
-    id: 1,
+    id: "1",
     author: "techguru",
     content: "Just launched my new AI startup! 🚀 Can't wait to see what the future holds.",
     likes: 750,
     timestamp: "2024-11-07T14:30:00Z",
     replies: [
       {
-        id: 101,
+        id: "101",
         author: "skeptic_dev",
         content: "AI startups are so 2023. What's your unique value prop?",
         likes: 156,
@@ -21,14 +40,14 @@ const mockPosts = [
     ]
   },
   {
-    id: 2,
+    id: "2",
     author: "design_master",
     content: "Flat design is dead. Time for brutalism in UI! 💀",
     likes: 1200,
     timestamp: "2024-11-07T13:15:00Z",
     replies: [
       {
-        id: 201,
+        id: "201",
         author: "ux_lover",
         content: "Actually, brutalism has been around forever. It's not new.",
         likes: 2800,
@@ -38,14 +57,14 @@ const mockPosts = [
     ]
   },
   {
-    id: 3,
+    id: "3",
     author: "ceo_startup",
     content: "Our team just hit unicorn status! 🦄 Time to celebrate!",
     likes: 2500,
     timestamp: "2024-11-07T12:45:00Z",
     replies: [
       {
-        id: 301,
+        id: "301",
         author: "finance_guru",
         content: "Unicorn? More like a donkey. Your valuation is inflated garbage.",
         likes: 150,
@@ -55,14 +74,14 @@ const mockPosts = [
     ]
   },
   {
-    id: 4,
+    id: "4",
     author: "influencer_pro",
     content: "Just dropped my new single! Stream it now 🎵 #NewMusic",
     likes: 3800,
     timestamp: "2024-11-07T11:20:00Z",
     replies: [
       {
-        id: 401,
+        id: "401",
         author: "music_critic",
         content: "This is absolutely terrible. How do you even call yourself a musician?",
         likes: 42000,
@@ -72,14 +91,14 @@ const mockPosts = [
     ]
   },
   {
-    id: 5,
+    id: "5",
     author: "fitness_guru",
     content: "Lost 50lbs in 3 months with this ONE weird trick! 💪",
     likes: 5200,
     timestamp: "2024-11-07T10:10:00Z",
     replies: [
       {
-        id: 501,
+        id: "501",
         author: "science_fan",
         content: "Please stop spreading misinformation. Weight loss requires diet + exercise.",
         likes: 58000,
@@ -89,14 +108,14 @@ const mockPosts = [
     ]
   },
   {
-    id: 6,
+    id: "6",
     author: "crypto_trader",
     content: "This coin is going to 1000x! Buy now before it's too late! 📈",
     likes: 6800,
     timestamp: "2024-11-07T09:30:00Z",
     replies: [
       {
-        id: 601,
+        id: "601",
         author: "bear_market",
         content: "This is a rug pull waiting to happen. DYOR people.",
         likes: 1200,
@@ -106,14 +125,14 @@ const mockPosts = [
     ]
   },
   {
-    id: 7,
+    id: "7",
     author: "celebrity_news",
     content: "BREAKING: Major celebrity scandal drops! 🍿",
     likes: 8500,
     timestamp: "2024-11-07T08:45:00Z",
     replies: [
       {
-        id: 701,
+        id: "701",
         author: "gossip_expert",
         content: "Old news. This was leaked weeks ago.",
         likes: 3400,
@@ -123,14 +142,14 @@ const mockPosts = [
     ]
   },
   {
-    id: 8,
+    id: "8",
     author: "politician_pro",
     content: "My new policy will change everything! Vote for change! 🗳️",
     likes: 9200,
     timestamp: "2024-11-07T07:15:00Z",
     replies: [
       {
-        id: 801,
+        id: "801",
         author: "fact_checker",
         content: "Your facts are wrong. Here's the actual data...",
         likes: 5600,
@@ -141,7 +160,7 @@ const mockPosts = [
   }
 ];
 
-const PostCard = ({ post }: { post: typeof mockPosts[0] }) => {
+const PostCard = ({ post }: { post: Post }) => {
   const hasRatio = post.replies.some(reply => reply.likes > post.likes);
   const hasBrutalRatio = post.replies.some(reply => reply.likes >= post.likes * 10);
 
@@ -226,18 +245,75 @@ const PostCard = ({ post }: { post: typeof mockPosts[0] }) => {
 export function App() {
   const [minLikes, setMinLikes] = useState(500);
   const [sortBy, setSortBy] = useState<'recency' | 'brutality'>('recency');
+  const [posts, setPosts] = useState<Post[]>(mockPosts);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const sortedPosts = [...mockPosts].sort((a, b) => {
+  // Load posts from backend API
+  const loadPosts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`/api/posts?minLikes=${minLikes}&maxResults=20`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to load posts');
+      }
+      
+      // Convert ratio data to our Post format
+      const ratios = result.data;
+      const convertedPosts: Post[] = ratios.map((ratio: any) => {
+        return {
+          id: ratio.parent.id,
+          author: ratio.parent.author.username,
+          content: ratio.parent.text,
+          likes: ratio.parent.public_metrics.like_count,
+          timestamp: ratio.parent.created_at,
+          replies: [{
+            id: ratio.reply.id,
+            author: ratio.reply.author.username,
+            content: ratio.reply.text,
+            likes: ratio.reply.public_metrics.like_count,
+            isRatio: ratio.ratio >= 2,
+            isBrutalRatio: ratio.isBrutalRatio
+          }]
+        };
+      });
+      
+      setPosts(convertedPosts.length > 0 ? convertedPosts : mockPosts);
+    } catch (err) {
+      console.error('Error loading posts:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load posts');
+      setPosts(mockPosts); // Fallback to mock data
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load posts on mount
+  useEffect(() => {
+    loadPosts();
+  }, []);
+
+  const sortedPosts = [...posts].sort((a, b) => {
     if (sortBy === 'recency') {
       return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
     } else { // brutality
-      const aMaxRatio = Math.max(...a.replies.map(reply => reply.likes / a.likes));
-      const bMaxRatio = Math.max(...b.replies.map(reply => reply.likes / b.likes));
+      const aMaxRatio = Math.max(...a.replies.map(reply => reply.likes / a.likes), 0);
+      const bMaxRatio = Math.max(...b.replies.map(reply => reply.likes / b.likes), 0);
       return bMaxRatio - aMaxRatio;
     }
   });
 
-  const filteredPosts = sortedPosts.filter(post => post.likes >= minLikes);
+  // Don't filter on parent post likes - backend already filtered by reply likes
+  const filteredPosts = sortedPosts;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -268,6 +344,13 @@ export function App() {
             >
               Follow @XDevelopers
             </a>
+            <button
+              onClick={loadPosts}
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+            >
+              {loading ? 'Loading...' : 'Refresh'}
+            </button>
           </div>
         </div>
       </header>
@@ -292,7 +375,7 @@ export function App() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Min. Original Likes: {minLikes.toLocaleString()}
+                  Min. Reply Likes: {minLikes.toLocaleString()}
                 </label>
                 <input
                   type="range"
@@ -307,6 +390,9 @@ export function App() {
                   <span>500</span>
                   <span>10k</span>
                 </div>
+                <p className="text-xs text-gray-400 mt-2">
+                  Filters for replies with this many likes or more
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -339,11 +425,36 @@ export function App() {
               <p className="text-gray-400 text-sm">Monitoring X for ratio opportunities in real-time</p>
             </div>
 
-            <div className="space-y-6">
-              {filteredPosts.map(post => (
-                <PostCard key={post.id} post={post} />
-              ))}
-            </div>
+            {error && (
+              <div className="bg-red-900/20 border border-red-500 rounded-lg p-4 mb-6">
+                <p className="text-red-400 font-semibold mb-2">⚠️ Error Loading Posts</p>
+                <p className="text-red-300 text-sm">{error}</p>
+                <p className="text-gray-400 text-xs mt-2">
+                  Make sure to update the BEARER_TOKEN in src/utils/x-api.ts
+                </p>
+              </div>
+            )}
+
+            {loading && posts.length === 0 ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                  <p className="text-gray-400">Loading posts from X...</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {filteredPosts.length > 0 ? (
+                  filteredPosts.map(post => (
+                    <PostCard key={post.id} post={post} />
+                  ))
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-gray-400">No posts found matching your filters.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </main>
       </div>
