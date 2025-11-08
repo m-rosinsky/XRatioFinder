@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 interface Post {
   id: string;
   author: string;
+  authorProfileImage?: string;
   content: string;
   likes: number;
   timestamp: string;
@@ -14,6 +15,7 @@ interface Post {
 interface Reply {
   id: string;
   author: string;
+  authorProfileImage?: string;
   content: string;
   likes: number;
   isRatio: boolean;
@@ -175,10 +177,42 @@ const PostCard = ({ post }: { post: Post }) => {
       {/* Original Post */}
       <div className="mb-4">
         <div className="flex items-center mb-2">
-          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold mr-3">
-            {post.author[0].toUpperCase()}
-          </div>
-          <span className="font-semibold text-blue-400">@{post.author}</span>
+          <a
+            href={`https://x.com/${post.author}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-10 h-10 rounded-full mr-3 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0 overflow-hidden bg-blue-500"
+            title={`@${post.author}'s profile`}
+          >
+            {post.authorProfileImage ? (
+              <img 
+                src={post.authorProfileImage} 
+                alt={`@${post.author}`}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-white font-bold">
+                {post.author[0].toUpperCase()}
+              </div>
+            )}
+          </a>
+          <a
+            href={`https://x.com/${post.author}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            @{post.author}
+          </a>
+          <a
+            href={`https://x.com/${post.author}/status/${post.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-2 text-gray-500 hover:text-blue-400 transition-colors text-sm"
+            title="View post on X"
+          >
+            🔗
+          </a>
           {hasBrutalRatio && (
             <span className="ml-auto bg-gradient-to-r from-orange-500 to-red-600 text-white px-3 py-1 rounded text-sm font-bold animate-pulse">
               💀 BRUTAL RATIO
@@ -210,10 +244,42 @@ const PostCard = ({ post }: { post: Post }) => {
                 : 'border-gray-600 bg-gray-700/50'
             }`}>
               <div className="flex items-center mb-2">
-                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm mr-2">
-                  {reply.author[0].toUpperCase()}
-                </div>
-                <span className="font-semibold text-purple-400 text-sm">@{reply.author}</span>
+                <a
+                  href={`https://x.com/${reply.author}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full mr-2 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0 overflow-hidden bg-purple-500"
+                  title={`@${reply.author}'s profile`}
+                >
+                  {reply.authorProfileImage ? (
+                    <img 
+                      src={reply.authorProfileImage} 
+                      alt={`@${reply.author}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white font-bold text-sm">
+                      {reply.author[0].toUpperCase()}
+                    </div>
+                  )}
+                </a>
+                <a
+                  href={`https://x.com/${reply.author}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-purple-400 hover:text-purple-300 text-sm transition-colors"
+                >
+                  @{reply.author}
+                </a>
+                <a
+                  href={`https://x.com/${reply.author}/status/${reply.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-2 text-gray-500 hover:text-purple-400 transition-colors text-xs"
+                  title="View reply on X"
+                >
+                  🔗
+                </a>
                 {reply.isBrutalRatio && (
                   <span className="ml-auto bg-gradient-to-r from-orange-500 to-red-600 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse">
                     BRUTAL!
@@ -273,12 +339,14 @@ export function App() {
         return {
           id: ratio.parent.id,
           author: ratio.parent.author.username,
+          authorProfileImage: ratio.parent.author.profile_image_url,
           content: ratio.parent.text,
           likes: ratio.parent.public_metrics.like_count,
           timestamp: ratio.parent.created_at,
           replies: [{
             id: ratio.reply.id,
             author: ratio.reply.author.username,
+            authorProfileImage: ratio.reply.author.profile_image_url,
             content: ratio.reply.text,
             likes: ratio.reply.public_metrics.like_count,
             isRatio: ratio.ratio >= 2,

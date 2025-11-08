@@ -26,6 +26,7 @@ interface XApiUser {
   id: string;
   name: string;
   username: string;
+  profile_image_url?: string;
 }
 
 interface XApiResponse {
@@ -50,6 +51,7 @@ export interface RatioData {
     author: {
       username: string;
       name: string;
+      profile_image_url?: string;
     };
     public_metrics: {
       like_count: number;
@@ -63,6 +65,7 @@ export interface RatioData {
     author: {
       username: string;
       name: string;
+      profile_image_url?: string;
     };
     public_metrics: {
       like_count: number;
@@ -79,7 +82,7 @@ export interface RatioData {
  */
 async function getTweetById(tweetId: string): Promise<{ data: XApiPost; includes?: { users?: XApiUser[] } } | null> {
   const tweetFields = "author_id,created_at,public_metrics,conversation_id,in_reply_to_user_id";
-  const userFields = "name,username";
+  const userFields = "name,username,profile_image_url";
   const expansions = "author_id";
 
   const url = new URL(`https://api.x.com/2/tweets/${tweetId}`);
@@ -118,7 +121,7 @@ export async function searchRecentPosts(
   // Search for replies that have high engagement
   const query = `min_likes:${minLikes} is:reply -is:retweet lang:en`;
   const tweetFields = "author_id,created_at,public_metrics,conversation_id,in_reply_to_user_id";
-  const userFields = "name,username";
+  const userFields = "name,username,profile_image_url";
   const expansions = "author_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id";
 
   const url = new URL("https://api.x.com/2/tweets/search/recent");
@@ -210,6 +213,7 @@ export async function searchRecentRatios(
           author: {
             username: parentUser.username,
             name: parentUser.name,
+            profile_image_url: parentUser.profile_image_url,
           },
           public_metrics: parentTweet.public_metrics,
         },
@@ -219,6 +223,7 @@ export async function searchRecentRatios(
           author: {
             username: replyUser.username,
             name: replyUser.name,
+            profile_image_url: replyUser.profile_image_url,
           },
           public_metrics: reply.public_metrics,
         },
