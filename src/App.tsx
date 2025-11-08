@@ -22,6 +22,29 @@ interface Reply {
   isBrutalRatio: boolean;
 }
 
+// Helper function to format relative time
+const formatRelativeTime = (timestamp: string): string => {
+  const now = new Date();
+  const postTime = new Date(timestamp);
+  const diffMs = now.getTime() - postTime.getTime();
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffSeconds < 60) {
+    return 'just now';
+  } else if (diffMinutes < 60) {
+    return `${diffMinutes}m ago`;
+  } else if (diffHours < 24) {
+    return `${diffHours}h ago`;
+  } else if (diffDays < 7) {
+    return `${diffDays}d ago`;
+  } else {
+    return postTime.toLocaleDateString();
+  }
+};
+
 // Mock data for demonstration - used as fallback
 const mockPosts: Post[] = [
   {
@@ -196,14 +219,18 @@ const PostCard = ({ post }: { post: Post }) => {
               </div>
             )}
           </a>
-          <a
-            href={`https://x.com/${post.author}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-semibold text-blue-400 hover:text-blue-300 transition-colors"
-          >
-            @{post.author}
-          </a>
+          <div className="flex items-center">
+            <a
+              href={`https://x.com/${post.author}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              @{post.author}
+            </a>
+            <span className="mx-2 text-gray-500">·</span>
+            <span className="text-gray-400 text-sm">{formatRelativeTime(post.timestamp)}</span>
+          </div>
           <a
             href={`https://x.com/${post.author}/status/${post.id}`}
             target="_blank"
@@ -314,6 +341,7 @@ export function App() {
   const [posts, setPosts] = useState<Post[]>(mockPosts);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showOnlyBrutal, setShowOnlyBrutal] = useState(false);
 
   const [wsConnected, setWsConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
@@ -426,10 +454,18 @@ export function App() {
     }
   };
 
-  // Filter posts based on reply likes (client-side filtering)
+  // Filter posts based on reply likes and brutal ratio flag (client-side filtering)
   const filteredByLikes = posts.filter(post => {
     // Check if any reply meets the minimum likes threshold
-    return post.replies.some(reply => reply.likes >= minLikes);
+    const meetsLikesThreshold = post.replies.some(reply => reply.likes >= minLikes);
+    
+    // If "show only brutal" is enabled, also check if it's a brutal ratio
+    if (showOnlyBrutal) {
+      const hasBrutalRatio = post.replies.some(reply => reply.isBrutalRatio);
+      return meetsLikesThreshold && hasBrutalRatio;
+    }
+    
+    return meetsLikesThreshold;
   });
 
   // Sort the filtered posts
@@ -480,13 +516,6 @@ export function App() {
             >
               Follow @XDevelopers
             </a>
-            <button
-              onClick={loadPosts}
-              disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-            >
-              {loading ? 'Loading...' : 'Refresh'}
-            </button>
           </div>
         </div>
       </header>
@@ -494,7 +523,16 @@ export function App() {
       <div className="flex">
         {/* Sidebar */}
         <aside className="w-80 bg-gray-800 border-r border-gray-700 p-6 min-h-screen">
-          <div className="mt-8">
+          {/* Refresh Button */}
+          <button
+            onClick={loadPosts}
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-4 py-3 rounded-lg text-sm font-semibold transition-colors mb-6"
+          >
+            {loading ? '⏳ Refreshing...' : '🔄 Refresh Feed'}
+          </button>
+
+          <div className="mt-2">
             <h3 className="text-md font-semibold mb-4 text-gray-200">Sort By</h3>
             <div className="mb-6">
               <select
@@ -532,21 +570,14 @@ export function App() {
               </div>
 
               <div className="space-y-2">
-                <label className="flex items-center">
-                  <input type="checkbox" defaultChecked className="mr-2" />
-                  <span className="text-sm">Show only ratios</span>
-                </label>
-                <label className="flex items-center">
-                  <input type="checkbox" className="mr-2" />
-                  <span className="text-sm">Show only brutal ratios</span>
-                </label>
-                <label className="flex items-center">
-                  <input type="checkbox" className="mr-2" />
-                  <span className="text-sm">Hide low engagement</span>
-                </label>
-                <label className="flex items-center">
-                  <input type="checkbox" className="mr-2" />
-                  <span className="text-sm">Real-time updates</span>
+                <label className="flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={showOnlyBrutal}
+                    onChange={(e) => setShowOnlyBrutal(e.target.checked)}
+                    className="mr-2 cursor-pointer" 
+                  />
+                  <span className="text-sm">Show only brutal ratios (10x+)</span>
                 </label>
               </div>
             </div>
