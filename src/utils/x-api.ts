@@ -75,6 +75,7 @@ export interface RatioData {
   };
   ratio: number;
   isBrutalRatio: boolean;
+  isLethalRatio: boolean;
 }
 
 /**
@@ -110,13 +111,15 @@ async function getTweetById(tweetId: string): Promise<{ data: XApiPost; includes
 }
 
 /**
- * Search for recent REPLIES with minimum likes
+ * Search for recent REPLIES with minimum likes (single page)
  * @param minLikes Minimum number of likes for replies
  * @param maxResults Maximum results per API call (10-100)
+ * @param nextToken Optional pagination token
  */
-export async function searchRecentPosts(
-  minLikes: number = 500,
-  maxResults: number = 20
+async function searchRecentPostsPage(
+  minLikes: number = 1000,
+  maxResults: number = 100,
+  nextToken?: string
 ): Promise<XApiResponse> {
   // Search for replies that have high engagement
   const query = `min_likes:${minLikes} is:reply -is:retweet lang:en`;
@@ -130,6 +133,11 @@ export async function searchRecentPosts(
   url.searchParams.append("tweet.fields", tweetFields);
   url.searchParams.append("user.fields", userFields);
   url.searchParams.append("expansions", expansions);
+  
+  // Add pagination token if provided
+  if (nextToken) {
+    url.searchParams.append("next_token", nextToken);
+  }
 
   const response = await fetch(url.toString(), {
     headers: {
@@ -146,92 +154,217 @@ export async function searchRecentPosts(
 }
 
 /**
+ * Search for recent REPLIES with minimum likes - FULLY PAGINATED
+ * Automatically fetches all pages of results
+ * @param minLikes Minimum number of likes for replies
+ * @param maxResults Maximum results per API call (10-100, use 100 for efficiency)
+ */
+export async function searchRecentPosts(
+  minLikes: number = 1000,
+  maxResults: number = 100
+): Promise<XApiResponse> {
+  const allData: any[] = [];
+  const allUsers = new Map<string, any>();
+  const allTweets = new Map<string, any>();
+  let nextToken: string | undefined = undefined;
+  let pageCount = 0;
+
+  console.log(`📄 Starting paginated search (min_likes:${minLikes})...`);
+
+  do {
+    pageCount++;
+    console.log(`📄 Fetching page ${pageCount}${nextToken ? ` (token: ${nextToken})` : ''}`);
+
+    const response = await searchRecentPostsPage(minLikes, maxResults, nextToken);
+
+    // Collect data from this page
+    if (response.data && response.data.length > 0) {
+      allData.push(...response.data);
+      console.log(`   ✓ Got ${response.data.length} posts (total: ${allData.length})`);
+    }
+
+    // Collect users from this page (deduplicate)
+    if (response.includes?.users) {
+      for (const user of response.includes.users) {
+        allUsers.set(user.id, user);
+      }
+    }
+
+    // Collect referenced tweets from this page (deduplicate)
+    if (response.includes?.tweets) {
+      for (const tweet of response.includes.tweets) {
+        allTweets.set(tweet.id, tweet);
+      }
+    }
+
+    // Get next token for pagination
+    nextToken = response.meta?.next_token;
+
+    // Stop after 5 pages to prevent slow queries (500 results max)
+    if (pageCount >= 5) {
+      console.log(`⚠️  Stopping at page ${pageCount} (limit reached)`);
+      nextToken = undefined;
+    }
+
+    // Add a tiny delay to avoid rate limiting
+    if (nextToken) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+
+  } while (nextToken);
+
+  console.log(`✅ Pagination complete: ${pageCount} pages, ${allData.length} total posts`);
+
+  // Return combined results in the same format
+  return {
+    data: allData,
+    includes: {
+      users: Array.from(allUsers.values()),
+      tweets: Array.from(allTweets.values()),
+    },
+    meta: {
+      result_count: allData.length,
+    },
+  };
+}
+
+/**
  * Find ratios by searching for high-engagement replies and fetching their parent posts
+ * Paginates until we have 500 ratios or run out of results
  * @param minLikes Minimum number of likes for replies
  * @param daysBack Days to search back (not currently used, X API limits to 7 days)
- * @param maxResults Maximum results per API call (10-100)
+ * @param maxResultsPerPage Maximum results per API page (10-100, use 100 for efficiency)
  */
 export async function searchRecentRatios(
-  minLikes: number = 500,
+  minLikes: number = 1000,
   daysBack: number = 7,
-  maxResults: number = 20
+  maxResultsPerPage: number = 100
 ): Promise<RatioData[]> {
-  const response = await searchRecentPosts(minLikes, maxResults);
-  
-  if (!response.data || response.data.length === 0) {
-    return [];
-  }
-  
   const ratios: RatioData[] = [];
-  const users = response.includes?.users || [];
-  const referencedTweets = response.includes?.tweets || [];
+  const allUsers = new Map<string, XApiUser>();
+  const allTweets = new Map<string, XApiPost>();
+  let nextToken: string | undefined = undefined;
+  let pageCount = 0;
+  const MAX_RATIOS = 500;
   
-  // Process each reply
-  for (const reply of response.data) {
-    // Find the parent tweet ID from referenced_tweets array
-    const replyToTweet = reply.referenced_tweets?.find(ref => ref.type === 'replied_to');
-    const parentTweetId = replyToTweet?.id;
+  console.log(`🔍 Searching for ratios (min_likes:${minLikes})...`);
+  
+  // Paginate until we have enough ratios
+  do {
+    pageCount++;
+    console.log(`📄 Fetching page ${pageCount}${nextToken ? ` (token: ${nextToken})` : ''}`);
     
-    if (!parentTweetId) {
-      // If no parent tweet found, skip this reply
-      continue;
+    const response = await searchRecentPostsPage(minLikes, maxResultsPerPage, nextToken);
+    
+    if (!response.data || response.data.length === 0) {
+      break;
     }
     
-    // Check if parent tweet is in the includes
-    let parentTweet = referencedTweets.find(t => t.id === parentTweetId);
-    let parentUser: XApiUser | undefined;
+    console.log(`   ✓ Got ${response.data.length} replies`);
     
-    if (!parentTweet) {
-      // Fetch the parent tweet if not included
-      const parentData = await getTweetById(parentTweetId);
-      if (!parentData) continue;
+    // Collect users and tweets from this page
+    if (response.includes?.users) {
+      for (const user of response.includes.users) {
+        allUsers.set(user.id, user);
+      }
+    }
+    if (response.includes?.tweets) {
+      for (const tweet of response.includes.tweets) {
+        allTweets.set(tweet.id, tweet);
+      }
+    }
+    
+    // Process each reply
+    for (const reply of response.data) {
+      // Stop if we have enough ratios
+      if (ratios.length >= MAX_RATIOS) {
+        console.log(`✅ Reached ${MAX_RATIOS} ratios, stopping pagination`);
+        nextToken = undefined;
+        break;
+      }
       
-      parentTweet = parentData.data;
-      parentUser = parentData.includes?.users?.[0];
+      // Find the parent tweet ID from referenced_tweets array
+      const replyToTweet = reply.referenced_tweets?.find(ref => ref.type === 'replied_to');
+      const parentTweetId = replyToTweet?.id;
+      
+      if (!parentTweetId) {
+        continue;
+      }
+      
+      // Check if parent tweet is in the includes
+      let parentTweet = allTweets.get(parentTweetId);
+      let parentUser: XApiUser | undefined;
+      
+      if (!parentTweet) {
+        // Fetch the parent tweet if not included
+        const parentData = await getTweetById(parentTweetId);
+        if (!parentData) continue;
+        
+        parentTweet = parentData.data;
+        parentUser = parentData.includes?.users?.[0];
+        if (parentUser) allUsers.set(parentUser.id, parentUser);
+      } else {
+        parentUser = allUsers.get(parentTweet.author_id);
+      }
+      
+      const replyUser = allUsers.get(reply.author_id);
+      
+      if (!parentTweet || !parentUser || !replyUser) {
+        continue;
+      }
+      
+      // Calculate ratio
+      const ratio = reply.public_metrics.like_count / parentTweet.public_metrics.like_count;
+      const isLethalRatio = ratio >= 100;
+      const isBrutalRatio = ratio >= 10;
+      const isRatio = ratio >= 2;
+      
+      // Only include if it's at least a 2x ratio
+      if (isRatio) {
+        ratios.push({
+          parent: {
+            id: parentTweet.id,
+            text: parentTweet.text,
+            created_at: parentTweet.created_at,
+            author: {
+              username: parentUser.username,
+              name: parentUser.name,
+              profile_image_url: parentUser.profile_image_url,
+            },
+            public_metrics: parentTweet.public_metrics,
+          },
+          reply: {
+            id: reply.id,
+            text: reply.text,
+            author: {
+              username: replyUser.username,
+              name: replyUser.name,
+              profile_image_url: replyUser.profile_image_url,
+            },
+            public_metrics: reply.public_metrics,
+          },
+          ratio,
+          isBrutalRatio,
+          isLethalRatio,
+        });
+      }
+    }
+    
+    // Get next token for pagination
+    if (ratios.length < MAX_RATIOS) {
+      nextToken = response.meta?.next_token;
     } else {
-      parentUser = users.find(u => u.id === parentTweet!.author_id);
+      nextToken = undefined;
     }
     
-    const replyUser = users.find(u => u.id === reply.author_id);
-    
-    if (!parentTweet || !parentUser || !replyUser) {
-      continue;
+    // Add a tiny delay to avoid rate limiting
+    if (nextToken) {
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
     
-    // Calculate ratio
-    const ratio = reply.public_metrics.like_count / parentTweet.public_metrics.like_count;
-    const isBrutalRatio = ratio >= 10;
-    const isRatio = ratio >= 2;
-    
-    // Only include if it's at least a 2x ratio
-    if (isRatio) {
-      ratios.push({
-        parent: {
-          id: parentTweet.id,
-          text: parentTweet.text,
-          created_at: parentTweet.created_at,
-          author: {
-            username: parentUser.username,
-            name: parentUser.name,
-            profile_image_url: parentUser.profile_image_url,
-          },
-          public_metrics: parentTweet.public_metrics,
-        },
-        reply: {
-          id: reply.id,
-          text: reply.text,
-          author: {
-            username: replyUser.username,
-            name: replyUser.name,
-            profile_image_url: replyUser.profile_image_url,
-          },
-          public_metrics: reply.public_metrics,
-        },
-        ratio,
-        isBrutalRatio,
-      });
-    }
-  }
+  } while (nextToken);
+  
+  console.log(`✅ Found ${ratios.length} ratios across ${pageCount} pages`);
   
   return ratios;
 }

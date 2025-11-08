@@ -53,8 +53,8 @@ export class RatioPoller {
 
       const existingIds = new Set(ratioStore.getAllRatios().map(r => r.id));
       
-      // Search for ratios with minimum 500 likes
-      const ratios = await searchRecentRatios(500, 7, 100);
+      // Search for ratios with minimum 1000 likes
+      const ratios = await searchRecentRatios(1000, 7, 100);
 
       let newCount = 0;
       for (const ratio of ratios) {
@@ -78,6 +78,7 @@ export class RatioPoller {
             },
             ratio: ratio.ratio,
             isBrutalRatio: ratio.isBrutalRatio,
+            isLethalRatio: ratio.isLethalRatio,
             isRatio: ratio.ratio >= 2,
             discoveredAt: Date.now(),
           };

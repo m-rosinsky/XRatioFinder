@@ -20,6 +20,7 @@ export interface StoredRatio {
   };
   ratio: number;
   isBrutalRatio: boolean;
+  isLethalRatio: boolean;
   isRatio: boolean;
   discoveredAt: number; // timestamp when we found this ratio
 }
@@ -78,6 +79,7 @@ class RatioStore {
       total: ratios.length,
       ratios: ratios.filter(r => r.isRatio).length,
       brutalRatios: ratios.filter(r => r.isBrutalRatio).length,
+      lethalRatios: ratios.filter(r => r.isLethalRatio).length,
       oldestTimestamp: Math.min(...ratios.map(r => r.discoveredAt)),
       newestTimestamp: Math.max(...ratios.map(r => r.discoveredAt)),
     };

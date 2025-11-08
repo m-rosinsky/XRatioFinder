@@ -20,6 +20,7 @@ interface Reply {
   likes: number;
   isRatio: boolean;
   isBrutalRatio: boolean;
+  isLethalRatio: boolean;
 }
 
 // Helper function to format relative time
@@ -60,7 +61,8 @@ const mockPosts: Post[] = [
         content: "AI startups are so 2023. What's your unique value prop?",
         likes: 156,
         isRatio: false,
-        isBrutalRatio: false
+        isBrutalRatio: false,
+        isLethalRatio: false
       }
     ]
   },
@@ -77,7 +79,8 @@ const mockPosts: Post[] = [
         content: "Actually, brutalism has been around forever. It's not new.",
         likes: 2800,
         isRatio: true,
-        isBrutalRatio: true
+        isBrutalRatio: true,
+        isLethalRatio: false
       }
     ]
   },
@@ -94,7 +97,8 @@ const mockPosts: Post[] = [
         content: "Unicorn? More like a donkey. Your valuation is inflated garbage.",
         likes: 150,
         isRatio: false,
-        isBrutalRatio: false
+        isBrutalRatio: false,
+        isLethalRatio: false
       }
     ]
   },
@@ -111,7 +115,8 @@ const mockPosts: Post[] = [
         content: "This is absolutely terrible. How do you even call yourself a musician?",
         likes: 42000,
         isRatio: true,
-        isBrutalRatio: true
+        isBrutalRatio: true,
+        isLethalRatio: false
       }
     ]
   },
@@ -128,7 +133,8 @@ const mockPosts: Post[] = [
         content: "Please stop spreading misinformation. Weight loss requires diet + exercise.",
         likes: 58000,
         isRatio: true,
-        isBrutalRatio: true
+        isBrutalRatio: true,
+        isLethalRatio: false
       }
     ]
   },
@@ -145,7 +151,8 @@ const mockPosts: Post[] = [
         content: "This is a rug pull waiting to happen. DYOR people.",
         likes: 1200,
         isRatio: false,
-        isBrutalRatio: false
+        isBrutalRatio: false,
+        isLethalRatio: false
       }
     ]
   },
@@ -162,7 +169,8 @@ const mockPosts: Post[] = [
         content: "Old news. This was leaked weeks ago.",
         likes: 3400,
         isRatio: false,
-        isBrutalRatio: false
+        isBrutalRatio: false,
+        isLethalRatio: false
       }
     ]
   },
@@ -179,6 +187,7 @@ const mockPosts: Post[] = [
         content: "Your facts are wrong. Here's the actual data...",
         likes: 5600,
         isRatio: false,
+        isLethalRatio: false,
         isBrutalRatio: false
       }
     ]
@@ -188,10 +197,13 @@ const mockPosts: Post[] = [
 const PostCard = ({ post }: { post: Post }) => {
   const hasRatio = post.replies.some(reply => reply.likes > post.likes);
   const hasBrutalRatio = post.replies.some(reply => reply.likes >= post.likes * 10);
+  const hasLethalRatio = post.replies.some(reply => reply.likes >= post.likes * 100);
 
   return (
     <div className={`bg-gray-800 rounded-lg border p-6 mb-6 ${
-      hasBrutalRatio
+      hasLethalRatio
+        ? 'border-purple-500 bg-purple-900/30 shadow-xl shadow-purple-500/30 ring-2 ring-purple-500/50'
+        : hasBrutalRatio
         ? 'border-orange-500 bg-orange-900/30 shadow-lg shadow-orange-500/20'
         : hasRatio
         ? 'border-red-500 bg-red-900/20'
@@ -240,12 +252,17 @@ const PostCard = ({ post }: { post: Post }) => {
           >
             🔗
           </a>
-          {hasBrutalRatio && (
+          {hasLethalRatio && (
+            <span className="ml-auto bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white px-3 py-1 rounded text-sm font-bold animate-pulse shadow-lg">
+              ☠️ LETHAL RATIO
+            </span>
+          )}
+          {hasBrutalRatio && !hasLethalRatio && (
             <span className="ml-auto bg-gradient-to-r from-orange-500 to-red-600 text-white px-3 py-1 rounded text-sm font-bold animate-pulse">
               💀 BRUTAL RATIO
             </span>
           )}
-          {hasRatio && !hasBrutalRatio && (
+          {hasRatio && !hasBrutalRatio && !hasLethalRatio && (
             <span className="ml-auto bg-red-500 text-white px-2 py-1 rounded text-sm font-bold">
               🔥 RATIO
             </span>
@@ -264,7 +281,9 @@ const PostCard = ({ post }: { post: Post }) => {
           <h4 className="text-sm font-semibold text-gray-400 mb-3">TOP REPLIES</h4>
           {post.replies.map(reply => (
             <div key={reply.id} className={`mb-3 p-3 rounded border ${
-              reply.isBrutalRatio
+              reply.isLethalRatio
+                ? 'border-purple-500 bg-purple-900/30 shadow-lg shadow-purple-500/20 ring-1 ring-purple-500/30'
+                : reply.isBrutalRatio
                 ? 'border-orange-500 bg-orange-900/20 shadow-md shadow-orange-500/10'
                 : reply.isRatio
                 ? 'border-red-500 bg-red-900/10'
@@ -307,12 +326,17 @@ const PostCard = ({ post }: { post: Post }) => {
                 >
                   🔗
                 </a>
-                {reply.isBrutalRatio && (
+                {reply.isLethalRatio && (
+                  <span className="ml-auto bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse shadow-md">
+                    LETHAL!
+                  </span>
+                )}
+                {reply.isBrutalRatio && !reply.isLethalRatio && (
                   <span className="ml-auto bg-gradient-to-r from-orange-500 to-red-600 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse">
                     BRUTAL!
                   </span>
                 )}
-                {reply.isRatio && !reply.isBrutalRatio && (
+                {reply.isRatio && !reply.isBrutalRatio && !reply.isLethalRatio && (
                   <span className="ml-auto bg-red-500 text-white px-2 py-0.5 rounded text-xs font-bold">
                     RATIO!
                   </span>
@@ -321,7 +345,12 @@ const PostCard = ({ post }: { post: Post }) => {
               <p className="text-gray-300 text-sm mb-2">{reply.content}</p>
               <div className="flex items-center text-gray-500 text-xs">
                 <span>❤️ {reply.likes} likes</span>
-                {reply.isBrutalRatio && (
+                {reply.isLethalRatio && (
+                  <span className="ml-2 text-purple-400 font-bold">
+                    ({Math.round(reply.likes / post.likes * 10) / 10}x the original! 💀💀💀)
+                  </span>
+                )}
+                {reply.isBrutalRatio && !reply.isLethalRatio && (
                   <span className="ml-2 text-orange-400 font-semibold">
                     ({Math.round(reply.likes / post.likes * 10) / 10}x the original!)
                   </span>
@@ -336,12 +365,13 @@ const PostCard = ({ post }: { post: Post }) => {
 };
 
 export function App() {
-  const [minLikes, setMinLikes] = useState(500);
+  const [minLikes, setMinLikes] = useState(1000);
   const [sortBy, setSortBy] = useState<'recency' | 'brutality'>('recency');
   const [posts, setPosts] = useState<Post[]>(mockPosts);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showOnlyBrutal, setShowOnlyBrutal] = useState(false);
+  const [showOnlyLethal, setShowOnlyLethal] = useState(false);
 
   const [wsConnected, setWsConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
@@ -362,7 +392,8 @@ export function App() {
         content: ratio.reply.content,
         likes: ratio.reply.likes,
         isRatio: ratio.isRatio,
-        isBrutalRatio: ratio.isBrutalRatio
+        isBrutalRatio: ratio.isBrutalRatio,
+        isLethalRatio: ratio.isLethalRatio || false
       }]
     };
   };
@@ -454,12 +485,18 @@ export function App() {
     }
   };
 
-  // Filter posts based on reply likes and brutal ratio flag (client-side filtering)
+  // Filter posts based on reply likes and ratio flags (client-side filtering)
   const filteredByLikes = posts.filter(post => {
     // Check if any reply meets the minimum likes threshold
     const meetsLikesThreshold = post.replies.some(reply => reply.likes >= minLikes);
     
-    // If "show only brutal" is enabled, also check if it's a brutal ratio
+    // If "show only lethal" is enabled, check for lethal ratios (takes priority)
+    if (showOnlyLethal) {
+      const hasLethalRatio = post.replies.some(reply => reply.isLethalRatio);
+      return meetsLikesThreshold && hasLethalRatio;
+    }
+    
+    // If "show only brutal" is enabled, check for brutal ratios
     if (showOnlyBrutal) {
       const hasBrutalRatio = post.replies.some(reply => reply.isBrutalRatio);
       return meetsLikesThreshold && hasBrutalRatio;
@@ -553,7 +590,7 @@ export function App() {
                 </label>
                 <input
                   type="range"
-                  min="500"
+                  min="1000"
                   max="10000"
                   step="100"
                   value={minLikes}
@@ -561,7 +598,7 @@ export function App() {
                   className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
                 />
                 <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>500</span>
+                  <span>1k</span>
                   <span>10k</span>
                 </div>
                 <p className="text-xs text-gray-400 mt-2">
@@ -573,8 +610,23 @@ export function App() {
                 <label className="flex items-center cursor-pointer">
                   <input 
                     type="checkbox" 
+                    checked={showOnlyLethal}
+                    onChange={(e) => {
+                      setShowOnlyLethal(e.target.checked);
+                      if (e.target.checked) setShowOnlyBrutal(false);
+                    }}
+                    className="mr-2 cursor-pointer" 
+                  />
+                  <span className="text-sm">Show only lethal ratios (100x+)</span>
+                </label>
+                <label className="flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
                     checked={showOnlyBrutal}
-                    onChange={(e) => setShowOnlyBrutal(e.target.checked)}
+                    onChange={(e) => {
+                      setShowOnlyBrutal(e.target.checked);
+                      if (e.target.checked) setShowOnlyLethal(false);
+                    }}
                     className="mr-2 cursor-pointer" 
                   />
                   <span className="text-sm">Show only brutal ratios (10x+)</span>
