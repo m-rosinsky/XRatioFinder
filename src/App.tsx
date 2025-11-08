@@ -315,62 +315,125 @@ export function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load posts from backend API
+  const [wsConnected, setWsConnected] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
+
+  // Convert stored ratio to Post format
+  const convertRatioToPost = (ratio: any): Post => {
+    return {
+      id: ratio.parent.id,
+      author: ratio.parent.author,
+      authorProfileImage: ratio.parent.authorProfileImage,
+      content: ratio.parent.content,
+      likes: ratio.parent.likes,
+      timestamp: ratio.parent.timestamp,
+      replies: [{
+        id: ratio.reply.id,
+        author: ratio.reply.author,
+        authorProfileImage: ratio.reply.authorProfileImage,
+        content: ratio.reply.content,
+        likes: ratio.reply.likes,
+        isRatio: ratio.isRatio,
+        isBrutalRatio: ratio.isBrutalRatio
+      }]
+    };
+  };
+
+  // WebSocket connection for real-time updates
+  useEffect(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${window.location.host}`);
+
+    ws.onopen = () => {
+      console.log("📡 Connected to backend");
+      setWsConnected(true);
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+
+        switch (message.type) {
+          case "initial_data":
+          case "ratios_updated":
+            console.log(`📊 Received ${message.data.length} ratios from backend`);
+            const convertedPosts = message.data.map(convertRatioToPost);
+            setPosts(convertedPosts.length > 0 ? convertedPosts : mockPosts);
+            setLastUpdate(Date.now());
+            setLoading(false);
+            break;
+
+          case "pong":
+            // Heartbeat response
+            break;
+        }
+      } catch (error) {
+        console.error("WebSocket message error:", error);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log("📡 Disconnected from backend");
+      setWsConnected(false);
+      // Auto-reconnect after 5 seconds
+      setTimeout(() => {
+        window.location.reload();
+      }, 5000);
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
+      setError("Connection to backend failed");
+    };
+
+    // Heartbeat to keep connection alive
+    const heartbeat = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "ping" }));
+      }
+    }, 30000);
+
+    return () => {
+      clearInterval(heartbeat);
+      ws.close();
+    };
+  }, []);
+
+  // Manual refresh trigger
   const loadPosts = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await fetch(`/api/posts?minLikes=${minLikes}&maxResults=20`);
-      
+
+      const response = await fetch("/api/refresh", { method: "POST" });
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const result = await response.json();
-      
+
       if (!result.success) {
-        throw new Error(result.error || 'Failed to load posts');
+        throw new Error(result.error || "Failed to refresh");
       }
-      
-      // Convert ratio data to our Post format
-      const ratios = result.data;
-      const convertedPosts: Post[] = ratios.map((ratio: any) => {
-        return {
-          id: ratio.parent.id,
-          author: ratio.parent.author.username,
-          authorProfileImage: ratio.parent.author.profile_image_url,
-          content: ratio.parent.text,
-          likes: ratio.parent.public_metrics.like_count,
-          timestamp: ratio.parent.created_at,
-          replies: [{
-            id: ratio.reply.id,
-            author: ratio.reply.author.username,
-            authorProfileImage: ratio.reply.author.profile_image_url,
-            content: ratio.reply.text,
-            likes: ratio.reply.public_metrics.like_count,
-            isRatio: ratio.ratio >= 2,
-            isBrutalRatio: ratio.isBrutalRatio
-          }]
-        };
-      });
-      
-      setPosts(convertedPosts.length > 0 ? convertedPosts : mockPosts);
+
+      console.log(`✅ Refresh complete: ${result.newRatios} new ratios`);
     } catch (err) {
-      console.error('Error loading posts:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load posts');
-      setPosts(mockPosts); // Fallback to mock data
+      console.error("Error refreshing:", err);
+      setError(err instanceof Error ? err.message : "Failed to refresh");
     } finally {
       setLoading(false);
     }
   };
 
-  // Load posts on mount
-  useEffect(() => {
-    loadPosts();
-  }, []);
+  // Filter posts based on reply likes (client-side filtering)
+  const filteredByLikes = posts.filter(post => {
+    // Check if any reply meets the minimum likes threshold
+    return post.replies.some(reply => reply.likes >= minLikes);
+  });
 
-  const sortedPosts = [...posts].sort((a, b) => {
+  // Sort the filtered posts
+  const sortedPosts = [...filteredByLikes].sort((a, b) => {
     if (sortBy === 'recency') {
       return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
     } else { // brutality
@@ -380,7 +443,6 @@ export function App() {
     }
   });
 
-  // Don't filter on parent post likes - backend already filtered by reply likes
   const filteredPosts = sortedPosts;
 
   return (
@@ -393,9 +455,15 @@ export function App() {
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
               X Ratio Finder
             </h1>
+            <div className="ml-4 flex items-center">
+              <div className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green-500' : 'bg-red-500'} mr-2`}></div>
+              <span className="text-xs text-gray-400">
+                {wsConnected ? 'Connected' : 'Disconnected'}
+              </span>
+            </div>
           </div>
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-400">Powered by the X API</span>
+            <span className="text-sm text-gray-400">powered by the X API</span>
             <a
               href="https://console.x.com"
               target="_blank"
@@ -459,7 +527,7 @@ export function App() {
                   <span>10k</span>
                 </div>
                 <p className="text-xs text-gray-400 mt-2">
-                  Filters for replies with this many likes or more
+                  Showing {filteredPosts.length} of {posts.length} ratios
                 </p>
               </div>
 

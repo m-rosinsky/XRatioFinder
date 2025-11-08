@@ -49,17 +49,27 @@ bun start
 
 ## How It Works
 
-The application uses the [X API v2 Search Recent Posts](https://docs.x.com/x-api/posts/search-recent-posts) endpoint to search for posts with high engagement. The search query uses operators like `min_faves` to filter posts by minimum likes.
+The application uses a **client-server architecture** with backend polling for efficiency:
 
-### Current Implementation
+1. **Backend polls X API** every 5 minutes searching for high-engagement replies
+2. **Ratios are calculated** by comparing reply likes to original post likes
+3. **Data is cached** in memory and shared across all clients
+4. **WebSocket broadcasts** real-time updates to connected clients
+5. **Clients filter/sort** data locally for instant responsiveness
 
-- ✅ Search recent posts (last 7 days) with minimum engagement threshold
-- ✅ Display posts with author information and metrics
-- ✅ Sort by recency or brutality
-- ✅ Adjustable minimum likes filter (500-10k)
-- ✅ Refresh functionality to fetch new data
-- ⏳ Conversation/reply fetching (coming next)
-- ⏳ Actual ratio calculation (coming next)
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed technical information.
+
+### Features
+
+- ✅ **Backend Polling**: Single X API polling source (efficient rate limit usage)
+- ✅ **Real-time Updates**: WebSocket broadcasts new ratios to all clients
+- ✅ **Ratio Detection**: Automatically finds posts being ratioed (2x+ likes)
+- ✅ **Brutal Ratio Highlighting**: Special indicators for 10x+ ratios
+- ✅ **Profile Pictures**: Real user avatars from X
+- ✅ **Clickable Links**: Direct links to posts and user profiles
+- ✅ **Client-side Filtering**: Sort by recency or brutality
+- ✅ **Connection Status**: Visual indicator of backend connection
+- ✅ **Manual Refresh**: Trigger immediate X API poll
 
 ## Tech Stack
 
