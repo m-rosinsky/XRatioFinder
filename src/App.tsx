@@ -1050,7 +1050,7 @@ export function App() {
                             </div>
                           </div>
                           <div className="bg-purple-900/20 rounded p-3 border border-purple-500/30">
-                            <p className="text-gray-500 text-xs mb-1">💀 Their devastating reply:</p>
+                            <p className="text-gray-500 text-xs mb-1">💀 Their reply:</p>
                             <p className="text-gray-200 text-sm mb-2">{entry.bestRatio.reply.content}</p>
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-purple-400 font-bold">❤️ {entry.bestRatio.reply.likes.toLocaleString()} likes</span>
