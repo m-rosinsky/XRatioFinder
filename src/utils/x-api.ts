@@ -133,6 +133,7 @@ async function searchRecentPostsPage(
   url.searchParams.append("tweet.fields", tweetFields);
   url.searchParams.append("user.fields", userFields);
   url.searchParams.append("expansions", expansions);
+  url.searchParams.append("sort_order", "recency")
   
   // Add pagination token if provided
   if (nextToken) {
