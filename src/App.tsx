@@ -365,6 +365,7 @@ const PostCard = ({ post }: { post: Post }) => {
 };
 
 export function App() {
+  const [activeFeed, setActiveFeed] = useState<'recents' | 'trending'>('recents');
   const [minLikes, setMinLikes] = useState(1000);
   const [sortBy, setSortBy] = useState<'recency' | 'brutality'>('recency');
   const [posts, setPosts] = useState<Post[]>(mockPosts);
@@ -458,13 +459,13 @@ export function App() {
     };
   }, []);
 
-  // Manual refresh trigger
+  // Manual refresh - fetches current data from server without triggering new API poll
   const loadPosts = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("/api/refresh", { method: "POST" });
+      const response = await fetch("/api/ratios", { method: "GET" });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -473,13 +474,18 @@ export function App() {
       const result = await response.json();
 
       if (!result.success) {
-        throw new Error(result.error || "Failed to refresh");
+        throw new Error(result.error || "Failed to load ratios");
       }
 
-      console.log(`✅ Refresh complete: ${result.newRatios} new ratios`);
+      // Convert and set the posts
+      const convertedPosts = result.data.map(convertRatioToPost);
+      setPosts(convertedPosts);
+      setLastUpdate(Date.now());
+
+      console.log(`✅ Refreshed view: ${result.data.length} ratios loaded`);
     } catch (err) {
-      console.error("Error refreshing:", err);
-      setError(err instanceof Error ? err.message : "Failed to refresh");
+      console.error("Error loading ratios:", err);
+      setError(err instanceof Error ? err.message : "Failed to load ratios");
     } finally {
       setLoading(false);
     }
@@ -566,7 +572,7 @@ export function App() {
             disabled={loading}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-4 py-3 rounded-lg text-sm font-semibold transition-colors mb-6"
           >
-            {loading ? '⏳ Refreshing...' : '🔄 Refresh Feed'}
+            {loading ? '⏳ Loading...' : '🔄 Refresh View'}
           </button>
 
           <div className="mt-2">
@@ -639,9 +645,47 @@ export function App() {
         {/* Main Content */}
         <main className="flex-1 p-6">
           <div className="max-w-4xl mx-auto">
+            {/* Feed Tabs */}
             <div className="mb-6">
-              <h2 className="text-xl font-semibold text-gray-200 mb-2">Latest Posts & Ratios</h2>
-              <p className="text-gray-400 text-sm">Monitoring X for ratio opportunities in real-time</p>
+              <div className="flex items-center gap-4 mb-4 border-b border-gray-700">
+                <button
+                  onClick={() => setActiveFeed('recents')}
+                  className={`px-4 py-2 font-semibold transition-all relative cursor-pointer ${
+                    activeFeed === 'recents'
+                      ? 'text-blue-400'
+                      : 'text-gray-400 hover:text-gray-300'
+                  }`}
+                >
+                  Recents
+                  {activeFeed === 'recents' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveFeed('trending')}
+                  className={`px-4 py-2 font-semibold transition-all relative cursor-pointer ${
+                    activeFeed === 'trending'
+                      ? 'text-blue-400'
+                      : 'text-gray-400 hover:text-gray-300'
+                  }`}
+                >
+                  Trending
+                  {activeFeed === 'trending' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>
+                  )}
+                </button>
+              </div>
+              
+              <div>
+                <h2 className="text-xl font-semibold text-gray-200 mb-2">
+                  {activeFeed === 'recents' ? 'Latest Posts & Ratios' : 'Trending Ratios'}
+                </h2>
+                <p className="text-gray-400 text-sm">
+                  {activeFeed === 'recents' 
+                    ? 'Monitoring X for ratio opportunities in real-time (last 7 days)'
+                    : 'Coming soon: Most viral ratios across all time'}
+                </p>
+              </div>
             </div>
 
             {error && (
@@ -654,24 +698,38 @@ export function App() {
               </div>
             )}
 
-            {loading && posts.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                  <p className="text-gray-400">Loading posts from X...</p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {filteredPosts.length > 0 ? (
-                  filteredPosts.map(post => (
-                    <PostCard key={post.id} post={post} />
-                  ))
-                ) : (
-                  <div className="text-center py-12">
-                    <p className="text-gray-400">No posts found matching your filters.</p>
+            {activeFeed === 'recents' ? (
+              // Recents Feed
+              loading && posts.length === 0 ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className="text-gray-400">Loading posts from X...</p>
                   </div>
-                )}
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {filteredPosts.length > 0 ? (
+                    filteredPosts.map(post => (
+                      <PostCard key={post.id} post={post} />
+                    ))
+                  ) : (
+                    <div className="text-center py-12">
+                      <p className="text-gray-400">No posts found matching your filters.</p>
+                    </div>
+                  )}
+                </div>
+              )
+            ) : (
+              // Trending Feed (placeholder)
+              <div className="text-center py-12">
+                <div className="bg-gray-800 border border-gray-700 rounded-lg p-8 max-w-md mx-auto">
+                  <div className="text-6xl mb-4">🚧</div>
+                  <h3 className="text-xl font-semibold text-gray-200 mb-2">Coming Soon</h3>
+                  <p className="text-gray-400">
+                    The Trending feed will showcase the most viral ratios from across all time.
+                  </p>
+                </div>
               </div>
             )}
           </div>
