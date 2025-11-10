@@ -365,7 +365,7 @@ const PostCard = ({ post }: { post: Post }) => {
 };
 
 export function App() {
-  const [activeFeed, setActiveFeed] = useState<'recents' | 'trending'>('recents');
+  const [activeFeed, setActiveFeed] = useState<'recents' | 'victims' | 'perpetrators'>('recents');
   const [minLikes, setMinLikes] = useState(1000);
   const [sortBy, setSortBy] = useState<'recency' | 'brutality'>('recency');
   const [posts, setPosts] = useState<Post[]>(mockPosts);
@@ -524,6 +524,113 @@ export function App() {
 
   const filteredPosts = sortedPosts;
 
+  // Calculate leaderboards
+  interface VictimLeaderboardEntry {
+    username: string;
+    name: string;
+    profileImage?: string;
+    ratioCount: number;
+    totalLikesAgainst: number;
+    worstRatio: {
+      ratio: number;
+      post: Post;
+    };
+  }
+
+  interface PerpetratorLeaderboardEntry {
+    username: string;
+    name: string;
+    profileImage?: string;
+    ratioCount: number;
+    totalLikesDealt: number;
+    bestRatio: {
+      ratio: number;
+      post: Post;
+      reply: Reply;
+    };
+  }
+
+  // Victims Leaderboard - users who got ratio'd the most
+  const victimsLeaderboard: VictimLeaderboardEntry[] = (() => {
+    const userStats = new Map<string, VictimLeaderboardEntry>();
+
+    posts.forEach(post => {
+      post.replies.forEach(reply => {
+        if (reply.isRatio) {
+          const username = post.author;
+          const ratio = reply.likes / post.likes;
+
+          if (!userStats.has(username)) {
+            userStats.set(username, {
+              username,
+              name: username,
+              profileImage: post.authorProfileImage,
+              ratioCount: 0,
+              totalLikesAgainst: 0,
+              worstRatio: {
+                ratio: 0,
+                post: post
+              }
+            });
+          }
+
+          const stats = userStats.get(username)!;
+          stats.ratioCount++;
+          stats.totalLikesAgainst += reply.likes;
+
+          if (ratio > stats.worstRatio.ratio) {
+            stats.worstRatio = { ratio, post };
+          }
+        }
+      });
+    });
+
+    return Array.from(userStats.values())
+      .sort((a, b) => b.ratioCount - a.ratioCount)
+      .slice(0, 50);
+  })();
+
+  // Perpetrators Leaderboard - users who ratio'd others the most
+  const perpetratorsLeaderboard: PerpetratorLeaderboardEntry[] = (() => {
+    const userStats = new Map<string, PerpetratorLeaderboardEntry>();
+
+    posts.forEach(post => {
+      post.replies.forEach(reply => {
+        if (reply.isRatio) {
+          const username = reply.author;
+          const ratio = reply.likes / post.likes;
+
+          if (!userStats.has(username)) {
+            userStats.set(username, {
+              username,
+              name: username,
+              profileImage: reply.authorProfileImage,
+              ratioCount: 0,
+              totalLikesDealt: 0,
+              bestRatio: {
+                ratio: 0,
+                post: post,
+                reply: reply
+              }
+            });
+          }
+
+          const stats = userStats.get(username)!;
+          stats.ratioCount++;
+          stats.totalLikesDealt += reply.likes;
+
+          if (ratio > stats.bestRatio.ratio) {
+            stats.bestRatio = { ratio, post, reply };
+          }
+        }
+      });
+    });
+
+    return Array.from(userStats.values())
+      .sort((a, b) => b.ratioCount - a.ratioCount)
+      .slice(0, 50);
+  })();
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
@@ -662,15 +769,28 @@ export function App() {
                   )}
                 </button>
                 <button
-                  onClick={() => setActiveFeed('trending')}
+                  onClick={() => setActiveFeed('victims')}
                   className={`px-4 py-2 font-semibold transition-all relative cursor-pointer ${
-                    activeFeed === 'trending'
+                    activeFeed === 'victims'
                       ? 'text-blue-400'
                       : 'text-gray-400 hover:text-gray-300'
                   }`}
                 >
-                  Trending
-                  {activeFeed === 'trending' && (
+                  😭 Most Ratio'd
+                  {activeFeed === 'victims' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveFeed('perpetrators')}
+                  className={`px-4 py-2 font-semibold transition-all relative cursor-pointer ${
+                    activeFeed === 'perpetrators'
+                      ? 'text-blue-400'
+                      : 'text-gray-400 hover:text-gray-300'
+                  }`}
+                >
+                  💀 Top Ratio-ers
+                  {activeFeed === 'perpetrators' && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>
                   )}
                 </button>
@@ -678,12 +798,18 @@ export function App() {
               
               <div>
                 <h2 className="text-xl font-semibold text-gray-200 mb-2">
-                  {activeFeed === 'recents' ? 'Latest Posts & Ratios' : 'Trending Ratios'}
+                  {activeFeed === 'recents' 
+                    ? 'Latest Posts & Ratios' 
+                    : activeFeed === 'victims'
+                    ? 'Most Ratio\'d Users'
+                    : 'Top Ratio-ers'}
                 </h2>
                 <p className="text-gray-400 text-sm">
                   {activeFeed === 'recents' 
                     ? 'Monitoring X for ratio opportunities in real-time (last 7 days)'
-                    : 'Coming soon: Most viral ratios across all time'}
+                    : activeFeed === 'victims'
+                    ? 'Users who got ratio\'d the most in the past 7 days'
+                    : 'Users who ratio\'d others the most in the past 7 days'}
                 </p>
               </div>
             </div>
@@ -720,16 +846,239 @@ export function App() {
                   )}
                 </div>
               )
+            ) : activeFeed === 'victims' ? (
+              // Victims Leaderboard Feed
+              <div className="space-y-4">
+                {victimsLeaderboard.length > 0 ? (
+                  <>
+                    <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-4">
+                      <div className="flex items-center justify-between text-sm text-gray-400">
+                        <span>😭 Top {victimsLeaderboard.length} most ratio'd users</span>
+                        <span>From {posts.length} total ratios</span>
+                      </div>
+                    </div>
+                    
+                    {victimsLeaderboard.map((entry, index) => (
+                      <div 
+                        key={entry.username}
+                        className={`bg-gray-800 rounded-lg border p-6 ${
+                          index === 0 
+                            ? 'border-yellow-500 bg-yellow-900/20 shadow-lg shadow-yellow-500/20'
+                            : index === 1
+                            ? 'border-gray-400 bg-gray-700/20'
+                            : index === 2
+                            ? 'border-orange-600 bg-orange-900/20'
+                            : 'border-gray-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center">
+                            <div className={`text-3xl font-bold mr-4 ${
+                              index === 0 ? 'text-yellow-500' : 
+                              index === 1 ? 'text-gray-400' : 
+                              index === 2 ? 'text-orange-600' : 
+                              'text-gray-500'
+                            }`}>
+                              {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                            </div>
+                            
+                            <a
+                              href={`https://x.com/${entry.username}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-12 h-12 rounded-full mr-3 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0 overflow-hidden bg-blue-500"
+                              title={`@${entry.username}'s profile`}
+                            >
+                              {entry.profileImage ? (
+                                <img 
+                                  src={entry.profileImage} 
+                                  alt={`@${entry.username}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-white font-bold">
+                                  {entry.username[0].toUpperCase()}
+                                </div>
+                              )}
+                            </a>
+                            
+                            <div>
+                              <a
+                                href={`https://x.com/${entry.username}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-semibold text-blue-400 hover:text-blue-300 transition-colors text-lg"
+                              >
+                                @{entry.username}
+                              </a>
+                              <div className="text-sm text-gray-400 mt-1">
+                                Got ratio'd <span className="text-red-400 font-bold">{entry.ratioCount}</span> time{entry.ratioCount !== 1 ? 's' : ''}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="text-right">
+                            <div className="text-sm text-gray-400">Total likes against</div>
+                            <div className="text-xl font-bold text-red-400">
+                              {entry.totalLikesAgainst.toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="border-t border-gray-700 pt-4">
+                          <div className="text-sm text-gray-400 mb-2">
+                            💀 Worst ratio: <span className="text-orange-400 font-bold">{entry.worstRatio.ratio.toFixed(1)}x</span>
+                          </div>
+                          <div className="bg-gray-900/50 rounded p-3">
+                            <p className="text-gray-300 text-sm mb-2">{entry.worstRatio.post.content}</p>
+                            <div className="flex items-center text-gray-500 text-xs">
+                              <span className="mr-4">❤️ {entry.worstRatio.post.likes} likes</span>
+                              <a
+                                href={`https://x.com/${entry.worstRatio.post.author}/status/${entry.worstRatio.post.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-400 hover:text-blue-300"
+                              >
+                                View post →
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="bg-gray-800 border border-gray-700 rounded-lg p-8 max-w-md mx-auto">
+                      <div className="text-6xl mb-4">📊</div>
+                      <h3 className="text-xl font-semibold text-gray-200 mb-2">No Data Yet</h3>
+                      <p className="text-gray-400">
+                        The leaderboard will populate as ratios are discovered.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
-              // Trending Feed (placeholder)
-              <div className="text-center py-12">
-                <div className="bg-gray-800 border border-gray-700 rounded-lg p-8 max-w-md mx-auto">
-                  <div className="text-6xl mb-4">🚧</div>
-                  <h3 className="text-xl font-semibold text-gray-200 mb-2">Coming Soon</h3>
-                  <p className="text-gray-400">
-                    The Trending feed will showcase the most viral ratios from across all time.
-                  </p>
-                </div>
+              // Perpetrators Leaderboard Feed
+              <div className="space-y-4">
+                {perpetratorsLeaderboard.length > 0 ? (
+                  <>
+                    <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-4">
+                      <div className="flex items-center justify-between text-sm text-gray-400">
+                        <span>💀 Top {perpetratorsLeaderboard.length} ratio assassins</span>
+                        <span>From {posts.length} total ratios</span>
+                      </div>
+                    </div>
+                    
+                    {perpetratorsLeaderboard.map((entry, index) => (
+                      <div 
+                        key={entry.username}
+                        className={`bg-gray-800 rounded-lg border p-6 ${
+                          index === 0 
+                            ? 'border-yellow-500 bg-yellow-900/20 shadow-lg shadow-yellow-500/20'
+                            : index === 1
+                            ? 'border-gray-400 bg-gray-700/20'
+                            : index === 2
+                            ? 'border-orange-600 bg-orange-900/20'
+                            : 'border-gray-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center">
+                            <div className={`text-3xl font-bold mr-4 ${
+                              index === 0 ? 'text-yellow-500' : 
+                              index === 1 ? 'text-gray-400' : 
+                              index === 2 ? 'text-orange-600' : 
+                              'text-gray-500'
+                            }`}>
+                              {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                            </div>
+                            
+                            <a
+                              href={`https://x.com/${entry.username}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-12 h-12 rounded-full mr-3 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0 overflow-hidden bg-purple-500"
+                              title={`@${entry.username}'s profile`}
+                            >
+                              {entry.profileImage ? (
+                                <img 
+                                  src={entry.profileImage} 
+                                  alt={`@${entry.username}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-white font-bold">
+                                  {entry.username[0].toUpperCase()}
+                                </div>
+                              )}
+                            </a>
+                            
+                            <div>
+                              <a
+                                href={`https://x.com/${entry.username}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-semibold text-purple-400 hover:text-purple-300 transition-colors text-lg"
+                              >
+                                @{entry.username}
+                              </a>
+                              <div className="text-sm text-gray-400 mt-1">
+                                Ratio'd <span className="text-purple-400 font-bold">{entry.ratioCount}</span> user{entry.ratioCount !== 1 ? 's' : ''}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="text-right">
+                            <div className="text-sm text-gray-400">Total likes earned</div>
+                            <div className="text-xl font-bold text-purple-400">
+                              {entry.totalLikesDealt.toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="border-t border-gray-700 pt-4">
+                          <div className="text-sm text-gray-400 mb-2">
+                            🔥 Best ratio: <span className="text-purple-400 font-bold">{entry.bestRatio.ratio.toFixed(1)}x</span>
+                          </div>
+                          <div className="bg-gray-900/50 rounded p-3 mb-3">
+                            <p className="text-gray-500 text-xs mb-1">Original post by @{entry.bestRatio.post.author}:</p>
+                            <p className="text-gray-300 text-sm mb-2">{entry.bestRatio.post.content}</p>
+                            <div className="flex items-center text-gray-500 text-xs">
+                              <span className="mr-4">❤️ {entry.bestRatio.post.likes} likes</span>
+                            </div>
+                          </div>
+                          <div className="bg-purple-900/20 rounded p-3 border border-purple-500/30">
+                            <p className="text-gray-500 text-xs mb-1">💀 Their devastating reply:</p>
+                            <p className="text-gray-200 text-sm mb-2">{entry.bestRatio.reply.content}</p>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-purple-400 font-bold">❤️ {entry.bestRatio.reply.likes.toLocaleString()} likes</span>
+                              <a
+                                href={`https://x.com/${entry.username}/status/${entry.bestRatio.reply.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-purple-400 hover:text-purple-300"
+                              >
+                                View reply →
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="bg-gray-800 border border-gray-700 rounded-lg p-8 max-w-md mx-auto">
+                      <div className="text-6xl mb-4">📊</div>
+                      <h3 className="text-xl font-semibold text-gray-200 mb-2">No Data Yet</h3>
+                      <p className="text-gray-400">
+                        The leaderboard will populate as ratios are discovered.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
