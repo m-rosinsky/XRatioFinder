@@ -27,6 +27,7 @@ export interface StoredRatio {
 
 class RatioStore {
   private ratios: Map<string, StoredRatio> = new Map();
+  private trackedUsers: Set<string> = new Set(); // Master list of users to track
   private maxAge = 48 * 60 * 60 * 1000; // 48 hours
 
   // Add or update a ratio
@@ -82,12 +83,29 @@ class RatioStore {
       lethalRatios: ratios.filter(r => r.isLethalRatio).length,
       oldestTimestamp: Math.min(...ratios.map(r => r.discoveredAt)),
       newestTimestamp: Math.max(...ratios.map(r => r.discoveredAt)),
+      trackedUsers: this.trackedUsers.size,
     };
+  }
+
+  // Get all tracked users
+  getTrackedUsers(): string[] {
+    return Array.from(this.trackedUsers);
+  }
+
+  // Update tracked users from leaderboards
+  updateTrackedUsersFromLeaderboards(victims: string[], perpetrators: string[]) {
+    // Add top victims
+    victims.forEach(username => this.trackedUsers.add(username));
+    // Add top perpetrators
+    perpetrators.forEach(username => this.trackedUsers.add(username));
+    
+    console.log(`📋 Tracked users updated: ${this.trackedUsers.size} total users`);
   }
 
   // Clear all data
   clear() {
     this.ratios.clear();
+    this.trackedUsers.clear();
   }
 }
 

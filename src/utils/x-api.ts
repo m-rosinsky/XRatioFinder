@@ -456,19 +456,21 @@ export async function searchRecentRatios(
  * @returns Array of newly discovered ratios
  */
 export async function enrichUserRatios(usernames: string[]): Promise<RatioData[]> {
-  const newRatios: RatioData[] = [];
   const endTime = new Date();
   const startTime = new Date(endTime.getTime() - (7 * 24 * 60 * 60 * 1000)); // 7 days ago
   
-  console.log(`🔍 Enriching ${usernames.length} users' timelines...`);
+  console.log(`🔍 Enriching ${usernames.length} users' timelines in parallel...`);
   
-  for (const username of usernames) {
+  // Process all users in parallel
+  const enrichmentPromises = usernames.map(async (username) => {
+    const userRatios: RatioData[] = [];
+    
     try {
       // Get user ID
       const user = await getUserByUsername(username);
       if (!user) {
         console.log(`⚠️  Couldn't find user ${username}`);
-        continue;
+        return userRatios;
       }
       
       console.log(`📊 Fetching tweets for @${username} (${user.id})...`);
@@ -486,7 +488,7 @@ export async function enrichUserRatios(usernames: string[]): Promise<RatioData[]
           break;
         }
         
-        console.log(`   Found ${response.data.length} tweets on page ${pageCount}`);
+        console.log(`   Found ${response.data.length} tweets on page ${pageCount} for @${username}`);
         
         const users = response.includes?.users || [];
         const referencedTweets = response.includes?.tweets || [];
@@ -510,7 +512,7 @@ export async function enrichUserRatios(usernames: string[]): Promise<RatioData[]
             
             // Only include if it's at least a 2x ratio and has significant engagement
             if (isRatio && reply.public_metrics.like_count >= 1000) {
-              newRatios.push({
+              userRatios.push({
                 parent: {
                   id: tweet.id,
                   text: tweet.text,
@@ -547,22 +549,27 @@ export async function enrichUserRatios(usernames: string[]): Promise<RatioData[]
           break;
         }
         
-        // Small delay to avoid rate limiting
+        // Small delay to avoid rate limiting within user pagination
         if (paginationToken) {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 50));
         }
         
       } while (paginationToken);
       
-      // Delay between users to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
     } catch (error) {
       console.error(`Error enriching user ${username}:`, error);
     }
-  }
+    
+    return userRatios;
+  });
   
-  console.log(`✅ Enrichment complete: Found ${newRatios.length} additional ratios`);
+  // Wait for all enrichment to complete
+  const results = await Promise.all(enrichmentPromises);
+  
+  // Flatten the array of arrays
+  const newRatios = results.flat();
+  
+  console.log(`✅ Victim enrichment complete: Found ${newRatios.length} additional ratios`);
   return newRatios;
 }
 
@@ -573,19 +580,21 @@ export async function enrichUserRatios(usernames: string[]): Promise<RatioData[]
  * @returns Array of newly discovered ratios
  */
 export async function enrichPerpetratorRatios(usernames: string[]): Promise<RatioData[]> {
-  const newRatios: RatioData[] = [];
   const endTime = new Date();
   const startTime = new Date(endTime.getTime() - (7 * 24 * 60 * 60 * 1000)); // 7 days ago
   
-  console.log(`🔍 Enriching ${usernames.length} ratio-ers' timelines...`);
+  console.log(`🔍 Enriching ${usernames.length} ratio-ers' timelines in parallel...`);
   
-  for (const username of usernames) {
+  // Process all users in parallel
+  const enrichmentPromises = usernames.map(async (username) => {
+    const userRatios: RatioData[] = [];
+    
     try {
       // Get user ID
       const user = await getUserByUsername(username);
       if (!user) {
         console.log(`⚠️  Couldn't find user ${username}`);
-        continue;
+        return userRatios;
       }
       
       console.log(`💀 Fetching replies for @${username} (${user.id})...`);
@@ -603,7 +612,7 @@ export async function enrichPerpetratorRatios(usernames: string[]): Promise<Rati
           break;
         }
         
-        console.log(`   Found ${response.data.length} tweets on page ${pageCount}`);
+        console.log(`   Found ${response.data.length} tweets on page ${pageCount} for @${username}`);
         
         const users = response.includes?.users || [];
         const referencedTweets = response.includes?.tweets || [];
@@ -635,7 +644,7 @@ export async function enrichPerpetratorRatios(usernames: string[]): Promise<Rati
             
             // Only include if it's at least a 2x ratio and has significant engagement
             if (isRatio && tweet.public_metrics.like_count >= 1000) {
-              newRatios.push({
+              userRatios.push({
                 parent: {
                   id: parentData.data.id,
                   text: parentData.data.text,
@@ -676,7 +685,7 @@ export async function enrichPerpetratorRatios(usernames: string[]): Promise<Rati
           
           // Only include if it's at least a 2x ratio and has significant engagement
           if (isRatio && tweet.public_metrics.like_count >= 1000) {
-            newRatios.push({
+            userRatios.push({
               parent: {
                 id: parentTweet.id,
                 text: parentTweet.text,
@@ -712,20 +721,25 @@ export async function enrichPerpetratorRatios(usernames: string[]): Promise<Rati
           break;
         }
         
-        // Small delay to avoid rate limiting
+        // Small delay to avoid rate limiting within user pagination
         if (paginationToken) {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 50));
         }
         
       } while (paginationToken);
       
-      // Delay between users to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
     } catch (error) {
       console.error(`Error enriching ratio-er ${username}:`, error);
     }
-  }
+    
+    return userRatios;
+  });
+  
+  // Wait for all enrichment to complete
+  const results = await Promise.all(enrichmentPromises);
+  
+  // Flatten the array of arrays
+  const newRatios = results.flat();
   
   console.log(`✅ Perpetrator enrichment complete: Found ${newRatios.length} additional ratios`);
   return newRatios;

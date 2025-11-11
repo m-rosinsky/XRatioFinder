@@ -91,7 +91,7 @@ export class RatioPoller {
       const stats = ratioStore.getStats();
       console.log(`✅ Poll complete: ${newCount} new ratios (total: ${stats.total})`);
 
-      // Enrich with user timelines (only top users to avoid excessive API calls)
+      // Update leaderboards and tracked users
       const allRatios = ratioStore.getAllRatios();
       const victimCounts = new Map<string, number>();
       const perpetratorCounts = new Map<string, number>();
@@ -117,58 +117,27 @@ export class RatioPoller {
         .slice(0, 10)
         .map(([username]) => username);
       
-      let totalEnrichedCount = 0;
+      // Update the master tracked users list with current leaderboard members
+      ratioStore.updateTrackedUsersFromLeaderboards(topVictims, topPerpetrators);
       
-      // Enrich victims' timelines
-      if (topVictims.length > 0) {
-        console.log(`😭 Enriching top ${topVictims.length} victims: ${topVictims.join(', ')}`);
-        
-        const enrichedRatios = await enrichUserRatios(topVictims);
-        let enrichedCount = 0;
-        
-        for (const ratio of enrichedRatios) {
-          if (!existingIds.has(ratio.parent.id)) {
-            const storedRatio: StoredRatio = {
-              id: ratio.parent.id,
-              parent: {
-                id: ratio.parent.id,
-                author: ratio.parent.author.username,
-                authorProfileImage: ratio.parent.author.profile_image_url,
-                content: ratio.parent.text,
-                likes: ratio.parent.public_metrics.like_count,
-                timestamp: ratio.parent.created_at,
-              },
-              reply: {
-                id: ratio.reply.id,
-                author: ratio.reply.author.username,
-                authorProfileImage: ratio.reply.author.profile_image_url,
-                content: ratio.reply.text,
-                likes: ratio.reply.public_metrics.like_count,
-              },
-              ratio: ratio.ratio,
-              isBrutalRatio: ratio.isBrutalRatio,
-              isLethalRatio: ratio.isLethalRatio,
-              isRatio: ratio.ratio >= 2,
-              discoveredAt: Date.now(),
-            };
-
-            ratioStore.addRatio(storedRatio);
-            enrichedCount++;
-          }
-        }
-        
-        console.log(`✅ Victim enrichment added ${enrichedCount} additional ratios`);
-        totalEnrichedCount += enrichedCount;
+      // Get all tracked users for enrichment
+      const trackedUsers = ratioStore.getTrackedUsers();
+      
+      if (trackedUsers.length === 0) {
+        console.log(`📋 No tracked users yet, skipping enrichment`);
+      } else {
+        console.log(`🔍 Enriching ${trackedUsers.length} tracked users...`);
       }
       
-      // Enrich perpetrators' timelines
-      if (topPerpetrators.length > 0) {
-        console.log(`💀 Enriching top ${topPerpetrators.length} ratio-ers: ${topPerpetrators.join(', ')}`);
+      let totalEnrichedCount = 0;
+      
+      // Enrich all tracked users (checks both their posts and replies)
+      if (trackedUsers.length > 0) {
+        // Enrich by checking if they got ratio'd
+        const victimRatios = await enrichUserRatios(trackedUsers);
+        let victimEnrichedCount = 0;
         
-        const enrichedRatios = await enrichPerpetratorRatios(topPerpetrators);
-        let enrichedCount = 0;
-        
-        for (const ratio of enrichedRatios) {
+        for (const ratio of victimRatios) {
           if (!existingIds.has(ratio.parent.id)) {
             const storedRatio: StoredRatio = {
               id: ratio.parent.id,
@@ -195,17 +164,56 @@ export class RatioPoller {
             };
 
             ratioStore.addRatio(storedRatio);
-            enrichedCount++;
+            victimEnrichedCount++;
           }
         }
         
-        console.log(`✅ Perpetrator enrichment added ${enrichedCount} additional ratios`);
-        totalEnrichedCount += enrichedCount;
+        totalEnrichedCount += victimEnrichedCount;
+        
+        // Enrich by checking their replies (ratios they performed)
+        const perpetratorRatios = await enrichPerpetratorRatios(trackedUsers);
+        let perpetratorEnrichedCount = 0;
+        
+        for (const ratio of perpetratorRatios) {
+          if (!existingIds.has(ratio.parent.id)) {
+            const storedRatio: StoredRatio = {
+              id: ratio.parent.id,
+              parent: {
+                id: ratio.parent.id,
+                author: ratio.parent.author.username,
+                authorProfileImage: ratio.parent.author.profile_image_url,
+                content: ratio.parent.text,
+                likes: ratio.parent.public_metrics.like_count,
+                timestamp: ratio.parent.created_at,
+              },
+              reply: {
+                id: ratio.reply.id,
+                author: ratio.reply.author.username,
+                authorProfileImage: ratio.reply.author.profile_image_url,
+                content: ratio.reply.text,
+                likes: ratio.reply.public_metrics.like_count,
+              },
+              ratio: ratio.ratio,
+              isBrutalRatio: ratio.isBrutalRatio,
+              isLethalRatio: ratio.isLethalRatio,
+              isRatio: ratio.ratio >= 2,
+              discoveredAt: Date.now(),
+            };
+
+            ratioStore.addRatio(storedRatio);
+            perpetratorEnrichedCount++;
+          }
+        }
+        
+        totalEnrichedCount += perpetratorEnrichedCount;
+        
+        console.log(`✅ Enrichment complete: ${victimEnrichedCount} from victims, ${perpetratorEnrichedCount} from perpetrators (${totalEnrichedCount} total)`);
       }
 
       newCount += totalEnrichedCount;
       const finalStats = ratioStore.getStats();
       console.log(`🎉 Total poll result: ${newCount} new ratios (${totalEnrichedCount} from enrichment, total: ${finalStats.total})`);
+      console.log(`📊 Stats: ${finalStats.ratios} ratios, ${finalStats.brutalRatios} brutal, ${finalStats.lethalRatios} lethal, ${finalStats.trackedUsers} tracked users\n`);
 
       // Notify listeners of update
       if (newCount > 0 && this.onUpdate) {
@@ -232,4 +240,5 @@ export class RatioPoller {
 }
 
 export const poller = new RatioPoller(5); // Poll every 5 minutes
+
 

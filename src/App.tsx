@@ -950,7 +950,7 @@ export function App() {
                                 @{entry.username}
                               </a>
                               <div className="text-sm text-gray-400 mt-1">
-                                Got ratio'd <span className="text-red-400 font-bold">{entry.ratioCount}</span> time{entry.ratioCount !== 1 ? 's' : ''}
+                                Got ratio'd <span className="text-red-400 font-bold">{entry.ratioCount}</span> time{entry.ratioCount !== 1 ? 's' : ''} this week
                               </div>
                             </div>
                           </div>
@@ -1063,7 +1063,7 @@ export function App() {
                                 @{entry.username}
                               </a>
                               <div className="text-sm text-gray-400 mt-1">
-                                Ratio'd <span className="text-purple-400 font-bold">{entry.ratioCount}</span> user{entry.ratioCount !== 1 ? 's' : ''}
+                                Ratio'd <span className="text-purple-400 font-bold">{entry.ratioCount}</span> user{entry.ratioCount !== 1 ? 's' : ''} this week
                               </div>
                             </div>
                           </div>
