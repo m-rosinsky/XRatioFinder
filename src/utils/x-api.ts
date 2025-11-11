@@ -7,6 +7,85 @@ if (!BEARER_TOKEN) {
   throw new Error("X_BEARER_TOKEN environment variable is not set. Please add it to your .env file.");
 }
 
+/**
+ * Retry configuration for API calls
+ */
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  baseDelay: 1000, // 1 second
+  maxDelay: 30000, // 30 seconds
+  retryableStatusCodes: [429, 500, 502, 503, 504], // Rate limits and server errors
+};
+
+/**
+ * Sleep for a given number of milliseconds
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Calculate exponential backoff delay with jitter
+ */
+function calculateDelay(attempt: number): number {
+  const delay = RETRY_CONFIG.baseDelay * Math.pow(2, attempt);
+  const jitter = Math.random() * 1000; // Add up to 1 second of jitter
+  return Math.min(delay + jitter, RETRY_CONFIG.maxDelay);
+}
+
+/**
+ * Check if an error is retryable
+ */
+function isRetryableError(error: any): boolean {
+  if (!error || typeof error !== 'object') return false;
+
+  // Check for HTTP status codes
+  if ('status' in error && typeof error.status === 'number' && RETRY_CONFIG.retryableStatusCodes.includes(error.status)) {
+    return true;
+  }
+
+  // Check for network errors, timeouts, etc.
+  if ('message' in error && typeof error.message === 'string') {
+    const message = error.message.toLowerCase();
+    return message.includes('network') ||
+           message.includes('timeout') ||
+           message.includes('fetch') ||
+           message.includes('connection');
+  }
+
+  return false;
+}
+
+/**
+ * Execute a function with retry logic and exponential backoff
+ */
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  operationName: string = 'operation'
+): Promise<T> {
+  let lastError: any;
+
+  for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+
+      // If this is the last attempt or not a retryable error, throw
+      if (attempt === RETRY_CONFIG.maxRetries || !isRetryableError(error)) {
+        throw error;
+      }
+
+      const delay = calculateDelay(attempt);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.warn(`⚠️ ${operationName} failed (attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries + 1}), retrying in ${Math.round(delay)}ms:`, errorMessage);
+      await sleep(delay);
+    }
+  }
+
+  throw lastError; // Should never reach here, but just in case
+}
+
 interface XApiPost {
   id: string;
   text: string;
@@ -89,21 +168,26 @@ async function getUserByUsername(username: string): Promise<{ id: string; userna
   url.searchParams.append("user.fields", "id,username,name,profile_image_url");
 
   try {
-    const response = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${BEARER_TOKEN}`,
-      },
-    });
+    const result = await withRetry(async () => {
+      const response = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${BEARER_TOKEN}`,
+        },
+      });
 
-    if (!response.ok) {
-      console.error(`Failed to fetch user ${username}: ${response.status}`);
-      return null;
-    }
+      if (!response.ok) {
+        const error = await response.text();
+        const errorObj = new Error(`X API Error (${response.status}): ${error}`);
+        (errorObj as any).status = response.status;
+        throw errorObj;
+      }
 
-    const result = await response.json();
+      return response.json();
+    }, `X API get user ${username}`);
+
     return result.data;
   } catch (error) {
-    console.error(`Error fetching user ${username}:`, error);
+    console.error(`Failed to fetch user ${username} after retries:`, error);
     return null;
   }
 }
@@ -137,22 +221,26 @@ async function getUserRecentTweets(
   }
 
   try {
-    const response = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${BEARER_TOKEN}`,
-      },
-    });
+    const result = await withRetry(async () => {
+      const response = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${BEARER_TOKEN}`,
+        },
+      });
 
-    if (!response.ok) {
-      console.error(`Failed to fetch tweets for user ${userId}: ${response.status}`);
-      const errorText = await response.text();
-      console.error(`Error details: ${errorText}`);
-      return null;
-    }
+      if (!response.ok) {
+        const error = await response.text();
+        const errorObj = new Error(`X API Error (${response.status}): ${error}`);
+        (errorObj as any).status = response.status;
+        throw errorObj;
+      }
 
-    return response.json();
+      return response.json();
+    }, `X API get user tweets ${userId}`);
+
+    return result;
   } catch (error) {
-    console.error(`Error fetching tweets for user ${userId}:`, error);
+    console.error(`Failed to fetch tweets for user ${userId} after retries:`, error);
     return null;
   }
 }
@@ -171,20 +259,26 @@ async function getTweetById(tweetId: string): Promise<{ data: XApiPost; includes
   url.searchParams.append("expansions", expansions);
 
   try {
-    const response = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${BEARER_TOKEN}`,
-      },
-    });
+    const result = await withRetry(async () => {
+      const response = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${BEARER_TOKEN}`,
+        },
+      });
 
-    if (!response.ok) {
-      console.error(`Failed to fetch tweet ${tweetId}: ${response.status}`);
-      return null;
-    }
+      if (!response.ok) {
+        const error = await response.text();
+        const errorObj = new Error(`X API Error (${response.status}): ${error}`);
+        (errorObj as any).status = response.status;
+        throw errorObj;
+      }
 
-    return response.json();
+      return response.json();
+    }, `X API get tweet ${tweetId}`);
+
+    return result;
   } catch (error) {
-    console.error(`Error fetching tweet ${tweetId}:`, error);
+    console.error(`Failed to fetch tweet ${tweetId} after retries:`, error);
     return null;
   }
 }
@@ -213,24 +307,28 @@ async function searchRecentPostsPage(
   url.searchParams.append("user.fields", userFields);
   url.searchParams.append("expansions", expansions);
   url.searchParams.append("sort_order", "recency")
-  
+
   // Add pagination token if provided
   if (nextToken) {
     url.searchParams.append("next_token", nextToken);
   }
 
-  const response = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${BEARER_TOKEN}`,
-    },
-  });
+  return await withRetry(async () => {
+    const response = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${BEARER_TOKEN}`,
+      },
+    });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`X API Error (${response.status}): ${error}`);
-  }
+    if (!response.ok) {
+      const error = await response.text();
+      const errorObj = new Error(`X API Error (${response.status}): ${error}`);
+      (errorObj as any).status = response.status;
+      throw errorObj;
+    }
 
-  return response.json();
+    return response.json();
+  }, `X API search (page ${nextToken ? 'with token' : 'initial'})`);
 }
 
 /**
