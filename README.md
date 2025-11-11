@@ -23,12 +23,21 @@ bun install
 
 ### 2. Configure X API Access
 
-See [SETUP.md](./SETUP.md) for detailed instructions on getting your X API Bearer Token.
+1. Copy the example environment file:
+```bash
+cp env.example .env
+```
 
-Quick setup:
-1. Get your Bearer Token from [console.x.com](https://console.x.com)
-2. Edit `src/utils/x-api.ts` and replace `YOUR_BEARER_TOKEN_HERE` with your token
-3. Follow [@XDevelopers](https://x.com/XDevelopers) for API updates
+2. Get your Bearer Token from [console.x.com](https://console.x.com)
+
+3. Edit `.env` and add your bearer token:
+```bash
+X_BEARER_TOKEN=your_actual_bearer_token_here
+```
+
+4. Follow [@XDevelopers](https://x.com/XDevelopers) for API updates
+
+**Note**: Never commit your `.env` file to version control. It's already in `.gitignore`.
 
 ### 3. Run the Application
 

@@ -1,8 +1,11 @@
 // X API utility functions
 // API Documentation: https://docs.x.com/x-api/posts/search-recent-posts
 
-// TODO: Move this to environment variable
-const BEARER_TOKEN = "AAAAAAAAAAAAAAAAAAAAABoIxwEAAAAASXK3XHi2eYodG%2B1PaQYKIqWpIho%3DINafsmcsxlQuEYUEnJXYOrF2nxrYPvI7pbD4V8vu3hAiPvqglU";
+const BEARER_TOKEN = process.env.X_BEARER_TOKEN;
+
+if (!BEARER_TOKEN) {
+  throw new Error("X_BEARER_TOKEN environment variable is not set. Please add it to your .env file.");
+}
 
 interface XApiPost {
   id: string;
