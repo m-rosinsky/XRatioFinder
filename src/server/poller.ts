@@ -1,5 +1,5 @@
 // Background polling service for X API
-import { searchRecentRatios } from "../utils/x-api";
+import { searchRecentRatios, enrichUserRatios, enrichPerpetratorRatios } from "../utils/x-api";
 import { ratioStore, type StoredRatio } from "./store";
 
 export class RatioPoller {
@@ -91,12 +91,128 @@ export class RatioPoller {
       const stats = ratioStore.getStats();
       console.log(`✅ Poll complete: ${newCount} new ratios (total: ${stats.total})`);
 
+      // Enrich with user timelines (only top users to avoid excessive API calls)
+      const allRatios = ratioStore.getAllRatios();
+      const victimCounts = new Map<string, number>();
+      const perpetratorCounts = new Map<string, number>();
+      
+      // Count how many times each user got ratio'd and how many times they ratio'd others
+      for (const ratio of allRatios) {
+        const victimUsername = ratio.parent.author;
+        const perpetratorUsername = ratio.reply.author;
+        
+        victimCounts.set(victimUsername, (victimCounts.get(victimUsername) || 0) + 1);
+        perpetratorCounts.set(perpetratorUsername, (perpetratorCounts.get(perpetratorUsername) || 0) + 1);
+      }
+      
+      // Get top 10 most ratio'd users (victims)
+      const topVictims = Array.from(victimCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([username]) => username);
+      
+      // Get top 10 ratio-ers (perpetrators)
+      const topPerpetrators = Array.from(perpetratorCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([username]) => username);
+      
+      let totalEnrichedCount = 0;
+      
+      // Enrich victims' timelines
+      if (topVictims.length > 0) {
+        console.log(`😭 Enriching top ${topVictims.length} victims: ${topVictims.join(', ')}`);
+        
+        const enrichedRatios = await enrichUserRatios(topVictims);
+        let enrichedCount = 0;
+        
+        for (const ratio of enrichedRatios) {
+          if (!existingIds.has(ratio.parent.id)) {
+            const storedRatio: StoredRatio = {
+              id: ratio.parent.id,
+              parent: {
+                id: ratio.parent.id,
+                author: ratio.parent.author.username,
+                authorProfileImage: ratio.parent.author.profile_image_url,
+                content: ratio.parent.text,
+                likes: ratio.parent.public_metrics.like_count,
+                timestamp: ratio.parent.created_at,
+              },
+              reply: {
+                id: ratio.reply.id,
+                author: ratio.reply.author.username,
+                authorProfileImage: ratio.reply.author.profile_image_url,
+                content: ratio.reply.text,
+                likes: ratio.reply.public_metrics.like_count,
+              },
+              ratio: ratio.ratio,
+              isBrutalRatio: ratio.isBrutalRatio,
+              isLethalRatio: ratio.isLethalRatio,
+              isRatio: ratio.ratio >= 2,
+              discoveredAt: Date.now(),
+            };
+
+            ratioStore.addRatio(storedRatio);
+            enrichedCount++;
+          }
+        }
+        
+        console.log(`✅ Victim enrichment added ${enrichedCount} additional ratios`);
+        totalEnrichedCount += enrichedCount;
+      }
+      
+      // Enrich perpetrators' timelines
+      if (topPerpetrators.length > 0) {
+        console.log(`💀 Enriching top ${topPerpetrators.length} ratio-ers: ${topPerpetrators.join(', ')}`);
+        
+        const enrichedRatios = await enrichPerpetratorRatios(topPerpetrators);
+        let enrichedCount = 0;
+        
+        for (const ratio of enrichedRatios) {
+          if (!existingIds.has(ratio.parent.id)) {
+            const storedRatio: StoredRatio = {
+              id: ratio.parent.id,
+              parent: {
+                id: ratio.parent.id,
+                author: ratio.parent.author.username,
+                authorProfileImage: ratio.parent.author.profile_image_url,
+                content: ratio.parent.text,
+                likes: ratio.parent.public_metrics.like_count,
+                timestamp: ratio.parent.created_at,
+              },
+              reply: {
+                id: ratio.reply.id,
+                author: ratio.reply.author.username,
+                authorProfileImage: ratio.reply.author.profile_image_url,
+                content: ratio.reply.text,
+                likes: ratio.reply.public_metrics.like_count,
+              },
+              ratio: ratio.ratio,
+              isBrutalRatio: ratio.isBrutalRatio,
+              isLethalRatio: ratio.isLethalRatio,
+              isRatio: ratio.ratio >= 2,
+              discoveredAt: Date.now(),
+            };
+
+            ratioStore.addRatio(storedRatio);
+            enrichedCount++;
+          }
+        }
+        
+        console.log(`✅ Perpetrator enrichment added ${enrichedCount} additional ratios`);
+        totalEnrichedCount += enrichedCount;
+      }
+
+      newCount += totalEnrichedCount;
+      const finalStats = ratioStore.getStats();
+      console.log(`🎉 Total poll result: ${newCount} new ratios (${totalEnrichedCount} from enrichment, total: ${finalStats.total})`);
+
       // Notify listeners of update
       if (newCount > 0 && this.onUpdate) {
         this.onUpdate();
       }
 
-      return { newRatios: newCount, totalRatios: stats.total };
+      return { newRatios: newCount, totalRatios: finalStats.total };
     } catch (error) {
       console.error("❌ Poll failed:", error);
       throw error;

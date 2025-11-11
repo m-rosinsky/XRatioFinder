@@ -373,6 +373,7 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [showOnlyBrutal, setShowOnlyBrutal] = useState(false);
   const [showOnlyLethal, setShowOnlyLethal] = useState(false);
+  const [filterUsername, setFilterUsername] = useState('');
 
   const [wsConnected, setWsConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
@@ -491,10 +492,22 @@ export function App() {
     }
   };
 
-  // Filter posts based on reply likes and ratio flags (client-side filtering)
+  // Filter posts based on reply likes, ratio flags, and username (client-side filtering)
   const filteredByLikes = posts.filter(post => {
     // Check if any reply meets the minimum likes threshold
     const meetsLikesThreshold = post.replies.some(reply => reply.likes >= minLikes);
+    
+    // Filter by username if specified (exact match, case-insensitive)
+    if (filterUsername.trim()) {
+      const cleanUsername = filterUsername.trim().toLowerCase().replace(/^@/, '');
+      const postAuthor = post.author.toLowerCase();
+      const replyAuthors = post.replies.map(r => r.author.toLowerCase());
+      
+      const matchesUsername = postAuthor === cleanUsername || replyAuthors.includes(cleanUsername);
+      if (!matchesUsername) {
+        return false;
+      }
+    }
     
     // If "show only lethal" is enabled, check for lethal ratios (takes priority)
     if (showOnlyLethal) {
@@ -744,6 +757,31 @@ export function App() {
                   />
                   <span className="text-sm">Show only brutal ratios (10x+)</span>
                 </label>
+              </div>
+
+              {/* User Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Filter by User
+                </label>
+                <input
+                  type="text"
+                  value={filterUsername}
+                  onChange={(e) => setFilterUsername(e.target.value)}
+                  placeholder="@username or username"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                />
+                {filterUsername && (
+                  <button
+                    onClick={() => setFilterUsername('')}
+                    className="mt-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                  >
+                    Clear filter
+                  </button>
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Shows ratios where user was ratio'd or did the ratioing
+                </p>
               </div>
             </div>
           </div>
