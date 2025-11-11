@@ -95,6 +95,131 @@ const server = serve({
         }));
       },
     },
+
+    "/api/enrich-user": {
+      async POST(req) {
+        try {
+          const body = await req.json();
+          const { username } = body;
+
+          if (!username || typeof username !== 'string') {
+            return withCORS(Response.json({
+              success: false,
+              error: 'Username is required'
+            }, { status: 400 }));
+          }
+
+          // Clean the username (remove @ prefix if present)
+          const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
+
+          // Add user to tracked list
+          ratioStore.addTrackedUser(cleanUsername);
+
+          // Trigger enrichment for this user
+          console.log(`🔍 Starting enrichment for filtered user: ${cleanUsername}`);
+
+          // Import enrichment functions
+          const { enrichUserRatios, enrichPerpetratorRatios } = await import("./utils/x-api");
+
+          let totalEnriched = 0;
+
+          try {
+            // Enrich as potential victim (check if their posts got ratio'd)
+            const victimRatios = await enrichUserRatios([cleanUsername]);
+            totalEnriched += victimRatios.length;
+
+            // Store the ratios
+            for (const ratio of victimRatios) {
+              const storedRatio = {
+                id: ratio.parent.id,
+                parent: {
+                  id: ratio.parent.id,
+                  author: ratio.parent.author.username,
+                  authorProfileImage: ratio.parent.author.profile_image_url,
+                  content: ratio.parent.text,
+                  likes: ratio.parent.public_metrics.like_count,
+                  timestamp: ratio.parent.created_at,
+                },
+                reply: {
+                  id: ratio.reply.id,
+                  author: ratio.reply.author.username,
+                  authorProfileImage: ratio.reply.author.profile_image_url,
+                  content: ratio.reply.text,
+                  likes: ratio.reply.public_metrics.like_count,
+                },
+                ratio: ratio.ratio,
+                isBrutalRatio: ratio.isBrutalRatio,
+                isLethalRatio: ratio.isLethalRatio,
+                isRatio: ratio.ratio >= 2,
+                discoveredAt: Date.now(),
+              };
+              ratioStore.addRatio(storedRatio);
+            }
+          } catch (error) {
+            console.error(`Error enriching ${cleanUsername} as victim:`, error);
+          }
+
+          try {
+            // Enrich as potential perpetrator (check their replies for ratios)
+            const perpetratorRatios = await enrichPerpetratorRatios([cleanUsername]);
+            totalEnriched += perpetratorRatios.length;
+
+            // Store the ratios
+            for (const ratio of perpetratorRatios) {
+              const storedRatio = {
+                id: ratio.parent.id,
+                parent: {
+                  id: ratio.parent.id,
+                  author: ratio.parent.author.username,
+                  authorProfileImage: ratio.parent.author.profile_image_url,
+                  content: ratio.parent.text,
+                  likes: ratio.parent.public_metrics.like_count,
+                  timestamp: ratio.parent.created_at,
+                },
+                reply: {
+                  id: ratio.reply.id,
+                  author: ratio.reply.author.username,
+                  authorProfileImage: ratio.reply.author.profile_image_url,
+                  content: ratio.reply.text,
+                  likes: ratio.reply.public_metrics.like_count,
+                },
+                ratio: ratio.ratio,
+                isBrutalRatio: ratio.isBrutalRatio,
+                isLethalRatio: ratio.isLethalRatio,
+                isRatio: ratio.ratio >= 2,
+                discoveredAt: Date.now(),
+              };
+              ratioStore.addRatio(storedRatio);
+            }
+          } catch (error) {
+            console.error(`Error enriching ${cleanUsername} as perpetrator:`, error);
+          }
+
+          console.log(`✅ Enrichment complete for ${cleanUsername}: ${totalEnriched} new ratios found`);
+
+          // Broadcast update to all clients
+          broadcastUpdate({
+            type: "ratios_updated",
+            data: ratioStore.getAllRatios(),
+            timestamp: Date.now(),
+          });
+
+          return withCORS(Response.json({
+            success: true,
+            username: cleanUsername,
+            enrichedRatios: totalEnriched,
+            totalTrackedUsers: ratioStore.getStats().trackedUsers,
+          }));
+
+        } catch (error) {
+          console.error('Enrich user error:', error);
+          return withCORS(Response.json({
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to enrich user'
+          }, { status: 500 }));
+        }
+      },
+    },
     
     // Catch-all for frontend
     "/*": index,

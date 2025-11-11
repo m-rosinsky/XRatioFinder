@@ -33,7 +33,11 @@ class RatioStore {
   // Add or update a ratio
   addRatio(ratio: StoredRatio) {
     this.ratios.set(ratio.id, ratio);
-    this.cleanup();
+
+    // Periodic cleanup to prevent memory bloat (every 100 additions)
+    if (this.ratios.size % 100 === 0) {
+      this.cleanup();
+    }
   }
 
   // Get all ratios
@@ -100,6 +104,12 @@ class RatioStore {
     perpetrators.forEach(username => this.trackedUsers.add(username));
     
     console.log(`📋 Tracked users updated: ${this.trackedUsers.size} total users`);
+  }
+
+  // Add a single user to the tracked users list
+  addTrackedUser(username: string) {
+    this.trackedUsers.add(username);
+    console.log(`👤 Added user to tracking: ${username} (${this.trackedUsers.size} total)`);
   }
 
   // Clear all data

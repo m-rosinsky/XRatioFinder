@@ -1,5 +1,7 @@
 import "./index.css";
 import { useState, useEffect } from "react";
+import heartIconUrl from "./assets/icons/heart.svg";
+import popoutIconUrl from "./assets/icons/popout.svg";
 
 // Type for our post data structure
 interface Post {
@@ -250,7 +252,7 @@ const PostCard = ({ post }: { post: Post }) => {
             className="ml-2 text-gray-500 hover:text-blue-400 transition-colors text-sm"
             title="View post on X"
           >
-            🔗
+            <img src={popoutIconUrl} className="w-4 h-4" alt="View on X" />
           </a>
           {hasLethalRatio && (
             <span className="ml-auto bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white px-3 py-1 rounded text-sm font-bold animate-pulse shadow-lg">
@@ -270,7 +272,10 @@ const PostCard = ({ post }: { post: Post }) => {
         </div>
         <p className="text-gray-200 mb-3">{post.content}</p>
         <div className="flex items-center text-gray-400 text-sm">
-          <span className="mr-4">❤️ {post.likes} likes</span>
+          <span className="mr-4 flex items-center">
+            <img src={heartIconUrl} className="w-4 h-4 mr-1" alt="likes" />
+            {post.likes} likes
+          </span>
           <span>{post.replies.length} replies</span>
         </div>
       </div>
@@ -324,7 +329,7 @@ const PostCard = ({ post }: { post: Post }) => {
                   className="ml-2 text-gray-500 hover:text-purple-400 transition-colors text-xs"
                   title="View reply on X"
                 >
-                  🔗
+                  <img src={popoutIconUrl} className="w-3 h-3" alt="View on X" />
                 </a>
                 {reply.isLethalRatio && (
                   <span className="ml-auto bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse shadow-md">
@@ -344,7 +349,10 @@ const PostCard = ({ post }: { post: Post }) => {
               </div>
               <p className="text-gray-300 text-sm mb-2">{reply.content}</p>
               <div className="flex items-center text-gray-500 text-xs">
-                <span>❤️ {reply.likes} likes</span>
+                <span className="flex items-center">
+                  <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
+                  {reply.likes} likes
+                </span>
                 {reply.isLethalRatio && (
                   <span className="ml-2 text-purple-400 font-bold">
                     ({Math.round(reply.likes / post.likes * 10) / 10}x the original! 💀💀💀)
@@ -487,6 +495,48 @@ export function App() {
     } catch (err) {
       console.error("Error loading ratios:", err);
       setError(err instanceof Error ? err.message : "Failed to load ratios");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Enrich a user when they filter by username
+  const enrichUser = async (username: string) => {
+    if (!username.trim()) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const cleanUsername = username.trim().replace(/^@/, '');
+
+      console.log(`🔍 Enriching user: ${cleanUsername}`);
+
+      const response = await fetch("/api/enrich-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username: cleanUsername }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || "Failed to enrich user");
+      }
+
+      console.log(`✅ Enriched ${cleanUsername}: ${result.enrichedRatios} new ratios, ${result.totalTrackedUsers} total tracked users`);
+
+      // The WebSocket should automatically update the posts, but let's refresh just in case
+      setTimeout(() => loadPosts(), 1000);
+
+    } catch (err) {
+      console.error("Error enriching user:", err);
+      setError(err instanceof Error ? err.message : "Failed to enrich user");
     } finally {
       setLoading(false);
     }
@@ -768,19 +818,31 @@ export function App() {
                   type="text"
                   value={filterUsername}
                   onChange={(e) => setFilterUsername(e.target.value)}
-                  placeholder="@username or username"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && filterUsername.trim()) {
+                      enrichUser(filterUsername);
+                    }
+                  }}
+                  onBlur={() => {
+                    if (filterUsername.trim()) {
+                      enrichUser(filterUsername);
+                    }
+                  }}
+                  placeholder="@username or username (press Enter to enrich)"
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  disabled={loading}
                 />
                 {filterUsername && (
                   <button
                     onClick={() => setFilterUsername('')}
                     className="mt-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                    disabled={loading}
                   >
                     Clear filter
                   </button>
                 )}
                 <p className="text-xs text-gray-500 mt-1">
-                  Shows ratios where user was ratio'd or did the ratioing
+                  Shows ratios where user was ratio'd or did the ratioing. Entering a username automatically enriches their timeline for missed ratios.
                 </p>
               </div>
             </div>
@@ -970,7 +1032,10 @@ export function App() {
                           <div className="bg-gray-900/50 rounded p-3">
                             <p className="text-gray-300 text-sm mb-2">{entry.worstRatio.post.content}</p>
                             <div className="flex items-center text-gray-500 text-xs">
-                              <span className="mr-4">❤️ {entry.worstRatio.post.likes} likes</span>
+                              <span className="mr-4 flex items-center">
+                                <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
+                                {entry.worstRatio.post.likes} likes
+                              </span>
                               <a
                                 href={`https://x.com/${entry.worstRatio.post.author}/status/${entry.worstRatio.post.id}`}
                                 target="_blank"
@@ -1084,14 +1149,20 @@ export function App() {
                             <p className="text-gray-500 text-xs mb-1">Original post by @{entry.bestRatio.post.author}:</p>
                             <p className="text-gray-300 text-sm mb-2">{entry.bestRatio.post.content}</p>
                             <div className="flex items-center text-gray-500 text-xs">
-                              <span className="mr-4">❤️ {entry.bestRatio.post.likes} likes</span>
+                              <span className="mr-4 flex items-center">
+                                <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
+                                {entry.bestRatio.post.likes} likes
+                              </span>
                             </div>
                           </div>
                           <div className="bg-purple-900/20 rounded p-3 border border-purple-500/30">
                             <p className="text-gray-500 text-xs mb-1">💀 Their reply:</p>
                             <p className="text-gray-200 text-sm mb-2">{entry.bestRatio.reply.content}</p>
                             <div className="flex items-center justify-between text-xs">
-                              <span className="text-purple-400 font-bold">❤️ {entry.bestRatio.reply.likes.toLocaleString()} likes</span>
+                              <span className="text-purple-400 font-bold flex items-center">
+                                <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
+                                {entry.bestRatio.reply.likes.toLocaleString()} likes
+                              </span>
                               <a
                                 href={`https://x.com/${entry.username}/status/${entry.bestRatio.reply.id}`}
                                 target="_blank"
