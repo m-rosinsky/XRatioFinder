@@ -155,9 +155,6 @@ const server = serve({
           // Clean the username (remove @ prefix if present)
           const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
 
-          // Add user to tracked list
-          ratioStore.addTrackedUser(cleanUsername);
-
           // Trigger enrichment for this user
           console.log(`🔍 Starting enrichment for filtered user: ${cleanUsername}`);
 
@@ -256,6 +253,14 @@ const server = serve({
           }
 
           console.log(`✅ Enrichment complete for ${cleanUsername}: ${newCount} new, ${totalEnriched - newCount} updated`);
+
+          // Only add user to tracked list if enrichment found at least one ratio
+          if (newCount > 0) {
+            ratioStore.addTrackedUser(cleanUsername);
+            console.log(`👤 Added ${cleanUsername} to tracked users (enrichment successful)`);
+          } else {
+            console.log(`⚠️  Not adding ${cleanUsername} to tracked users (no ratios found)`);
+          }
 
           // Broadcast update to all clients
           broadcastUpdate({

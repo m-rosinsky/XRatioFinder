@@ -31,6 +31,9 @@ yarn-error.log*
 .env*.local
 .env
 
+# tracked users data
+tracked_users.csv
+
 # vercel
 .vercel
 
