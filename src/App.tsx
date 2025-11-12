@@ -385,6 +385,9 @@ export function App() {
 
   const [wsConnected, setWsConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
+  const [victimsLeaderboard, setVictimsLeaderboard] = useState<VictimLeaderboardEntry[]>([]);
+  const [perpetratorsLeaderboard, setPerpetratorsLeaderboard] = useState<PerpetratorLeaderboardEntry[]>([]);
+  const [totalRatios, setTotalRatios] = useState<number>(0);
 
   // Convert stored ratio to Post format
   const convertRatioToPost = (ratio: any): Post => {
@@ -423,13 +426,16 @@ export function App() {
         const message = JSON.parse(event.data);
 
         switch (message.type) {
-          case "initial_data":
+          case "connected":
+            // Initial connection - load data with current filters
+            console.log(`📡 WebSocket connected, loading initial data`);
+            loadPosts();
+            break;
+
           case "ratios_updated":
-            console.log(`📊 Received ${message.data.length} ratios from backend`);
-            const convertedPosts = message.data.map(convertRatioToPost);
-            setPosts(convertedPosts.length > 0 ? convertedPosts : mockPosts);
-            setLastUpdate(Date.now());
-            setLoading(false);
+            // Data updated on server - refresh with current filters
+            console.log(`📊 Server data updated, refreshing view`);
+            loadPosts();
             break;
 
           case "pong":
@@ -474,7 +480,15 @@ export function App() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("/api/ratios", { method: "GET" });
+      // Build query parameters
+      const params = new URLSearchParams({
+        limit: '100',
+        sortBy: sortBy,
+        showOnlyBrutal: showOnlyBrutal.toString(),
+        showOnlyLethal: showOnlyLethal.toString(),
+      });
+
+      const response = await fetch(`/api/ratios?${params}`, { method: "GET" });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -490,13 +504,42 @@ export function App() {
       const convertedPosts = result.data.map(convertRatioToPost);
       setPosts(convertedPosts);
       setLastUpdate(Date.now());
+      
+      // Update total ratios count from stats
+      if (result.stats && result.stats.total) {
+        setTotalRatios(result.stats.total);
+      }
 
-      console.log(`✅ Refreshed view: ${result.data.length} ratios loaded`);
+      console.log(`✅ Refreshed view: ${result.data.length} ratios loaded (${result.stats?.total || 0} total)`);
     } catch (err) {
       console.error("Error loading ratios:", err);
       setError(err instanceof Error ? err.message : "Failed to load ratios");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Load leaderboards from backend
+  const loadLeaderboards = async () => {
+    try {
+      const response = await fetch("/api/leaderboards", { method: "GET" });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to load leaderboards");
+      }
+
+      setVictimsLeaderboard(result.data.victims);
+      setPerpetratorsLeaderboard(result.data.perpetrators);
+
+      console.log(`✅ Leaderboards loaded: ${result.data.victims.length} victims, ${result.data.perpetrators.length} perpetrators`);
+    } catch (err) {
+      console.error("Error loading leaderboards:", err);
     }
   };
 
@@ -590,109 +633,44 @@ export function App() {
   // Calculate leaderboards
   interface VictimLeaderboardEntry {
     username: string;
-    name: string;
     profileImage?: string;
     ratioCount: number;
-    totalLikesAgainst: number;
+    totalLikes: number;
     worstRatio: {
       ratio: number;
-      post: Post;
+      postId: string;
+      postContent: string;
+      postLikes: number;
+      replyId: string;
+      replyContent: string;
+      replyLikes: number;
+      replyAuthor: string;
     };
   }
 
   interface PerpetratorLeaderboardEntry {
     username: string;
-    name: string;
     profileImage?: string;
     ratioCount: number;
-    totalLikesDealt: number;
+    totalLikes: number;
     bestRatio: {
       ratio: number;
-      post: Post;
-      reply: Reply;
+      postId: string;
+      postContent: string;
+      postLikes: number;
+      postAuthor: string;
+      replyId: string;
+      replyContent: string;
+      replyLikes: number;
     };
   }
 
-  // Victims Leaderboard - users who got ratio'd the most
-  const victimsLeaderboard: VictimLeaderboardEntry[] = (() => {
-    const userStats = new Map<string, VictimLeaderboardEntry>();
-
-    posts.forEach(post => {
-      post.replies.forEach(reply => {
-        if (reply.isRatio) {
-          const username = post.author;
-          const ratio = reply.likes / post.likes;
-
-          if (!userStats.has(username)) {
-            userStats.set(username, {
-              username,
-              name: username,
-              profileImage: post.authorProfileImage,
-              ratioCount: 0,
-              totalLikesAgainst: 0,
-              worstRatio: {
-                ratio: 0,
-                post: post
-              }
-            });
-          }
-
-          const stats = userStats.get(username)!;
-          stats.ratioCount++;
-          stats.totalLikesAgainst += reply.likes;
-
-          if (ratio > stats.worstRatio.ratio) {
-            stats.worstRatio = { ratio, post };
-          }
-        }
-      });
-    });
-
-    return Array.from(userStats.values())
-      .sort((a, b) => b.ratioCount - a.ratioCount)
-      .slice(0, 50);
-  })();
-
-  // Perpetrators Leaderboard - users who ratio'd others the most
-  const perpetratorsLeaderboard: PerpetratorLeaderboardEntry[] = (() => {
-    const userStats = new Map<string, PerpetratorLeaderboardEntry>();
-
-    posts.forEach(post => {
-      post.replies.forEach(reply => {
-        if (reply.isRatio) {
-          const username = reply.author;
-          const ratio = reply.likes / post.likes;
-
-          if (!userStats.has(username)) {
-            userStats.set(username, {
-              username,
-              name: username,
-              profileImage: reply.authorProfileImage,
-              ratioCount: 0,
-              totalLikesDealt: 0,
-              bestRatio: {
-                ratio: 0,
-                post: post,
-                reply: reply
-              }
-            });
-          }
-
-          const stats = userStats.get(username)!;
-          stats.ratioCount++;
-          stats.totalLikesDealt += reply.likes;
-
-          if (ratio > stats.bestRatio.ratio) {
-            stats.bestRatio = { ratio, post, reply };
-          }
-        }
-      });
-    });
-
-    return Array.from(userStats.values())
-      .sort((a, b) => b.ratioCount - a.ratioCount)
-      .slice(0, 50);
-  })();
+  // Load leaderboards when switching to leaderboard feeds
+  useEffect(() => {
+    if (activeFeed === 'victims' || activeFeed === 'perpetrators') {
+      loadLeaderboards();
+    }
+  }, [activeFeed]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -954,7 +932,7 @@ export function App() {
                     <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-4">
                       <div className="flex items-center justify-between text-sm text-gray-400">
                         <span>😭 Top {victimsLeaderboard.length} most ratio'd users</span>
-                        <span>From {posts.length} total ratios</span>
+                        <span>From {totalRatios} total ratios</span>
                       </div>
                     </div>
                     
@@ -1020,7 +998,7 @@ export function App() {
                           <div className="text-right">
                             <div className="text-sm text-gray-400">Total likes against</div>
                             <div className="text-xl font-bold text-red-400">
-                              {entry.totalLikesAgainst.toLocaleString()}
+                              {entry.totalLikes.toLocaleString()}
                             </div>
                           </div>
                         </div>
@@ -1030,14 +1008,14 @@ export function App() {
                             💀 Worst ratio: <span className="text-orange-400 font-bold">{entry.worstRatio.ratio.toFixed(1)}x</span>
                           </div>
                           <div className="bg-gray-900/50 rounded p-3">
-                            <p className="text-gray-300 text-sm mb-2">{entry.worstRatio.post.content}</p>
+                            <p className="text-gray-300 text-sm mb-2">{entry.worstRatio.postContent}</p>
                             <div className="flex items-center text-gray-500 text-xs">
                               <span className="mr-4 flex items-center">
                                 <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
-                                {entry.worstRatio.post.likes} likes
+                                {entry.worstRatio.postLikes} likes
                               </span>
                               <a
-                                href={`https://x.com/${entry.worstRatio.post.author}/status/${entry.worstRatio.post.id}`}
+                                href={`https://x.com/${entry.username}/status/${entry.worstRatio.postId}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-blue-400 hover:text-blue-300"
@@ -1070,7 +1048,7 @@ export function App() {
                     <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-4">
                       <div className="flex items-center justify-between text-sm text-gray-400">
                         <span>💀 Top {perpetratorsLeaderboard.length} ratio assassins</span>
-                        <span>From {posts.length} total ratios</span>
+                        <span>From {totalRatios} total ratios</span>
                       </div>
                     </div>
                     
@@ -1136,7 +1114,7 @@ export function App() {
                           <div className="text-right">
                             <div className="text-sm text-gray-400">Total likes earned</div>
                             <div className="text-xl font-bold text-purple-400">
-                              {entry.totalLikesDealt.toLocaleString()}
+                              {entry.totalLikes.toLocaleString()}
                             </div>
                           </div>
                         </div>
@@ -1146,25 +1124,25 @@ export function App() {
                             🔥 Best ratio: <span className="text-purple-400 font-bold">{entry.bestRatio.ratio.toFixed(1)}x</span>
                           </div>
                           <div className="bg-gray-900/50 rounded p-3 mb-3">
-                            <p className="text-gray-500 text-xs mb-1">Original post by @{entry.bestRatio.post.author}:</p>
-                            <p className="text-gray-300 text-sm mb-2">{entry.bestRatio.post.content}</p>
+                            <p className="text-gray-500 text-xs mb-1">Original post by @{entry.bestRatio.postAuthor}:</p>
+                            <p className="text-gray-300 text-sm mb-2">{entry.bestRatio.postContent}</p>
                             <div className="flex items-center text-gray-500 text-xs">
                               <span className="mr-4 flex items-center">
                                 <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
-                                {entry.bestRatio.post.likes} likes
+                                {entry.bestRatio.postLikes} likes
                               </span>
                             </div>
                           </div>
                           <div className="bg-purple-900/20 rounded p-3 border border-purple-500/30">
                             <p className="text-gray-500 text-xs mb-1">💀 Their reply:</p>
-                            <p className="text-gray-200 text-sm mb-2">{entry.bestRatio.reply.content}</p>
+                            <p className="text-gray-200 text-sm mb-2">{entry.bestRatio.replyContent}</p>
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-purple-400 font-bold flex items-center">
                                 <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
-                                {entry.bestRatio.reply.likes.toLocaleString()} likes
+                                {entry.bestRatio.replyLikes.toLocaleString()} likes
                               </span>
                               <a
-                                href={`https://x.com/${entry.username}/status/${entry.bestRatio.reply.id}`}
+                                href={`https://x.com/${entry.username}/status/${entry.bestRatio.replyId}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-purple-400 hover:text-purple-300"

@@ -91,6 +91,96 @@ class RatioStore {
     };
   }
 
+  // Calculate leaderboards from current ratios
+  getLeaderboards() {
+    const ratios = this.getAllRatios();
+    
+    // Calculate victim counts (who got ratio'd the most)
+    const victimCounts = new Map<string, { count: number; totalLikes: number; profileImage?: string; worstRatio: { ratio: number; postId: string; postContent: string; postLikes: number; replyId: string; replyContent: string; replyLikes: number; replyAuthor: string } }>();
+    
+    // Calculate perpetrator counts (who did the most ratioing)
+    const perpetratorCounts = new Map<string, { count: number; totalLikes: number; profileImage?: string; bestRatio: { ratio: number; postId: string; postContent: string; postLikes: number; postAuthor: string; replyId: string; replyContent: string; replyLikes: number } }>();
+    
+    for (const ratio of ratios) {
+      // Track victims
+      const victim = victimCounts.get(ratio.parent.author) || { count: 0, totalLikes: 0, profileImage: undefined, worstRatio: { ratio: 0, postId: '', postContent: '', postLikes: 0, replyId: '', replyContent: '', replyLikes: 0, replyAuthor: '' } };
+      victim.count++;
+      victim.totalLikes += ratio.reply.likes;
+      
+      // Update profile image if available
+      if (ratio.parent.authorProfileImage) {
+        victim.profileImage = ratio.parent.authorProfileImage;
+      }
+      
+      if (ratio.ratio > victim.worstRatio.ratio) {
+        victim.worstRatio = {
+          ratio: ratio.ratio,
+          postId: ratio.parent.id,
+          postContent: ratio.parent.content,
+          postLikes: ratio.parent.likes,
+          replyId: ratio.reply.id,
+          replyContent: ratio.reply.content,
+          replyLikes: ratio.reply.likes,
+          replyAuthor: ratio.reply.author,
+        };
+      }
+      victimCounts.set(ratio.parent.author, victim);
+      
+      // Track perpetrators
+      const perpetrator = perpetratorCounts.get(ratio.reply.author) || { count: 0, totalLikes: 0, profileImage: undefined, bestRatio: { ratio: 0, postId: '', postContent: '', postLikes: 0, postAuthor: '', replyId: '', replyContent: '', replyLikes: 0 } };
+      perpetrator.count++;
+      perpetrator.totalLikes += ratio.reply.likes;
+      
+      // Update profile image if available
+      if (ratio.reply.authorProfileImage) {
+        perpetrator.profileImage = ratio.reply.authorProfileImage;
+      }
+      
+      if (ratio.ratio > perpetrator.bestRatio.ratio) {
+        perpetrator.bestRatio = {
+          ratio: ratio.ratio,
+          postId: ratio.parent.id,
+          postContent: ratio.parent.content,
+          postLikes: ratio.parent.likes,
+          postAuthor: ratio.parent.author,
+          replyId: ratio.reply.id,
+          replyContent: ratio.reply.content,
+          replyLikes: ratio.reply.likes,
+        };
+      }
+      perpetratorCounts.set(ratio.reply.author, perpetrator);
+    }
+    
+    // Sort and get top victims
+    const victims = Array.from(victimCounts.entries())
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 20)
+      .map(([username, data]) => ({
+        username,
+        profileImage: data.profileImage,
+        ratioCount: data.count,
+        totalLikes: data.totalLikes,
+        worstRatio: data.worstRatio,
+      }));
+    
+    // Sort and get top perpetrators
+    const perpetrators = Array.from(perpetratorCounts.entries())
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 20)
+      .map(([username, data]) => ({
+        username,
+        profileImage: data.profileImage,
+        ratioCount: data.count,
+        totalLikes: data.totalLikes,
+        bestRatio: data.bestRatio,
+      }));
+    
+    return {
+      victims,
+      perpetrators,
+    };
+  }
+
   // Get all tracked users
   getTrackedUsers(): string[] {
     return Array.from(this.trackedUsers);

@@ -39,8 +39,8 @@ poller.start(() => {
   console.log("📡 Broadcasting update to", wsClients.size, "clients");
   broadcastUpdate({
     type: "ratios_updated",
-    data: ratioStore.getAllRatios(),
     timestamp: Date.now(),
+    stats: ratioStore.getStats(),
   });
 });
 
@@ -48,9 +48,34 @@ const server = serve({
   routes: {
     // API routes
     "/api/ratios": {
-      async GET() {
+      async GET(req) {
         try {
-          const ratios = ratioStore.getAllRatios();
+          const url = new URL(req.url);
+          const limit = parseInt(url.searchParams.get('limit') || '100');
+          const sortBy = url.searchParams.get('sortBy') || 'recency';
+          const showOnlyBrutal = url.searchParams.get('showOnlyBrutal') === 'true';
+          const showOnlyLethal = url.searchParams.get('showOnlyLethal') === 'true';
+          
+          let ratios = ratioStore.getAllRatios();
+          
+          // Apply filters
+          if (showOnlyLethal) {
+            ratios = ratios.filter(r => r.isLethalRatio);
+          } else if (showOnlyBrutal) {
+            ratios = ratios.filter(r => r.isBrutalRatio);
+          }
+          
+          // Sort
+          if (sortBy === 'brutality') {
+            ratios.sort((a, b) => b.ratio - a.ratio);
+          } else {
+            // Default: recency
+            ratios.sort((a, b) => b.discoveredAt - a.discoveredAt);
+          }
+          
+          // Limit
+          ratios = ratios.slice(0, limit);
+          
           return withCORS(Response.json({
             success: true,
             data: ratios,
@@ -61,6 +86,24 @@ const server = serve({
           return withCORS(Response.json({
             success: false,
             error: error instanceof Error ? error.message : 'Failed to fetch ratios'
+          }, { status: 500 }));
+        }
+      },
+    },
+
+    "/api/leaderboards": {
+      async GET() {
+        try {
+          const leaderboards = ratioStore.getLeaderboards();
+          return withCORS(Response.json({
+            success: true,
+            data: leaderboards,
+          }));
+        } catch (error) {
+          console.error('Leaderboards API Error:', error);
+          return withCORS(Response.json({
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to fetch leaderboards'
           }, { status: 500 }));
         }
       },
@@ -200,8 +243,8 @@ const server = serve({
           // Broadcast update to all clients
           broadcastUpdate({
             type: "ratios_updated",
-            data: ratioStore.getAllRatios(),
             timestamp: Date.now(),
+            stats: ratioStore.getStats(),
           });
 
           return withCORS(Response.json({
@@ -244,10 +287,9 @@ const server = serve({
       wsClients.add(ws);
       console.log(`📡 WebSocket connected (${wsClients.size} total)`);
       
-      // Send current data immediately
+      // Send stats immediately - client will fetch filtered data
       ws.send(JSON.stringify({
-        type: "initial_data",
-        data: ratioStore.getAllRatios(),
+        type: "connected",
         stats: ratioStore.getStats(),
       }));
     },
