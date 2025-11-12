@@ -163,7 +163,7 @@ export interface RatioData {
 /**
  * Get a user's ID by their username
  */
-async function getUserByUsername(username: string): Promise<{ id: string; username: string; name: string; profile_image_url?: string } | null> {
+export async function getUserByUsername(username: string): Promise<{ id: string; username: string; name: string; profile_image_url?: string } | null> {
   const url = new URL(`https://api.x.com/2/users/by/username/${username}`);
   url.searchParams.append("user.fields", "id,username,name,profile_image_url");
 

@@ -155,8 +155,21 @@ const server = serve({
           // Clean the username (remove @ prefix if present)
           const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
 
-          // Trigger enrichment for this user
-          console.log(`🔍 Starting enrichment for filtered user: ${cleanUsername}`);
+          // First check if the user exists
+          console.log(`🔍 Checking if user ${cleanUsername} exists...`);
+          const { getUserByUsername } = await import("./utils/x-api");
+          const userExists = await getUserByUsername(cleanUsername);
+
+          if (!userExists) {
+            console.log(`⚠️  User ${cleanUsername} not found, skipping enrichment`);
+            return withCORS(Response.json({
+              success: false,
+              error: `User @${cleanUsername} not found`
+            }, { status: 404 }));
+          }
+
+          console.log(`✅ User ${cleanUsername} found, proceeding with enrichment`);
+          ratioStore.addTrackedUser(cleanUsername);
 
           // Import enrichment functions
           const { enrichUserRatios, enrichPerpetratorRatios } = await import("./utils/x-api");
@@ -253,14 +266,6 @@ const server = serve({
           }
 
           console.log(`✅ Enrichment complete for ${cleanUsername}: ${newCount} new, ${totalEnriched - newCount} updated`);
-
-          // Only add user to tracked list if enrichment found at least one ratio
-          if (newCount > 0) {
-            ratioStore.addTrackedUser(cleanUsername);
-            console.log(`👤 Added ${cleanUsername} to tracked users (enrichment successful)`);
-          } else {
-            console.log(`⚠️  Not adding ${cleanUsername} to tracked users (no ratios found)`);
-          }
 
           // Broadcast update to all clients
           broadcastUpdate({
