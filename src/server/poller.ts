@@ -57,39 +57,46 @@ export class RatioPoller {
       const ratios = await searchRecentRatios(1000, 7, 100);
 
       let newCount = 0;
+      let updatedCount = 0;
+      
       for (const ratio of ratios) {
-        if (!existingIds.has(ratio.parent.id)) {
-          const storedRatio: StoredRatio = {
+        const isNew = !existingIds.has(ratio.parent.id);
+        
+        const storedRatio: StoredRatio = {
+          id: ratio.parent.id,
+          parent: {
             id: ratio.parent.id,
-            parent: {
-              id: ratio.parent.id,
-              author: ratio.parent.author.username,
-              authorProfileImage: ratio.parent.author.profile_image_url,
-              content: ratio.parent.text,
-              likes: ratio.parent.public_metrics.like_count,
-              timestamp: ratio.parent.created_at,
-            },
-            reply: {
-              id: ratio.reply.id,
-              author: ratio.reply.author.username,
-              authorProfileImage: ratio.reply.author.profile_image_url,
-              content: ratio.reply.text,
-              likes: ratio.reply.public_metrics.like_count,
-            },
-            ratio: ratio.ratio,
-            isBrutalRatio: ratio.isBrutalRatio,
-            isLethalRatio: ratio.isLethalRatio,
-            isRatio: ratio.ratio >= 2,
-            discoveredAt: Date.now(),
-          };
+            author: ratio.parent.author.username,
+            authorProfileImage: ratio.parent.author.profile_image_url,
+            content: ratio.parent.text,
+            likes: ratio.parent.public_metrics.like_count,
+            timestamp: ratio.parent.created_at,
+          },
+          reply: {
+            id: ratio.reply.id,
+            author: ratio.reply.author.username,
+            authorProfileImage: ratio.reply.author.profile_image_url,
+            content: ratio.reply.text,
+            likes: ratio.reply.public_metrics.like_count,
+          },
+          ratio: ratio.ratio,
+          isBrutalRatio: ratio.isBrutalRatio,
+          isLethalRatio: ratio.isLethalRatio,
+          isRatio: ratio.ratio >= 2,
+          discoveredAt: isNew ? Date.now() : (ratioStore.getAllRatios().find(r => r.id === ratio.parent.id)?.discoveredAt || Date.now()),
+        };
 
-          ratioStore.addRatio(storedRatio);
+        ratioStore.addRatio(storedRatio);
+        
+        if (isNew) {
           newCount++;
+        } else {
+          updatedCount++;
         }
       }
 
       const stats = ratioStore.getStats();
-      console.log(`✅ Poll complete: ${newCount} new ratios (total: ${stats.total})`);
+      console.log(`✅ Poll complete: ${newCount} new ratios, ${updatedCount} updated (total: ${stats.total})`);
 
       // Update leaderboards and tracked users
       const allRatios = ratioStore.getAllRatios();
@@ -138,32 +145,35 @@ export class RatioPoller {
         let victimEnrichedCount = 0;
         
         for (const ratio of victimRatios) {
-          if (!existingIds.has(ratio.parent.id)) {
-            const storedRatio: StoredRatio = {
+          const isNew = !existingIds.has(ratio.parent.id);
+          
+          const storedRatio: StoredRatio = {
+            id: ratio.parent.id,
+            parent: {
               id: ratio.parent.id,
-              parent: {
-                id: ratio.parent.id,
-                author: ratio.parent.author.username,
-                authorProfileImage: ratio.parent.author.profile_image_url,
-                content: ratio.parent.text,
-                likes: ratio.parent.public_metrics.like_count,
-                timestamp: ratio.parent.created_at,
-              },
-              reply: {
-                id: ratio.reply.id,
-                author: ratio.reply.author.username,
-                authorProfileImage: ratio.reply.author.profile_image_url,
-                content: ratio.reply.text,
-                likes: ratio.reply.public_metrics.like_count,
-              },
-              ratio: ratio.ratio,
-              isBrutalRatio: ratio.isBrutalRatio,
-              isLethalRatio: ratio.isLethalRatio,
-              isRatio: ratio.ratio >= 2,
-              discoveredAt: Date.now(),
-            };
+              author: ratio.parent.author.username,
+              authorProfileImage: ratio.parent.author.profile_image_url,
+              content: ratio.parent.text,
+              likes: ratio.parent.public_metrics.like_count,
+              timestamp: ratio.parent.created_at,
+            },
+            reply: {
+              id: ratio.reply.id,
+              author: ratio.reply.author.username,
+              authorProfileImage: ratio.reply.author.profile_image_url,
+              content: ratio.reply.text,
+              likes: ratio.reply.public_metrics.like_count,
+            },
+            ratio: ratio.ratio,
+            isBrutalRatio: ratio.isBrutalRatio,
+            isLethalRatio: ratio.isLethalRatio,
+            isRatio: ratio.ratio >= 2,
+            discoveredAt: isNew ? Date.now() : (ratioStore.getAllRatios().find(r => r.id === ratio.parent.id)?.discoveredAt || Date.now()),
+          };
 
-            ratioStore.addRatio(storedRatio);
+          ratioStore.addRatio(storedRatio);
+          
+          if (isNew) {
             victimEnrichedCount++;
           }
         }
@@ -175,32 +185,35 @@ export class RatioPoller {
         let perpetratorEnrichedCount = 0;
         
         for (const ratio of perpetratorRatios) {
-          if (!existingIds.has(ratio.parent.id)) {
-            const storedRatio: StoredRatio = {
+          const isNew = !existingIds.has(ratio.parent.id);
+          
+          const storedRatio: StoredRatio = {
+            id: ratio.parent.id,
+            parent: {
               id: ratio.parent.id,
-              parent: {
-                id: ratio.parent.id,
-                author: ratio.parent.author.username,
-                authorProfileImage: ratio.parent.author.profile_image_url,
-                content: ratio.parent.text,
-                likes: ratio.parent.public_metrics.like_count,
-                timestamp: ratio.parent.created_at,
-              },
-              reply: {
-                id: ratio.reply.id,
-                author: ratio.reply.author.username,
-                authorProfileImage: ratio.reply.author.profile_image_url,
-                content: ratio.reply.text,
-                likes: ratio.reply.public_metrics.like_count,
-              },
-              ratio: ratio.ratio,
-              isBrutalRatio: ratio.isBrutalRatio,
-              isLethalRatio: ratio.isLethalRatio,
-              isRatio: ratio.ratio >= 2,
-              discoveredAt: Date.now(),
-            };
+              author: ratio.parent.author.username,
+              authorProfileImage: ratio.parent.author.profile_image_url,
+              content: ratio.parent.text,
+              likes: ratio.parent.public_metrics.like_count,
+              timestamp: ratio.parent.created_at,
+            },
+            reply: {
+              id: ratio.reply.id,
+              author: ratio.reply.author.username,
+              authorProfileImage: ratio.reply.author.profile_image_url,
+              content: ratio.reply.text,
+              likes: ratio.reply.public_metrics.like_count,
+            },
+            ratio: ratio.ratio,
+            isBrutalRatio: ratio.isBrutalRatio,
+            isLethalRatio: ratio.isLethalRatio,
+            isRatio: ratio.ratio >= 2,
+            discoveredAt: isNew ? Date.now() : (ratioStore.getAllRatios().find(r => r.id === ratio.parent.id)?.discoveredAt || Date.now()),
+          };
 
-            ratioStore.addRatio(storedRatio);
+          ratioStore.addRatio(storedRatio);
+          
+          if (isNew) {
             perpetratorEnrichedCount++;
           }
         }

@@ -164,7 +164,10 @@ const server = serve({
           // Import enrichment functions
           const { enrichUserRatios, enrichPerpetratorRatios } = await import("./utils/x-api");
 
+          // Get existing ratio IDs to determine which are new
+          const existingIds = new Set(ratioStore.getAllRatios().map(r => r.id));
           let totalEnriched = 0;
+          let newCount = 0;
 
           try {
             // Enrich as potential victim (check if their posts got ratio'd)
@@ -173,6 +176,8 @@ const server = serve({
 
             // Store the ratios
             for (const ratio of victimRatios) {
+              const isNew = !existingIds.has(ratio.parent.id);
+              
               const storedRatio = {
                 id: ratio.parent.id,
                 parent: {
@@ -194,9 +199,14 @@ const server = serve({
                 isBrutalRatio: ratio.isBrutalRatio,
                 isLethalRatio: ratio.isLethalRatio,
                 isRatio: ratio.ratio >= 2,
-                discoveredAt: Date.now(),
+                discoveredAt: isNew ? Date.now() : (ratioStore.getAllRatios().find(r => r.id === ratio.parent.id)?.discoveredAt || Date.now()),
               };
+              
               ratioStore.addRatio(storedRatio);
+              
+              if (isNew) {
+                newCount++;
+              }
             }
           } catch (error) {
             console.error(`Error enriching ${cleanUsername} as victim:`, error);
@@ -209,6 +219,8 @@ const server = serve({
 
             // Store the ratios
             for (const ratio of perpetratorRatios) {
+              const isNew = !existingIds.has(ratio.parent.id);
+              
               const storedRatio = {
                 id: ratio.parent.id,
                 parent: {
@@ -230,15 +242,20 @@ const server = serve({
                 isBrutalRatio: ratio.isBrutalRatio,
                 isLethalRatio: ratio.isLethalRatio,
                 isRatio: ratio.ratio >= 2,
-                discoveredAt: Date.now(),
+                discoveredAt: isNew ? Date.now() : (ratioStore.getAllRatios().find(r => r.id === ratio.parent.id)?.discoveredAt || Date.now()),
               };
+              
               ratioStore.addRatio(storedRatio);
+              
+              if (isNew) {
+                newCount++;
+              }
             }
           } catch (error) {
             console.error(`Error enriching ${cleanUsername} as perpetrator:`, error);
           }
 
-          console.log(`✅ Enrichment complete for ${cleanUsername}: ${totalEnriched} new ratios found`);
+          console.log(`✅ Enrichment complete for ${cleanUsername}: ${newCount} new, ${totalEnriched - newCount} updated`);
 
           // Broadcast update to all clients
           broadcastUpdate({
