@@ -56,18 +56,22 @@ const server = serve({
           const showOnlyBrutal = url.searchParams.get('showOnlyBrutal') === 'true';
           const showOnlyLethal = url.searchParams.get('showOnlyLethal') === 'true';
           const username = url.searchParams.get('username');
-          
+          const minLikes = parseInt(url.searchParams.get('minLikes') || '1000');
+
           let ratios = ratioStore.getAllRatios();
-          
+
           // Filter by username if provided (exact match, case-insensitive)
           if (username && username.trim()) {
             const cleanUsername = username.trim().toLowerCase();
-            ratios = ratios.filter(r => 
-              r.parent.author.toLowerCase() === cleanUsername || 
+            ratios = ratios.filter(r =>
+              r.parent.author.toLowerCase() === cleanUsername ||
               r.reply.author.toLowerCase() === cleanUsername
             );
           }
-          
+
+          // Filter by minimum likes on replies
+          ratios = ratios.filter(r => r.reply.likes >= minLikes);
+
           // Apply filters
           if (showOnlyLethal) {
             ratios = ratios.filter(r => r.isLethalRatio);

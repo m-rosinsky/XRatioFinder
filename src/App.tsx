@@ -486,6 +486,7 @@ export function App() {
         sortBy: sortBy,
         showOnlyBrutal: showOnlyBrutal.toString(),
         showOnlyLethal: showOnlyLethal.toString(),
+        minLikes: minLikes.toString(),
       });
 
       // Add username filter if provided
@@ -522,7 +523,15 @@ export function App() {
     } finally {
       setLoading(false);
     }
-  }, [sortBy, showOnlyBrutal, showOnlyLethal]); // Dependencies ensure fresh state values
+  }, [sortBy, showOnlyBrutal, showOnlyLethal, minLikes]); // Dependencies ensure fresh state values
+
+  // Auto-refresh when filter states change (checkboxes and min likes)
+  useEffect(() => {
+    if (wsConnected) { // Only auto-refresh if WebSocket is connected
+      console.log(`🔄 Filter state changed, auto-refreshing with current filters`);
+      loadPosts(filterUsername || undefined);
+    }
+  }, [sortBy, showOnlyBrutal, showOnlyLethal, minLikes, loadPosts, wsConnected]); // Added minLikes to dependencies
 
   // Load leaderboards from backend
   const loadLeaderboards = async () => {
@@ -589,12 +598,8 @@ export function App() {
     }
   };
 
-  // Filter posts based on reply likes (client-side filtering for likes threshold only)
-  const filteredByLikes = posts.filter(post => {
-    // Check if any reply meets the minimum likes threshold
-    const meetsLikesThreshold = post.replies.some(reply => reply.likes >= minLikes);
-    return meetsLikesThreshold;
-  });
+  // Posts are now filtered by backend, so use them directly
+  const filteredByLikes = posts;
 
   // Sort the filtered posts
   const sortedPosts = [...filteredByLikes].sort((a, b) => {
