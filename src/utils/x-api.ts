@@ -491,6 +491,11 @@ export async function searchRecentRatios(
         continue;
       }
       
+      // Skip self-ratios (can't ratio yourself)
+      if (reply.author_id === parentTweet.author_id) {
+        continue;
+      }
+      
       // Calculate ratio
       const ratio = reply.public_metrics.like_count / parentTweet.public_metrics.like_count;
       const isLethalRatio = ratio >= 100;
@@ -601,6 +606,11 @@ export async function enrichUserRatios(usernames: string[]): Promise<RatioData[]
           for (const reply of replies) {
             const replyUser = users.find(u => u.id === reply.author_id);
             if (!replyUser) continue;
+            
+            // Skip self-ratios (can't ratio yourself)
+            if (reply.author_id === tweet.author_id) {
+              continue;
+            }
             
             // Calculate ratio
             const ratio = reply.public_metrics.like_count / tweet.public_metrics.like_count;
@@ -743,6 +753,12 @@ export async function enrichPerpetratorRatios(usernames: string[]): Promise<Rati
               continue;
             }
             
+            // Skip self-ratios (can't ratio yourself)
+            if (tweet.author_id === parentData.data.author_id) {
+              console.log(`   ⏭️  Skipping self-ratio: ${tweet.id}`);
+              continue;
+            }
+            
             // Calculate ratio
             const ratio = tweet.public_metrics.like_count / parentData.data.public_metrics.like_count;
             const isLethalRatio = ratio >= 100;
@@ -787,6 +803,12 @@ export async function enrichPerpetratorRatios(usernames: string[]): Promise<Rati
           const parentUser = users.find(u => u.id === parentTweet.author_id);
           if (!parentUser) {
             console.log(`   ❌ Parent user not found in includes for tweet ${parentTweet.id} (author_id: ${parentTweet.author_id})`);
+            continue;
+          }
+          
+          // Skip self-ratios (can't ratio yourself)
+          if (tweet.author_id === parentTweet.author_id) {
+            console.log(`   ⏭️  Skipping self-ratio: ${tweet.id}`);
             continue;
           }
           

@@ -79,8 +79,12 @@ const server = serve({
           if (sortBy === 'brutality') {
             ratios.sort((a, b) => b.ratio - a.ratio);
           } else {
-            // Default: recency
-            ratios.sort((a, b) => b.discoveredAt - a.discoveredAt);
+            // Default: recency (by actual post timestamp, not discovery time)
+            ratios.sort((a, b) => {
+              const timeA = new Date(a.parent.timestamp).getTime();
+              const timeB = new Date(b.parent.timestamp).getTime();
+              return timeB - timeA;
+            });
           }
           
           // Limit
