@@ -659,11 +659,11 @@ export function App() {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
-        <div className="flex items-center justify-between">
+      <header className="bg-gray-800 border-b border-gray-700 px-4 sm:px-6 py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center">
-            <div className="text-2xl mr-3">⚖️</div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+            <div className="text-xl sm:text-2xl mr-3">⚖️</div>
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
               X Ratio Finder
             </h1>
             <div className="ml-4 flex items-center">
@@ -673,31 +673,143 @@ export function App() {
               </span>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-400">powered by the X API</span>
-            <a
-              href="https://console.x.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-400 hover:text-blue-300 text-sm underline transition-colors"
-            >
-              Console
-            </a>
-            <a
-              href="https://x.com/XDevelopers"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-400 hover:text-blue-300 text-sm underline transition-colors"
-            >
-              Follow @XDevelopers
-            </a>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-center sm:text-left">
+            <span className="text-xs sm:text-sm text-gray-400">powered by the X API</span>
+            <div className="flex gap-2 sm:gap-4 justify-center sm:justify-start">
+              <a
+                href="https://console.x.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:text-blue-300 text-xs sm:text-sm underline transition-colors"
+              >
+                Console
+              </a>
+              <a
+                href="https://x.com/XDevelopers"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:text-blue-300 text-xs sm:text-sm underline transition-colors"
+              >
+                Follow @XDevelopers
+              </a>
+            </div>
           </div>
         </div>
       </header>
 
+      {/* Mobile Filters - Show only on mobile */}
+      <div className="md:hidden bg-gray-800 border-b border-gray-700 px-4 py-4">
+        <div className="flex flex-col gap-4">
+          {/* Mobile Refresh Button */}
+          <button
+            onClick={() => loadPosts(filterUsername || undefined)}
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
+          >
+            {loading ? '⏳ Loading...' : '🔄 Refresh View'}
+          </button>
+
+          {/* Mobile Sort and Filters */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Sort */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Sort By
+              </label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'recency' | 'brutality')}
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="recency">🕒 Recent</option>
+                <option value="brutality">💀 Brutal</option>
+              </select>
+            </div>
+
+            {/* Min Likes Slider */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Min Likes: {minLikes.toLocaleString()}
+              </label>
+              <input
+                type="range"
+                min="1000"
+                max="10000"
+                step="100"
+                value={minLikes}
+                onChange={(e) => setMinLikes(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>1k</span>
+                <span>10k</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Checkboxes */}
+          <div className="space-y-2">
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showOnlyBrutal}
+                onChange={(e) => setShowOnlyBrutal(e.target.checked)}
+                className="mr-2 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+              />
+              <span className="text-sm">Show only brutal ratios (10x+)</span>
+            </label>
+
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showOnlyLethal}
+                onChange={(e) => setShowOnlyLethal(e.target.checked)}
+                className="mr-2 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+              />
+              <span className="text-sm">Show only lethal ratios (100x+)</span>
+            </label>
+          </div>
+
+          {/* Mobile User Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Filter by User
+            </label>
+            <input
+              type="text"
+              value={filterUsername}
+              onChange={(e) => setFilterUsername(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === 'Enter' && filterUsername.trim()) {
+                  // First enrich the user to ensure we have their data
+                  await enrichUser(filterUsername);
+                  // Then load posts filtered by that user
+                  loadPosts(filterUsername);
+                }
+              }}
+              placeholder="@username (press Enter)"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              disabled={loading}
+            />
+            {filterUsername && (
+              <button
+                onClick={() => {
+                  setFilterUsername('');
+                  loadPosts(); // Reload without filter
+                }}
+                className="mt-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                disabled={loading}
+              >
+                Clear filter
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-80 bg-gray-800 border-r border-gray-700 p-6 min-h-screen">
+        {/* Sidebar - Hidden on mobile */}
+        <aside className="hidden md:block w-80 bg-gray-800 border-r border-gray-700 p-6 min-h-screen">
           {/* Refresh Button */}
           <button
             onClick={() => loadPosts(filterUsername || undefined)}
@@ -813,7 +925,7 @@ export function App() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 md:p-6">
           <div className="max-w-4xl mx-auto">
             {/* Feed Tabs */}
             <div className="mb-6">
