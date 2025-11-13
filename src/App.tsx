@@ -429,13 +429,13 @@ export function App() {
           case "connected":
             // Initial connection - load data with current filters
             console.log(`📡 WebSocket connected, loading initial data`);
-            loadPosts();
+            loadPosts(filterUsername || undefined);
             break;
 
           case "ratios_updated":
             // Data updated on server - refresh with current filters
             console.log(`📊 Server data updated, refreshing view`);
-            loadPosts();
+            loadPosts(filterUsername || undefined);
             break;
 
           case "pong":
@@ -475,7 +475,7 @@ export function App() {
   }, []);
 
   // Manual refresh - fetches current data from server without triggering new API poll
-  const loadPosts = async () => {
+  const loadPosts = async (usernameFilter?: string) => {
     try {
       setLoading(true);
       setError(null);
@@ -487,6 +487,11 @@ export function App() {
         showOnlyBrutal: showOnlyBrutal.toString(),
         showOnlyLethal: showOnlyLethal.toString(),
       });
+
+      // Add username filter if provided
+      if (usernameFilter && usernameFilter.trim()) {
+        params.append('username', usernameFilter.trim().toLowerCase().replace(/^@/, ''));
+      }
 
       const response = await fetch(`/api/ratios?${params}`, { method: "GET" });
 
@@ -574,8 +579,7 @@ export function App() {
 
       console.log(`✅ Enriched ${cleanUsername}: ${result.enrichedRatios} new ratios, ${result.totalTrackedUsers} total tracked users`);
 
-      // The WebSocket should automatically update the posts, but let's refresh just in case
-      setTimeout(() => loadPosts(), 1000);
+      // WebSocket will automatically update the posts when enrichment completes
 
     } catch (err) {
       console.error("Error enriching user:", err);
@@ -585,35 +589,10 @@ export function App() {
     }
   };
 
-  // Filter posts based on reply likes, ratio flags, and username (client-side filtering)
+  // Filter posts based on reply likes (client-side filtering for likes threshold only)
   const filteredByLikes = posts.filter(post => {
     // Check if any reply meets the minimum likes threshold
     const meetsLikesThreshold = post.replies.some(reply => reply.likes >= minLikes);
-    
-    // Filter by username if specified (exact match, case-insensitive)
-    if (filterUsername.trim()) {
-      const cleanUsername = filterUsername.trim().toLowerCase().replace(/^@/, '');
-      const postAuthor = post.author.toLowerCase();
-      const replyAuthors = post.replies.map(r => r.author.toLowerCase());
-      
-      const matchesUsername = postAuthor === cleanUsername || replyAuthors.includes(cleanUsername);
-      if (!matchesUsername) {
-        return false;
-      }
-    }
-    
-    // If "show only lethal" is enabled, check for lethal ratios (takes priority)
-    if (showOnlyLethal) {
-      const hasLethalRatio = post.replies.some(reply => reply.isLethalRatio);
-      return meetsLikesThreshold && hasLethalRatio;
-    }
-    
-    // If "show only brutal" is enabled, check for brutal ratios
-    if (showOnlyBrutal) {
-      const hasBrutalRatio = post.replies.some(reply => reply.isBrutalRatio);
-      return meetsLikesThreshold && hasBrutalRatio;
-    }
-    
     return meetsLikesThreshold;
   });
 
@@ -716,7 +695,7 @@ export function App() {
         <aside className="w-80 bg-gray-800 border-r border-gray-700 p-6 min-h-screen">
           {/* Refresh Button */}
           <button
-            onClick={loadPosts}
+            onClick={() => loadPosts(filterUsername || undefined)}
             disabled={loading}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-4 py-3 rounded-lg text-sm font-semibold transition-colors mb-6"
           >
@@ -756,7 +735,7 @@ export function App() {
                   <span>10k</span>
                 </div>
                 <p className="text-xs text-gray-400 mt-2">
-                  Showing {filteredPosts.length} of {posts.length} ratios
+                  Showing {filteredPosts.length} of {totalRatios} ratios
                 </p>
               </div>
 
@@ -796,23 +775,24 @@ export function App() {
                   type="text"
                   value={filterUsername}
                   onChange={(e) => setFilterUsername(e.target.value)}
-                  onKeyDown={(e) => {
+                  onKeyDown={async (e) => {
                     if (e.key === 'Enter' && filterUsername.trim()) {
-                      enrichUser(filterUsername);
+                      // First enrich the user to ensure we have their data
+                      await enrichUser(filterUsername);
+                      // Then load posts filtered by that user
+                      loadPosts(filterUsername);
                     }
                   }}
-                  onBlur={() => {
-                    if (filterUsername.trim()) {
-                      enrichUser(filterUsername);
-                    }
-                  }}
-                  placeholder="@username or username (press Enter to enrich)"
+                  placeholder="@username or username (press Enter to filter)"
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   disabled={loading}
                 />
                 {filterUsername && (
                   <button
-                    onClick={() => setFilterUsername('')}
+                    onClick={() => {
+                      setFilterUsername('');
+                      loadPosts(); // Reload without filter
+                    }}
                     className="mt-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
                     disabled={loading}
                   >

@@ -82,7 +82,7 @@ export class RatioPoller {
           ratio: ratio.ratio,
           isBrutalRatio: ratio.isBrutalRatio,
           isLethalRatio: ratio.isLethalRatio,
-          isRatio: ratio.ratio >= 2,
+          isRatio: ratio.ratio > 1,
           discoveredAt: isNew ? Date.now() : (ratioStore.getAllRatios().find(r => r.id === ratio.parent.id)?.discoveredAt || Date.now()),
         };
 
@@ -167,7 +167,7 @@ export class RatioPoller {
             ratio: ratio.ratio,
             isBrutalRatio: ratio.isBrutalRatio,
             isLethalRatio: ratio.isLethalRatio,
-            isRatio: ratio.ratio >= 2,
+            isRatio: ratio.ratio > 1,
             discoveredAt: isNew ? Date.now() : (ratioStore.getAllRatios().find(r => r.id === ratio.parent.id)?.discoveredAt || Date.now()),
           };
 
@@ -207,7 +207,7 @@ export class RatioPoller {
             ratio: ratio.ratio,
             isBrutalRatio: ratio.isBrutalRatio,
             isLethalRatio: ratio.isLethalRatio,
-            isRatio: ratio.ratio >= 2,
+            isRatio: ratio.ratio > 1,
             discoveredAt: isNew ? Date.now() : (ratioStore.getAllRatios().find(r => r.id === ratio.parent.id)?.discoveredAt || Date.now()),
           };
 

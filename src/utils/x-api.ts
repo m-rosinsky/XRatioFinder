@@ -495,9 +495,9 @@ export async function searchRecentRatios(
       const ratio = reply.public_metrics.like_count / parentTweet.public_metrics.like_count;
       const isLethalRatio = ratio >= 100;
       const isBrutalRatio = ratio >= 10;
-      const isRatio = ratio >= 2;
-      
-      // Only include if it's at least a 2x ratio
+      const isRatio = ratio > 1;
+
+      // Only include if it's greater than the original likes
       if (isRatio) {
         ratios.push({
           parent: {
@@ -606,9 +606,9 @@ export async function enrichUserRatios(usernames: string[]): Promise<RatioData[]
             const ratio = reply.public_metrics.like_count / tweet.public_metrics.like_count;
             const isLethalRatio = ratio >= 100;
             const isBrutalRatio = ratio >= 10;
-            const isRatio = ratio >= 2;
+            const isRatio = ratio > 1;
             
-            // Only include if it's at least a 2x ratio and has significant engagement
+            // Only include if it's greater than the original likes and has significant engagement
             if (isRatio && reply.public_metrics.like_count >= 1000) {
               userRatios.push({
                 parent: {
@@ -725,23 +725,35 @@ export async function enrichPerpetratorRatios(usernames: string[]): Promise<Rati
           const parentRef = tweet.referenced_tweets?.find(ref => ref.type === 'replied_to');
           if (!parentRef) continue;
           
+          console.log(`   🔍 Checking reply ${tweet.id} (${tweet.public_metrics.like_count} likes) to parent ${parentRef.id}`);
+          
           const parentTweet = referencedTweets.find(t => t.id === parentRef.id);
           if (!parentTweet) {
+            console.log(`   ⚠️  Parent tweet ${parentRef.id} not in includes, fetching directly...`);
             // Try to fetch it directly
             const parentData = await getTweetById(parentRef.id);
-            if (!parentData) continue;
+            if (!parentData) {
+              console.log(`   ❌ Failed to fetch parent tweet ${parentRef.id}`);
+              continue;
+            }
             
             const parentUser = parentData.includes?.users?.[0];
-            if (!parentUser) continue;
+            if (!parentUser) {
+              console.log(`   ❌ Parent user not found for tweet ${parentRef.id}`);
+              continue;
+            }
             
             // Calculate ratio
             const ratio = tweet.public_metrics.like_count / parentData.data.public_metrics.like_count;
             const isLethalRatio = ratio >= 100;
             const isBrutalRatio = ratio >= 10;
-            const isRatio = ratio >= 2;
+            const isRatio = ratio > 1;
             
-            // Only include if it's at least a 2x ratio and has significant engagement
+            console.log(`   📊 Ratio calculated: ${ratio.toFixed(2)}x (reply: ${tweet.public_metrics.like_count}, parent: ${parentData.data.public_metrics.like_count})`);
+            
+            // Only include if it's greater than the original likes and has significant engagement
             if (isRatio && tweet.public_metrics.like_count >= 1000) {
+              console.log(`   ✅ Adding ratio: ${ratio.toFixed(2)}x for @${username}`);
               userRatios.push({
                 parent: {
                   id: parentData.data.id,
@@ -773,16 +785,22 @@ export async function enrichPerpetratorRatios(usernames: string[]): Promise<Rati
           }
           
           const parentUser = users.find(u => u.id === parentTweet.author_id);
-          if (!parentUser) continue;
+          if (!parentUser) {
+            console.log(`   ❌ Parent user not found in includes for tweet ${parentTweet.id} (author_id: ${parentTweet.author_id})`);
+            continue;
+          }
           
           // Calculate ratio
           const ratio = tweet.public_metrics.like_count / parentTweet.public_metrics.like_count;
           const isLethalRatio = ratio >= 100;
           const isBrutalRatio = ratio >= 10;
-          const isRatio = ratio >= 2;
+          const isRatio = ratio > 1;
           
-          // Only include if it's at least a 2x ratio and has significant engagement
+          console.log(`   📊 Ratio calculated: ${ratio.toFixed(2)}x (reply: ${tweet.public_metrics.like_count}, parent: ${parentTweet.public_metrics.like_count})`);
+          
+          // Only include if it's greater than the original likes and has significant engagement
           if (isRatio && tweet.public_metrics.like_count >= 1000) {
+            console.log(`   ✅ Adding ratio: ${ratio.toFixed(2)}x for @${username} (from includes)`);
             userRatios.push({
               parent: {
                 id: parentTweet.id,

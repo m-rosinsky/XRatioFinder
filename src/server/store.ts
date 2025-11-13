@@ -107,7 +107,7 @@ class RatioStore {
       ratios = ratios.filter(r => r.reply.likes >= minLikes);
     }
 
-    // Filter for only ratios (2x+)
+    // Filter for only ratios (>1x)
     if (onlyRatios) {
       ratios = ratios.filter(r => r.isRatio);
     }

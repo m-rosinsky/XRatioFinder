@@ -55,8 +55,18 @@ const server = serve({
           const sortBy = url.searchParams.get('sortBy') || 'recency';
           const showOnlyBrutal = url.searchParams.get('showOnlyBrutal') === 'true';
           const showOnlyLethal = url.searchParams.get('showOnlyLethal') === 'true';
+          const username = url.searchParams.get('username');
           
           let ratios = ratioStore.getAllRatios();
+          
+          // Filter by username if provided (exact match, case-insensitive)
+          if (username && username.trim()) {
+            const cleanUsername = username.trim().toLowerCase();
+            ratios = ratios.filter(r => 
+              r.parent.author.toLowerCase() === cleanUsername || 
+              r.reply.author.toLowerCase() === cleanUsername
+            );
+          }
           
           // Apply filters
           if (showOnlyLethal) {
@@ -208,7 +218,7 @@ const server = serve({
                 ratio: ratio.ratio,
                 isBrutalRatio: ratio.isBrutalRatio,
                 isLethalRatio: ratio.isLethalRatio,
-                isRatio: ratio.ratio >= 2,
+                isRatio: ratio.ratio > 1,
                 discoveredAt: isNew ? Date.now() : (ratioStore.getAllRatios().find(r => r.id === ratio.parent.id)?.discoveredAt || Date.now()),
               };
               
@@ -251,7 +261,7 @@ const server = serve({
                 ratio: ratio.ratio,
                 isBrutalRatio: ratio.isBrutalRatio,
                 isLethalRatio: ratio.isLethalRatio,
-                isRatio: ratio.ratio >= 2,
+                isRatio: ratio.ratio > 1,
                 discoveredAt: isNew ? Date.now() : (ratioStore.getAllRatios().find(r => r.id === ratio.parent.id)?.discoveredAt || Date.now()),
               };
               
