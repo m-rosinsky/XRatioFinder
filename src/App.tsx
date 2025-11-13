@@ -1,5 +1,5 @@
 import "./index.css";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import heartIconUrl from "./assets/icons/heart.svg";
 import popoutIconUrl from "./assets/icons/popout.svg";
 
@@ -475,12 +475,12 @@ export function App() {
   }, []);
 
   // Manual refresh - fetches current data from server without triggering new API poll
-  const loadPosts = async (usernameFilter?: string) => {
+  const loadPosts = useCallback(async (usernameFilter?: string) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Build query parameters
+      // Build query parameters using current state values
       const params = new URLSearchParams({
         limit: '100',
         sortBy: sortBy,
@@ -522,7 +522,7 @@ export function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sortBy, showOnlyBrutal, showOnlyLethal]); // Dependencies ensure fresh state values
 
   // Load leaderboards from backend
   const loadLeaderboards = async () => {
