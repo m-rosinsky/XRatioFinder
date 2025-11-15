@@ -50,6 +50,12 @@ const formatRelativeTime = (timestamp: string): string => {
   }
 };
 
+// Helper function to clean content by removing t.co links
+const cleanContent = (content: string): string => {
+  // Remove https://t.co links (Twitter's URL shortener)
+  return content.replace(/https:\/\/t\.co\/\w+/g, '').trim();
+};
+
 // Mock data for demonstration - used as fallback
 const mockPosts: Post[] = [
   {
@@ -257,7 +263,7 @@ const PostCard = ({ post }: { post: Post }) => {
             <img src={popoutIconUrl} className="w-4 h-4" alt="View on X" />
           </a>
         </div>
-        <p className="text-gray-200 text-sm sm:text-base mb-3">{post.content}</p>
+        <p className="text-gray-200 text-sm sm:text-base mb-3">{cleanContent(post.content)}</p>
 
         {/* Display images if available */}
         {post.images && post.images.length > 0 && (
@@ -372,7 +378,7 @@ const PostCard = ({ post }: { post: Post }) => {
                   </span>
                 )}
               </div>
-              <p className="text-gray-300 text-xs sm:text-sm mb-2">{reply.content}</p>
+              <p className="text-gray-300 text-xs sm:text-sm mb-2">{cleanContent(reply.content)}</p>
 
               {/* Display reply images if available */}
               {reply.images && reply.images.length > 0 && (
@@ -1177,7 +1183,7 @@ export function App() {
                           </div>
                           <div className="bg-gray-900/50 rounded p-2 sm:p-3 mb-2 sm:mb-3">
                             <p className="text-gray-500 text-xs mb-1">Their post:</p>
-                            <p className="text-gray-300 text-xs sm:text-sm mb-2">{entry.worstRatio.postContent}</p>
+                            <p className="text-gray-300 text-xs sm:text-sm mb-2">{cleanContent(entry.worstRatio.postContent)}</p>
 
                             {/* Display post images if available */}
                             {entry.worstRatio.postImages && entry.worstRatio.postImages.length > 0 && (
@@ -1218,7 +1224,7 @@ export function App() {
                           </div>
                           <div className="bg-red-900/20 rounded p-2 sm:p-3 border border-red-500/30">
                             <p className="text-gray-500 text-xs mb-1">💀 Ratio'd by @{entry.worstRatio.replyAuthor}:</p>
-                            <p className="text-gray-200 text-xs sm:text-sm mb-2">{entry.worstRatio.replyContent}</p>
+                            <p className="text-gray-200 text-xs sm:text-sm mb-2">{cleanContent(entry.worstRatio.replyContent)}</p>
 
                             {/* Display reply images if available */}
                             {entry.worstRatio.replyImages && entry.worstRatio.replyImages.length > 0 && (
@@ -1357,7 +1363,7 @@ export function App() {
                           </div>
                           <div className="bg-gray-900/50 rounded p-2 sm:p-3 mb-2 sm:mb-3">
                             <p className="text-gray-500 text-xs mb-1">Original post by @{entry.bestRatio.postAuthor}:</p>
-                            <p className="text-gray-300 text-xs sm:text-sm mb-2">{entry.bestRatio.postContent}</p>
+                            <p className="text-gray-300 text-xs sm:text-sm mb-2">{cleanContent(entry.bestRatio.postContent)}</p>
 
                             {/* Display post images if available */}
                             {entry.bestRatio.postImages && entry.bestRatio.postImages.length > 0 && (
@@ -1397,7 +1403,7 @@ export function App() {
                           </div>
                           <div className="bg-purple-900/20 rounded p-2 sm:p-3 border border-purple-500/30">
                             <p className="text-gray-500 text-xs mb-1">💀 Their reply:</p>
-                            <p className="text-gray-200 text-xs sm:text-sm mb-2">{entry.bestRatio.replyContent}</p>
+                            <p className="text-gray-200 text-xs sm:text-sm mb-2">{cleanContent(entry.bestRatio.replyContent)}</p>
 
                             {/* Display reply images if available */}
                             {entry.bestRatio.replyImages && entry.bestRatio.replyImages.length > 0 && (
