@@ -12,6 +12,7 @@ interface Post {
   likes: number;
   timestamp: string;
   replies: Reply[];
+  images?: string[];
 }
 
 interface Reply {
@@ -23,6 +24,7 @@ interface Reply {
   isRatio: boolean;
   isBrutalRatio: boolean;
   isLethalRatio: boolean;
+  images?: string[];
 }
 
 // Helper function to format relative time
@@ -256,6 +258,46 @@ const PostCard = ({ post }: { post: Post }) => {
           </a>
         </div>
         <p className="text-gray-200 text-sm sm:text-base mb-3">{post.content}</p>
+
+        {/* Display images if available */}
+        {post.images && post.images.length > 0 && (
+          <div className="mb-3">
+            <div className={`grid gap-2 ${
+              post.images.length === 1 ? 'grid-cols-1' :
+              post.images.length === 2 ? 'grid-cols-2' :
+              post.images.length === 3 ? 'grid-cols-2' :
+              'grid-cols-2'
+            }`}>
+              {post.images.slice(0, 4).map((imageUrl, index) => (
+                <div
+                  key={index}
+                  className={`relative overflow-hidden rounded-lg bg-gray-700 ${
+                    post.images!.length === 3 && index === 0 ? 'row-span-2' : ''
+                  }`}
+                >
+                  <img
+                    src={imageUrl}
+                    alt={`Post image ${index + 1}`}
+                    className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => window.open(imageUrl, '_blank')}
+                    style={{
+                      aspectRatio: post.images!.length === 1 ? '16/9' :
+                                   post.images!.length === 2 ? '1/1' :
+                                   post.images!.length === 3 && index === 0 ? '1/2' :
+                                   '1/1'
+                    }}
+                  />
+                  {post.images!.length > 4 && index === 3 && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                      <span className="text-white font-bold">+{post.images!.length - 4}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center text-gray-400 text-sm">
           <span className="mr-4 flex items-center">
             <img src={heartIconUrl} className="w-4 h-4 mr-1" alt="likes" />
@@ -333,6 +375,46 @@ const PostCard = ({ post }: { post: Post }) => {
                 )}
               </div>
               <p className="text-gray-300 text-xs sm:text-sm mb-2">{reply.content}</p>
+
+              {/* Display reply images if available */}
+              {reply.images && reply.images.length > 0 && (
+                <div className="mb-2">
+                  <div className={`grid gap-1 ${
+                    reply.images.length === 1 ? 'grid-cols-1' :
+                    reply.images.length === 2 ? 'grid-cols-2' :
+                    reply.images.length === 3 ? 'grid-cols-2' :
+                    'grid-cols-2'
+                  }`}>
+                    {reply.images.slice(0, 4).map((imageUrl, index) => (
+                      <div
+                        key={index}
+                        className={`relative overflow-hidden rounded border border-gray-600 ${
+                          reply.images!.length === 3 && index === 0 ? 'row-span-2' : ''
+                        }`}
+                      >
+                        <img
+                          src={imageUrl}
+                          alt={`Reply image ${index + 1}`}
+                          className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => window.open(imageUrl, '_blank')}
+                          style={{
+                            aspectRatio: reply.images!.length === 1 ? '16/9' :
+                                         reply.images!.length === 2 ? '1/1' :
+                                         reply.images!.length === 3 && index === 0 ? '1/2' :
+                                         '1/1'
+                          }}
+                        />
+                        {reply.images!.length > 4 && index === 3 && (
+                          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                            <span className="text-white font-bold text-xs">+{reply.images!.length - 4}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center text-gray-500 text-xs">
                 <span className="flex items-center">
                   <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
@@ -383,12 +465,14 @@ export function App() {
       content: ratio.parent.content,
       likes: ratio.parent.likes,
       timestamp: ratio.parent.timestamp,
+      images: ratio.parent.images,
       replies: [{
         id: ratio.reply.id,
         author: ratio.reply.author,
         authorProfileImage: ratio.reply.authorProfileImage,
         content: ratio.reply.content,
         likes: ratio.reply.likes,
+        images: ratio.reply.images,
         isRatio: ratio.isRatio,
         isBrutalRatio: ratio.isBrutalRatio,
         isLethalRatio: ratio.isLethalRatio || false
@@ -610,10 +694,12 @@ export function App() {
       postId: string;
       postContent: string;
       postLikes: number;
+      postImages?: string[];
       replyId: string;
       replyContent: string;
       replyLikes: number;
       replyAuthor: string;
+      replyImages?: string[];
     };
   }
 
@@ -628,9 +714,11 @@ export function App() {
       postContent: string;
       postLikes: number;
       postAuthor: string;
+      postImages?: string[];
       replyId: string;
       replyContent: string;
       replyLikes: number;
+      replyImages?: string[];
     };
   }
 
@@ -1092,6 +1180,29 @@ export function App() {
                           <div className="bg-gray-900/50 rounded p-2 sm:p-3 mb-2 sm:mb-3">
                             <p className="text-gray-500 text-xs mb-1">Their post:</p>
                             <p className="text-gray-300 text-xs sm:text-sm mb-2">{entry.worstRatio.postContent}</p>
+
+                            {/* Display post images if available */}
+                            {entry.worstRatio.postImages && entry.worstRatio.postImages.length > 0 && (
+                              <div className="mb-2">
+                                <div className={`grid gap-1 ${
+                                  entry.worstRatio.postImages.length === 1 ? 'grid-cols-1' :
+                                  entry.worstRatio.postImages.length === 2 ? 'grid-cols-2' :
+                                  'grid-cols-2'
+                                }`}>
+                                  {entry.worstRatio.postImages.slice(0, 2).map((imageUrl, index) => (
+                                    <div key={index} className="relative overflow-hidden rounded border border-gray-600">
+                                      <img
+                                        src={imageUrl}
+                                        alt={`Post image ${index + 1}`}
+                                        className="w-full h-16 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                        onClick={() => window.open(imageUrl, '_blank')}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
                             <div className="flex items-center justify-between text-gray-500 text-xs">
                               <span className="flex items-center">
                                 <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
@@ -1110,6 +1221,28 @@ export function App() {
                           <div className="bg-red-900/20 rounded p-2 sm:p-3 border border-red-500/30">
                             <p className="text-gray-500 text-xs mb-1">💀 Ratio'd by @{entry.worstRatio.replyAuthor}:</p>
                             <p className="text-gray-200 text-xs sm:text-sm mb-2">{entry.worstRatio.replyContent}</p>
+
+                            {/* Display reply images if available */}
+                            {entry.worstRatio.replyImages && entry.worstRatio.replyImages.length > 0 && (
+                              <div className="mb-2">
+                                <div className={`grid gap-1 ${
+                                  entry.worstRatio.replyImages.length === 1 ? 'grid-cols-1' :
+                                  entry.worstRatio.replyImages.length === 2 ? 'grid-cols-2' :
+                                  'grid-cols-2'
+                                }`}>
+                                  {entry.worstRatio.replyImages.slice(0, 2).map((imageUrl, index) => (
+                                    <div key={index} className="relative overflow-hidden rounded border border-red-500/30">
+                                      <img
+                                        src={imageUrl}
+                                        alt={`Reply image ${index + 1}`}
+                                        className="w-full h-16 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                        onClick={() => window.open(imageUrl, '_blank')}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-red-400 font-bold flex items-center">
                                 <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
@@ -1227,6 +1360,28 @@ export function App() {
                           <div className="bg-gray-900/50 rounded p-2 sm:p-3 mb-2 sm:mb-3">
                             <p className="text-gray-500 text-xs mb-1">Original post by @{entry.bestRatio.postAuthor}:</p>
                             <p className="text-gray-300 text-xs sm:text-sm mb-2">{entry.bestRatio.postContent}</p>
+
+                            {/* Display post images if available */}
+                            {entry.bestRatio.postImages && entry.bestRatio.postImages.length > 0 && (
+                              <div className="mb-2">
+                                <div className={`grid gap-1 ${
+                                  entry.bestRatio.postImages.length === 1 ? 'grid-cols-1' :
+                                  entry.bestRatio.postImages.length === 2 ? 'grid-cols-2' :
+                                  'grid-cols-2'
+                                }`}>
+                                  {entry.bestRatio.postImages.slice(0, 2).map((imageUrl, index) => (
+                                    <div key={index} className="relative overflow-hidden rounded border border-gray-600">
+                                      <img
+                                        src={imageUrl}
+                                        alt={`Post image ${index + 1}`}
+                                        className="w-full h-16 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                        onClick={() => window.open(imageUrl, '_blank')}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                             <div className="flex items-center justify-between text-gray-500 text-xs">
                               <span className="flex items-center">
                                 <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
@@ -1245,6 +1400,28 @@ export function App() {
                           <div className="bg-purple-900/20 rounded p-2 sm:p-3 border border-purple-500/30">
                             <p className="text-gray-500 text-xs mb-1">💀 Their reply:</p>
                             <p className="text-gray-200 text-xs sm:text-sm mb-2">{entry.bestRatio.replyContent}</p>
+
+                            {/* Display reply images if available */}
+                            {entry.bestRatio.replyImages && entry.bestRatio.replyImages.length > 0 && (
+                              <div className="mb-2">
+                                <div className={`grid gap-1 ${
+                                  entry.bestRatio.replyImages.length === 1 ? 'grid-cols-1' :
+                                  entry.bestRatio.replyImages.length === 2 ? 'grid-cols-2' :
+                                  'grid-cols-2'
+                                }`}>
+                                  {entry.bestRatio.replyImages.slice(0, 2).map((imageUrl, index) => (
+                                    <div key={index} className="relative overflow-hidden rounded border border-purple-500/30">
+                                      <img
+                                        src={imageUrl}
+                                        alt={`Reply image ${index + 1}`}
+                                        className="w-full h-16 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                        onClick={() => window.open(imageUrl, '_blank')}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-purple-400 font-bold flex items-center">
                                 <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />

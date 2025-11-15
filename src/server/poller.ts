@@ -71,6 +71,7 @@ export class RatioPoller {
             content: ratio.parent.text,
             likes: ratio.parent.public_metrics.like_count,
             timestamp: ratio.parent.created_at,
+            images: ratio.parent.images,
           },
           reply: {
             id: ratio.reply.id,
@@ -78,6 +79,7 @@ export class RatioPoller {
             authorProfileImage: ratio.reply.author.profile_image_url,
             content: ratio.reply.text,
             likes: ratio.reply.public_metrics.like_count,
+            images: ratio.reply.images,
           },
           ratio: ratio.ratio,
           isBrutalRatio: ratio.isBrutalRatio,
@@ -156,6 +158,7 @@ export class RatioPoller {
               content: ratio.parent.text,
               likes: ratio.parent.public_metrics.like_count,
               timestamp: ratio.parent.created_at,
+              images: ratio.parent.images,
             },
             reply: {
               id: ratio.reply.id,
@@ -163,6 +166,7 @@ export class RatioPoller {
               authorProfileImage: ratio.reply.author.profile_image_url,
               content: ratio.reply.text,
               likes: ratio.reply.public_metrics.like_count,
+              images: ratio.reply.images,
             },
             ratio: ratio.ratio,
             isBrutalRatio: ratio.isBrutalRatio,
@@ -196,6 +200,7 @@ export class RatioPoller {
               content: ratio.parent.text,
               likes: ratio.parent.public_metrics.like_count,
               timestamp: ratio.parent.created_at,
+              images: ratio.parent.images,
             },
             reply: {
               id: ratio.reply.id,
@@ -203,6 +208,7 @@ export class RatioPoller {
               authorProfileImage: ratio.reply.author.profile_image_url,
               content: ratio.reply.text,
               likes: ratio.reply.public_metrics.like_count,
+              images: ratio.reply.images,
             },
             ratio: ratio.ratio,
             isBrutalRatio: ratio.isBrutalRatio,

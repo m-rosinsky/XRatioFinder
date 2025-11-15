@@ -13,6 +13,7 @@ export interface StoredRatio {
     content: string;
     likes: number;
     timestamp: string;
+    images?: string[];
   };
   reply: {
     id: string;
@@ -20,6 +21,7 @@ export interface StoredRatio {
     authorProfileImage?: string;
     content: string;
     likes: number;
+    images?: string[];
   };
   ratio: number;
   isBrutalRatio: boolean;
@@ -171,10 +173,12 @@ class RatioStore {
           postId: ratio.parent.id,
           postContent: ratio.parent.content,
           postLikes: ratio.parent.likes,
+          postImages: ratio.parent.images,
           replyId: ratio.reply.id,
           replyContent: ratio.reply.content,
           replyLikes: ratio.reply.likes,
           replyAuthor: ratio.reply.author,
+          replyImages: ratio.reply.images,
         };
       }
       victimCounts.set(ratio.parent.author, victim);
@@ -196,9 +200,11 @@ class RatioStore {
           postContent: ratio.parent.content,
           postLikes: ratio.parent.likes,
           postAuthor: ratio.parent.author,
+          postImages: ratio.parent.images,
           replyId: ratio.reply.id,
           replyContent: ratio.reply.content,
           replyLikes: ratio.reply.likes,
+          replyImages: ratio.reply.images,
         };
       }
       perpetratorCounts.set(ratio.reply.author, perpetrator);

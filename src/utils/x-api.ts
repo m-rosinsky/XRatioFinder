@@ -102,6 +102,9 @@ interface XApiPost {
     type: string;
     id: string;
   }>;
+  attachments?: {
+    media_keys?: string[];
+  };
 }
 
 interface XApiUser {
@@ -111,11 +114,19 @@ interface XApiUser {
   profile_image_url?: string;
 }
 
+interface XApiMedia {
+  media_key: string;
+  type: string;
+  url?: string;
+  preview_image_url?: string;
+}
+
 interface XApiResponse {
   data: XApiPost[];
   includes?: {
     users?: XApiUser[];
     tweets?: XApiPost[];
+    media?: XApiMedia[];
   };
   meta: {
     result_count: number;
@@ -140,6 +151,7 @@ export interface RatioData {
       reply_count: number;
       repost_count: number;
     };
+    images?: string[];
   };
   reply: {
     id: string;
@@ -154,6 +166,7 @@ export interface RatioData {
       reply_count: number;
       repost_count: number;
     };
+    images?: string[];
   };
   ratio: number;
   isBrutalRatio: boolean;
@@ -203,14 +216,16 @@ async function getUserRecentTweets(
   maxResults: number = 100,
   paginationToken?: string
 ): Promise<XApiResponse | null> {
-  const tweetFields = "author_id,created_at,public_metrics,conversation_id,in_reply_to_user_id,referenced_tweets";
+  const tweetFields = "author_id,created_at,public_metrics,conversation_id,in_reply_to_user_id,referenced_tweets,attachments";
   const userFields = "name,username,profile_image_url";
-  const expansions = "author_id,referenced_tweets.id,referenced_tweets.id.author_id";
+  const mediaFields = "url,preview_image_url,type";
+  const expansions = "author_id,referenced_tweets.id,referenced_tweets.id.author_id,attachments.media_keys";
 
   const url = new URL(`https://api.x.com/2/users/${userId}/tweets`);
   url.searchParams.append("max_results", maxResults.toString());
   url.searchParams.append("tweet.fields", tweetFields);
   url.searchParams.append("user.fields", userFields);
+  url.searchParams.append("media.fields", mediaFields);
   url.searchParams.append("expansions", expansions);
   url.searchParams.append("exclude", "retweets"); // Exclude retweets as requested
   url.searchParams.append("start_time", startTime.toISOString());
@@ -248,14 +263,16 @@ async function getUserRecentTweets(
 /**
  * Get a single tweet by ID
  */
-async function getTweetById(tweetId: string): Promise<{ data: XApiPost; includes?: { users?: XApiUser[] } } | null> {
-  const tweetFields = "author_id,created_at,public_metrics,conversation_id,in_reply_to_user_id";
+async function getTweetById(tweetId: string): Promise<{ data: XApiPost; includes?: { users?: XApiUser[]; media?: XApiMedia[] } } | null> {
+  const tweetFields = "author_id,created_at,public_metrics,conversation_id,in_reply_to_user_id,attachments";
   const userFields = "name,username,profile_image_url";
-  const expansions = "author_id";
+  const mediaFields = "url,preview_image_url,type";
+  const expansions = "author_id,attachments.media_keys";
 
   const url = new URL(`https://api.x.com/2/tweets/${tweetId}`);
   url.searchParams.append("tweet.fields", tweetFields);
   url.searchParams.append("user.fields", userFields);
+  url.searchParams.append("media.fields", mediaFields);
   url.searchParams.append("expansions", expansions);
 
   try {
@@ -296,15 +313,17 @@ async function searchRecentPostsPage(
 ): Promise<XApiResponse> {
   // Search for replies that have high engagement
   const query = `min_likes:${minLikes} is:reply -is:retweet lang:en`;
-  const tweetFields = "author_id,created_at,public_metrics,conversation_id,in_reply_to_user_id";
+  const tweetFields = "author_id,created_at,public_metrics,conversation_id,in_reply_to_user_id,attachments";
   const userFields = "name,username,profile_image_url";
-  const expansions = "author_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id";
+  const mediaFields = "url,preview_image_url,type";
+  const expansions = "author_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id,attachments.media_keys";
 
   const url = new URL("https://api.x.com/2/tweets/search/recent");
   url.searchParams.append("query", query);
   url.searchParams.append("max_results", maxResults.toString());
   url.searchParams.append("tweet.fields", tweetFields);
   url.searchParams.append("user.fields", userFields);
+  url.searchParams.append("media.fields", mediaFields);
   url.searchParams.append("expansions", expansions);
   url.searchParams.append("sort_order", "recency")
 
@@ -421,6 +440,7 @@ export async function searchRecentRatios(
   const ratios: RatioData[] = [];
   const allUsers = new Map<string, XApiUser>();
   const allTweets = new Map<string, XApiPost>();
+  const allMedia = new Map<string, XApiMedia>();
   let nextToken: string | undefined = undefined;
   let pageCount = 0;
   const MAX_RATIOS = 500;
@@ -440,7 +460,7 @@ export async function searchRecentRatios(
     
     console.log(`   ✓ Got ${response.data.length} replies`);
     
-    // Collect users and tweets from this page
+    // Collect users, tweets, and media from this page
     if (response.includes?.users) {
       for (const user of response.includes.users) {
         allUsers.set(user.id, user);
@@ -449,6 +469,11 @@ export async function searchRecentRatios(
     if (response.includes?.tweets) {
       for (const tweet of response.includes.tweets) {
         allTweets.set(tweet.id, tweet);
+      }
+    }
+    if (response.includes?.media) {
+      for (const mediaItem of response.includes.media) {
+        allMedia.set(mediaItem.media_key, mediaItem);
       }
     }
     
@@ -515,6 +540,7 @@ export async function searchRecentRatios(
               profile_image_url: parentUser.profile_image_url,
             },
             public_metrics: parentTweet.public_metrics,
+            images: extractImagesFromTweet(parentTweet, Array.from(allMedia.values())),
           },
           reply: {
             id: reply.id,
@@ -525,6 +551,7 @@ export async function searchRecentRatios(
               profile_image_url: replyUser.profile_image_url,
             },
             public_metrics: reply.public_metrics,
+            images: extractImagesFromTweet(reply, Array.from(allMedia.values())),
           },
           ratio,
           isBrutalRatio,
@@ -595,11 +622,12 @@ export async function enrichUserRatios(usernames: string[]): Promise<RatioData[]
         
         const users = response.includes?.users || [];
         const referencedTweets = response.includes?.tweets || [];
-        
+        const media = response.includes?.media || [];
+
         // Check each tweet to see if it got ratio'd
         for (const tweet of response.data) {
           // Find replies to this tweet from the referenced tweets
-          const replies = referencedTweets.filter(rt => 
+          const replies = referencedTweets.filter(rt =>
             rt.referenced_tweets?.some(ref => ref.type === 'replied_to' && ref.id === tweet.id)
           );
           
@@ -631,6 +659,7 @@ export async function enrichUserRatios(usernames: string[]): Promise<RatioData[]
                     profile_image_url: user.profile_image_url,
                   },
                   public_metrics: tweet.public_metrics,
+                  images: extractImagesFromTweet(tweet, media),
                 },
                 reply: {
                   id: reply.id,
@@ -641,6 +670,7 @@ export async function enrichUserRatios(usernames: string[]): Promise<RatioData[]
                     profile_image_url: replyUser.profile_image_url,
                   },
                   public_metrics: reply.public_metrics,
+                  images: extractImagesFromTweet(reply, media),
                 },
                 ratio,
                 isBrutalRatio,
@@ -721,10 +751,11 @@ export async function enrichPerpetratorRatios(usernames: string[]): Promise<Rati
         }
         
         console.log(`   Found ${response.data.length} tweets on page ${pageCount} for @${username}`);
-        
+
         const users = response.includes?.users || [];
         const referencedTweets = response.includes?.tweets || [];
-        
+        const media = response.includes?.media || [];
+
         // Check each tweet to see if it's a reply that is a ratio
         for (const tweet of response.data) {
           // Check if this is a reply
@@ -781,6 +812,7 @@ export async function enrichPerpetratorRatios(usernames: string[]): Promise<Rati
                     profile_image_url: parentUser.profile_image_url,
                   },
                   public_metrics: parentData.data.public_metrics,
+                  images: extractImagesFromTweet(parentData.data, parentData.includes?.media || []),
                 },
                 reply: {
                   id: tweet.id,
@@ -791,6 +823,7 @@ export async function enrichPerpetratorRatios(usernames: string[]): Promise<Rati
                     profile_image_url: user.profile_image_url,
                   },
                   public_metrics: tweet.public_metrics,
+                  images: extractImagesFromTweet(tweet, media),
                 },
                 ratio,
                 isBrutalRatio,
@@ -834,6 +867,7 @@ export async function enrichPerpetratorRatios(usernames: string[]): Promise<Rati
                   profile_image_url: parentUser.profile_image_url,
                 },
                 public_metrics: parentTweet.public_metrics,
+                images: extractImagesFromTweet(parentTweet, media),
               },
               reply: {
                 id: tweet.id,
@@ -844,6 +878,7 @@ export async function enrichPerpetratorRatios(usernames: string[]): Promise<Rati
                   profile_image_url: user.profile_image_url,
                 },
                 public_metrics: tweet.public_metrics,
+                images: extractImagesFromTweet(tweet, media),
               },
               ratio,
               isBrutalRatio,
@@ -888,5 +923,25 @@ export async function enrichPerpetratorRatios(usernames: string[]): Promise<Rati
  */
 function getUserById(userId: string, users?: XApiUser[]): XApiUser | undefined {
   return users?.find(u => u.id === userId);
+}
+
+/**
+ * Helper to extract image URLs from a tweet
+ */
+function extractImagesFromTweet(tweet: XApiPost, media?: XApiMedia[]): string[] {
+  if (!tweet.attachments?.media_keys || !media) {
+    return [];
+  }
+
+  return tweet.attachments.media_keys
+    .map(mediaKey => {
+      const mediaItem = media.find(m => m.media_key === mediaKey);
+      // Only include photos for now (videos/gifs would need different handling)
+      if (mediaItem?.type === 'photo' && mediaItem.url) {
+        return mediaItem.url;
+      }
+      return null;
+    })
+    .filter(Boolean) as string[];
 }
 

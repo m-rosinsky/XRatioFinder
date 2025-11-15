@@ -205,7 +205,7 @@ const server = serve({
             // Store the ratios
             for (const ratio of victimRatios) {
               const isNew = !existingIds.has(ratio.parent.id);
-              
+
               const storedRatio = {
                 id: ratio.parent.id,
                 parent: {
@@ -215,6 +215,7 @@ const server = serve({
                   content: ratio.parent.text,
                   likes: ratio.parent.public_metrics.like_count,
                   timestamp: ratio.parent.created_at,
+                  images: ratio.parent.images,
                 },
                 reply: {
                   id: ratio.reply.id,
@@ -222,6 +223,7 @@ const server = serve({
                   authorProfileImage: ratio.reply.author.profile_image_url,
                   content: ratio.reply.text,
                   likes: ratio.reply.public_metrics.like_count,
+                  images: ratio.reply.images,
                 },
                 ratio: ratio.ratio,
                 isBrutalRatio: ratio.isBrutalRatio,
@@ -248,7 +250,7 @@ const server = serve({
             // Store the ratios
             for (const ratio of perpetratorRatios) {
               const isNew = !existingIds.has(ratio.parent.id);
-              
+
               const storedRatio = {
                 id: ratio.parent.id,
                 parent: {
@@ -258,6 +260,7 @@ const server = serve({
                   content: ratio.parent.text,
                   likes: ratio.parent.public_metrics.like_count,
                   timestamp: ratio.parent.created_at,
+                  images: ratio.parent.images,
                 },
                 reply: {
                   id: ratio.reply.id,
@@ -265,6 +268,7 @@ const server = serve({
                   authorProfileImage: ratio.reply.author.profile_image_url,
                   content: ratio.reply.text,
                   likes: ratio.reply.public_metrics.like_count,
+                  images: ratio.reply.images,
                 },
                 ratio: ratio.ratio,
                 isBrutalRatio: ratio.isBrutalRatio,
