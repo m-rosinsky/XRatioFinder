@@ -299,18 +299,16 @@ const PostCard = ({ post }: { post: Post }) => {
         )}
 
         <div className="flex items-center text-gray-400 text-sm">
-          <span className="mr-4 flex items-center">
+          <span className="flex items-center">
             <img src={heartIconUrl} className="w-4 h-4 mr-1" alt="likes" />
             {post.likes} likes
           </span>
-          <span>{post.replies.length} replies</span>
         </div>
       </div>
 
       {/* Replies */}
       {post.replies.length > 0 && (
         <div className="border-t border-gray-700 pt-4">
-          <h4 className="text-sm font-semibold text-gray-400 mb-3">TOP REPLIES</h4>
           {post.replies.map(reply => (
             <div key={reply.id} className={`mb-3 p-3 rounded border ${
               reply.isLethalRatio
