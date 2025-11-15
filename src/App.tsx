@@ -1104,10 +1104,11 @@ export function App() {
                           <div className="text-sm text-gray-400 mb-2">
                             💀 Worst ratio: <span className="text-orange-400 font-bold">{entry.worstRatio.ratio.toFixed(1)}x</span>
                           </div>
-                          <div className="bg-gray-900/50 rounded p-3">
+                          <div className="bg-gray-900/50 rounded p-3 mb-3">
+                            <p className="text-gray-500 text-xs mb-1">Their post:</p>
                             <p className="text-gray-300 text-sm mb-2">{entry.worstRatio.postContent}</p>
-                            <div className="flex items-center text-gray-500 text-xs">
-                              <span className="mr-4 flex items-center">
+                            <div className="flex items-center justify-between text-gray-500 text-xs">
+                              <span className="flex items-center">
                                 <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
                                 {entry.worstRatio.postLikes} likes
                               </span>
@@ -1118,6 +1119,24 @@ export function App() {
                                 className="text-blue-400 hover:text-blue-300"
                               >
                                 View post →
+                              </a>
+                            </div>
+                          </div>
+                          <div className="bg-red-900/20 rounded p-3 border border-red-500/30">
+                            <p className="text-gray-500 text-xs mb-1">💀 Ratio'd by @{entry.worstRatio.replyAuthor}:</p>
+                            <p className="text-gray-200 text-sm mb-2">{entry.worstRatio.replyContent}</p>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-red-400 font-bold flex items-center">
+                                <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
+                                {entry.worstRatio.replyLikes.toLocaleString()} likes
+                              </span>
+                              <a
+                                href={`https://x.com/${entry.worstRatio.replyAuthor}/status/${entry.worstRatio.replyId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-red-400 hover:text-red-300"
+                              >
+                                View reply →
                               </a>
                             </div>
                           </div>
@@ -1223,11 +1242,19 @@ export function App() {
                           <div className="bg-gray-900/50 rounded p-3 mb-3">
                             <p className="text-gray-500 text-xs mb-1">Original post by @{entry.bestRatio.postAuthor}:</p>
                             <p className="text-gray-300 text-sm mb-2">{entry.bestRatio.postContent}</p>
-                            <div className="flex items-center text-gray-500 text-xs">
-                              <span className="mr-4 flex items-center">
+                            <div className="flex items-center justify-between text-gray-500 text-xs">
+                              <span className="flex items-center">
                                 <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
                                 {entry.bestRatio.postLikes} likes
                               </span>
+                              <a
+                                href={`https://x.com/${entry.bestRatio.postAuthor}/status/${entry.bestRatio.postId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-400 hover:text-blue-300"
+                              >
+                                View post →
+                              </a>
                             </div>
                           </div>
                           <div className="bg-purple-900/20 rounded p-3 border border-purple-500/30">
