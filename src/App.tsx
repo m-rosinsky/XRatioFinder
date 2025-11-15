@@ -202,7 +202,7 @@ const PostCard = ({ post }: { post: Post }) => {
   const hasLethalRatio = post.replies.some(reply => reply.likes >= post.likes * 100);
 
   return (
-    <div className={`bg-gray-800 rounded-lg border p-6 mb-6 ${
+    <div className={`bg-gray-800 rounded-lg border p-3 sm:p-4 md:p-6 mb-4 sm:mb-6 ${
       hasLethalRatio
         ? 'border-purple-500 bg-purple-900/30 shadow-xl shadow-purple-500/30 ring-2 ring-purple-500/50'
         : hasBrutalRatio
@@ -218,7 +218,7 @@ const PostCard = ({ post }: { post: Post }) => {
             href={`https://x.com/${post.author}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full mr-3 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0 overflow-hidden bg-blue-500"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full mr-2 sm:mr-3 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0 overflow-hidden bg-blue-500"
             title={`@${post.author}'s profile`}
           >
             {post.authorProfileImage ? (
@@ -254,23 +254,8 @@ const PostCard = ({ post }: { post: Post }) => {
           >
             <img src={popoutIconUrl} className="w-4 h-4" alt="View on X" />
           </a>
-          {hasLethalRatio && (
-            <span className="ml-auto bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white px-3 py-1 rounded text-sm font-bold animate-pulse shadow-lg">
-              ☠️ LETHAL RATIO
-            </span>
-          )}
-          {hasBrutalRatio && !hasLethalRatio && (
-            <span className="ml-auto bg-gradient-to-r from-orange-500 to-red-600 text-white px-3 py-1 rounded text-sm font-bold animate-pulse">
-              💀 BRUTAL RATIO
-            </span>
-          )}
-          {hasRatio && !hasBrutalRatio && !hasLethalRatio && (
-            <span className="ml-auto bg-red-500 text-white px-2 py-1 rounded text-sm font-bold">
-              🔥 RATIO
-            </span>
-          )}
         </div>
-        <p className="text-gray-200 mb-3">{post.content}</p>
+        <p className="text-gray-200 text-sm sm:text-base mb-3">{post.content}</p>
         <div className="flex items-center text-gray-400 text-sm">
           <span className="mr-4 flex items-center">
             <img src={heartIconUrl} className="w-4 h-4 mr-1" alt="likes" />
@@ -299,7 +284,7 @@ const PostCard = ({ post }: { post: Post }) => {
                   href={`https://x.com/${reply.author}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-full mr-2 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0 overflow-hidden bg-purple-500"
+                  className="w-6 h-6 sm:w-8 sm:h-8 rounded-full mr-2 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0 overflow-hidden bg-purple-500"
                   title={`@${reply.author}'s profile`}
                 >
                   {reply.authorProfileImage ? (
@@ -347,7 +332,7 @@ const PostCard = ({ post }: { post: Post }) => {
                   </span>
                 )}
               </div>
-              <p className="text-gray-300 text-sm mb-2">{reply.content}</p>
+              <p className="text-gray-300 text-xs sm:text-sm mb-2">{reply.content}</p>
               <div className="flex items-center text-gray-500 text-xs">
                 <span className="flex items-center">
                   <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
@@ -659,28 +644,28 @@ export function App() {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700 px-4 sm:px-6 py-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <header className="bg-gray-800 border-b border-gray-700 px-4 sm:px-6 py-3 sm:py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
           <div className="flex items-center">
             <div className="text-xl sm:text-2xl mr-3">⚖️</div>
             <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
               X Ratio Finder
             </h1>
-            <div className="ml-4 flex items-center">
-              <div className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green-500' : 'bg-red-500'} mr-2`}></div>
-              <span className="text-xs text-gray-400">
+            <div className="ml-2 sm:ml-4 flex items-center">
+              <div className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green-500' : 'bg-red-500'} mr-1 sm:mr-2`}></div>
+              <span className="text-xs text-gray-400 hidden sm:inline">
                 {wsConnected ? 'Connected' : 'Disconnected'}
               </span>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-center sm:text-left">
             <span className="text-xs sm:text-sm text-gray-400">powered by the X API</span>
-            <div className="flex gap-2 sm:gap-4 justify-center sm:justify-start">
+            <div className="flex gap-1 sm:gap-2 md:gap-4 justify-center sm:justify-start">
               <a
                 href="https://console.x.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-400 hover:text-blue-300 text-xs sm:text-sm underline transition-colors"
+                className="text-blue-400 hover:text-blue-300 text-xs underline transition-colors"
               >
                 Console
               </a>
@@ -688,9 +673,9 @@ export function App() {
                 href="https://x.com/XDevelopers"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-400 hover:text-blue-300 text-xs sm:text-sm underline transition-colors"
+                className="text-blue-400 hover:text-blue-300 text-xs underline transition-colors"
               >
-                Follow @XDevelopers
+                @XDevelopers
               </a>
             </div>
           </div>
@@ -704,7 +689,7 @@ export function App() {
           <button
             onClick={() => loadPosts(filterUsername || undefined)}
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-4 py-3 sm:py-3 rounded-lg text-sm font-semibold transition-colors min-h-[44px]"
           >
             {loading ? '⏳ Loading...' : '🔄 Refresh View'}
           </button>
@@ -748,23 +733,23 @@ export function App() {
           </div>
 
           {/* Mobile Checkboxes */}
-          <div className="space-y-2">
-            <label className="flex items-center cursor-pointer">
+          <div className="space-y-3">
+            <label className="flex items-center cursor-pointer min-h-[44px]">
               <input
                 type="checkbox"
                 checked={showOnlyBrutal}
                 onChange={(e) => setShowOnlyBrutal(e.target.checked)}
-                className="mr-2 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+                className="mr-3 w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
               />
               <span className="text-sm">Show only brutal ratios (10x+)</span>
             </label>
 
-            <label className="flex items-center cursor-pointer">
+            <label className="flex items-center cursor-pointer min-h-[44px]">
               <input
                 type="checkbox"
                 checked={showOnlyLethal}
                 onChange={(e) => setShowOnlyLethal(e.target.checked)}
-                className="mr-2 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+                className="mr-3 w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
               />
               <span className="text-sm">Show only lethal ratios (100x+)</span>
             </label>
@@ -788,7 +773,7 @@ export function App() {
                 }
               }}
               placeholder="@username (press Enter)"
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="w-full px-3 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm min-h-[44px]"
               disabled={loading}
             />
             {filterUsername && (
@@ -797,7 +782,7 @@ export function App() {
                   setFilterUsername('');
                   loadPosts(); // Reload without filter
                 }}
-                className="mt-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                className="mt-2 text-sm text-blue-400 hover:text-blue-300 transition-colors min-h-[44px] py-2"
                 disabled={loading}
               >
                 Clear filter
@@ -814,7 +799,7 @@ export function App() {
           <button
             onClick={() => loadPosts(filterUsername || undefined)}
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-4 py-3 rounded-lg text-sm font-semibold transition-colors mb-6"
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-4 py-3 rounded-lg text-sm font-semibold transition-colors mb-6 min-h-[44px]"
           >
             {loading ? '⏳ Loading...' : '🔄 Refresh View'}
           </button>
@@ -856,28 +841,28 @@ export function App() {
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <label className="flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
+              <div className="space-y-3">
+                <label className="flex items-center cursor-pointer min-h-[44px]">
+                  <input
+                    type="checkbox"
                     checked={showOnlyLethal}
                     onChange={(e) => {
                       setShowOnlyLethal(e.target.checked);
                       if (e.target.checked) setShowOnlyBrutal(false);
                     }}
-                    className="mr-2 cursor-pointer" 
+                    className="mr-3 w-5 h-5 cursor-pointer"
                   />
                   <span className="text-sm">Show only lethal ratios (100x+)</span>
                 </label>
-                <label className="flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
+                <label className="flex items-center cursor-pointer min-h-[44px]">
+                  <input
+                    type="checkbox"
                     checked={showOnlyBrutal}
                     onChange={(e) => {
                       setShowOnlyBrutal(e.target.checked);
                       if (e.target.checked) setShowOnlyLethal(false);
                     }}
-                    className="mr-2 cursor-pointer" 
+                    className="mr-3 w-5 h-5 cursor-pointer"
                   />
                   <span className="text-sm">Show only brutal ratios (10x+)</span>
                 </label>
@@ -901,7 +886,7 @@ export function App() {
                     }
                   }}
                   placeholder="@username or username (press Enter to filter)"
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm min-h-[44px]"
                   disabled={loading}
                 />
                 {filterUsername && (
@@ -910,7 +895,7 @@ export function App() {
                       setFilterUsername('');
                       loadPosts(); // Reload without filter
                     }}
-                    className="mt-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                    className="mt-2 text-sm text-blue-400 hover:text-blue-300 transition-colors min-h-[44px] py-2"
                     disabled={loading}
                   >
                     Clear filter
@@ -928,11 +913,11 @@ export function App() {
         <main className="flex-1 p-4 md:p-6">
           <div className="max-w-4xl mx-auto">
             {/* Feed Tabs */}
-            <div className="mb-6">
-              <div className="flex items-center gap-4 mb-4 border-b border-gray-700">
+            <div className="mb-4 sm:mb-6">
+              <div className="flex items-center gap-2 sm:gap-4 mb-3 sm:mb-4 border-b border-gray-700">
                 <button
                   onClick={() => setActiveFeed('recents')}
-                  className={`px-4 py-2 font-semibold transition-all relative cursor-pointer ${
+                  className={`px-3 sm:px-4 py-2 sm:py-2 font-semibold transition-all relative cursor-pointer text-sm sm:text-base ${
                     activeFeed === 'recents'
                       ? 'text-blue-400'
                       : 'text-gray-400 hover:text-gray-300'
@@ -945,7 +930,7 @@ export function App() {
                 </button>
                 <button
                   onClick={() => setActiveFeed('victims')}
-                  className={`px-4 py-2 font-semibold transition-all relative cursor-pointer ${
+                  className={`px-3 sm:px-4 py-2 sm:py-2 font-semibold transition-all relative cursor-pointer text-sm sm:text-base ${
                     activeFeed === 'victims'
                       ? 'text-blue-400'
                       : 'text-gray-400 hover:text-gray-300'
@@ -958,7 +943,7 @@ export function App() {
                 </button>
                 <button
                   onClick={() => setActiveFeed('perpetrators')}
-                  className={`px-4 py-2 font-semibold transition-all relative cursor-pointer ${
+                  className={`px-3 sm:px-4 py-2 sm:py-2 font-semibold transition-all relative cursor-pointer text-sm sm:text-base ${
                     activeFeed === 'perpetrators'
                       ? 'text-blue-400'
                       : 'text-gray-400 hover:text-gray-300'
@@ -972,15 +957,15 @@ export function App() {
               </div>
               
               <div>
-                <h2 className="text-xl font-semibold text-gray-200 mb-2">
-                  {activeFeed === 'recents' 
-                    ? 'Latest Posts & Ratios' 
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-200 mb-2">
+                  {activeFeed === 'recents'
+                    ? 'Latest Posts & Ratios'
                     : activeFeed === 'victims'
                     ? 'Most Ratio\'d Users'
                     : 'Top Ratio-ers'}
                 </h2>
-                <p className="text-gray-400 text-sm">
-                  {activeFeed === 'recents' 
+                <p className="text-gray-400 text-xs sm:text-sm">
+                  {activeFeed === 'recents'
                     ? 'Monitoring X for ratio opportunities in real-time (last 7 days)'
                     : activeFeed === 'victims'
                     ? 'Users who got ratio\'d the most in the past 7 days'
@@ -1034,10 +1019,10 @@ export function App() {
                     </div>
                     
                     {victimsLeaderboard.map((entry, index) => (
-                      <div 
+                      <div
                         key={entry.username}
-                        className={`bg-gray-800 rounded-lg border p-6 ${
-                          index === 0 
+                        className={`bg-gray-800 rounded-lg border p-3 sm:p-4 md:p-6 ${
+                          index === 0
                             ? 'border-yellow-500 bg-yellow-900/20 shadow-lg shadow-yellow-500/20'
                             : index === 1
                             ? 'border-gray-400 bg-gray-700/20'
@@ -1046,22 +1031,22 @@ export function App() {
                             : 'border-gray-700'
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center justify-between mb-3 sm:mb-4">
                           <div className="flex items-center">
-                            <div className={`text-3xl font-bold mr-4 ${
-                              index === 0 ? 'text-yellow-500' : 
-                              index === 1 ? 'text-gray-400' : 
-                              index === 2 ? 'text-orange-600' : 
+                            <div className={`text-2xl sm:text-3xl font-bold mr-2 sm:mr-4 ${
+                              index === 0 ? 'text-yellow-500' :
+                              index === 1 ? 'text-gray-400' :
+                              index === 2 ? 'text-orange-600' :
                               'text-gray-500'
                             }`}>
                               {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
                             </div>
-                            
+
                             <a
                               href={`https://x.com/${entry.username}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="w-12 h-12 rounded-full mr-3 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0 overflow-hidden bg-blue-500"
+                              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full mr-2 sm:mr-3 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0 overflow-hidden bg-blue-500"
                               title={`@${entry.username}'s profile`}
                             >
                               {entry.profileImage ? (
@@ -1082,31 +1067,31 @@ export function App() {
                                 href={`https://x.com/${entry.username}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="font-semibold text-blue-400 hover:text-blue-300 transition-colors text-lg"
+                                className="font-semibold text-blue-400 hover:text-blue-300 transition-colors text-base sm:text-lg"
                               >
                                 @{entry.username}
                               </a>
-                              <div className="text-sm text-gray-400 mt-1">
+                              <div className="text-xs sm:text-sm text-gray-400 mt-1">
                                 Got ratio'd <span className="text-red-400 font-bold">{entry.ratioCount}</span> time{entry.ratioCount !== 1 ? 's' : ''} this week
                               </div>
                             </div>
                           </div>
                           
                           <div className="text-right">
-                            <div className="text-sm text-gray-400">Total likes against</div>
-                            <div className="text-xl font-bold text-red-400">
+                            <div className="text-xs sm:text-sm text-gray-400">Total likes against</div>
+                            <div className="text-lg sm:text-xl font-bold text-red-400">
                               {entry.totalLikes.toLocaleString()}
                             </div>
                           </div>
                         </div>
                         
-                        <div className="border-t border-gray-700 pt-4">
-                          <div className="text-sm text-gray-400 mb-2">
+                        <div className="border-t border-gray-700 pt-3 sm:pt-4">
+                          <div className="text-xs sm:text-sm text-gray-400 mb-2">
                             💀 Worst ratio: <span className="text-orange-400 font-bold">{entry.worstRatio.ratio.toFixed(1)}x</span>
                           </div>
-                          <div className="bg-gray-900/50 rounded p-3 mb-3">
+                          <div className="bg-gray-900/50 rounded p-2 sm:p-3 mb-2 sm:mb-3">
                             <p className="text-gray-500 text-xs mb-1">Their post:</p>
-                            <p className="text-gray-300 text-sm mb-2">{entry.worstRatio.postContent}</p>
+                            <p className="text-gray-300 text-xs sm:text-sm mb-2">{entry.worstRatio.postContent}</p>
                             <div className="flex items-center justify-between text-gray-500 text-xs">
                               <span className="flex items-center">
                                 <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
@@ -1122,9 +1107,9 @@ export function App() {
                               </a>
                             </div>
                           </div>
-                          <div className="bg-red-900/20 rounded p-3 border border-red-500/30">
+                          <div className="bg-red-900/20 rounded p-2 sm:p-3 border border-red-500/30">
                             <p className="text-gray-500 text-xs mb-1">💀 Ratio'd by @{entry.worstRatio.replyAuthor}:</p>
-                            <p className="text-gray-200 text-sm mb-2">{entry.worstRatio.replyContent}</p>
+                            <p className="text-gray-200 text-xs sm:text-sm mb-2">{entry.worstRatio.replyContent}</p>
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-red-400 font-bold flex items-center">
                                 <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
@@ -1169,10 +1154,10 @@ export function App() {
                     </div>
                     
                     {perpetratorsLeaderboard.map((entry, index) => (
-                      <div 
+                      <div
                         key={entry.username}
-                        className={`bg-gray-800 rounded-lg border p-6 ${
-                          index === 0 
+                        className={`bg-gray-800 rounded-lg border p-3 sm:p-4 md:p-6 ${
+                          index === 0
                             ? 'border-yellow-500 bg-yellow-900/20 shadow-lg shadow-yellow-500/20'
                             : index === 1
                             ? 'border-gray-400 bg-gray-700/20'
@@ -1181,22 +1166,22 @@ export function App() {
                             : 'border-gray-700'
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center justify-between mb-3 sm:mb-4">
                           <div className="flex items-center">
-                            <div className={`text-3xl font-bold mr-4 ${
-                              index === 0 ? 'text-yellow-500' : 
-                              index === 1 ? 'text-gray-400' : 
-                              index === 2 ? 'text-orange-600' : 
+                            <div className={`text-2xl sm:text-3xl font-bold mr-2 sm:mr-4 ${
+                              index === 0 ? 'text-yellow-500' :
+                              index === 1 ? 'text-gray-400' :
+                              index === 2 ? 'text-orange-600' :
                               'text-gray-500'
                             }`}>
                               {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
                             </div>
-                            
+
                             <a
                               href={`https://x.com/${entry.username}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="w-12 h-12 rounded-full mr-3 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0 overflow-hidden bg-purple-500"
+                              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full mr-2 sm:mr-3 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0 overflow-hidden bg-purple-500"
                               title={`@${entry.username}'s profile`}
                             >
                               {entry.profileImage ? (
@@ -1217,31 +1202,31 @@ export function App() {
                                 href={`https://x.com/${entry.username}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="font-semibold text-purple-400 hover:text-purple-300 transition-colors text-lg"
+                                className="font-semibold text-purple-400 hover:text-purple-300 transition-colors text-base sm:text-lg"
                               >
                                 @{entry.username}
                               </a>
-                              <div className="text-sm text-gray-400 mt-1">
+                              <div className="text-xs sm:text-sm text-gray-400 mt-1">
                                 Ratio'd <span className="text-purple-400 font-bold">{entry.ratioCount}</span> user{entry.ratioCount !== 1 ? 's' : ''} this week
                               </div>
                             </div>
                           </div>
                           
                           <div className="text-right">
-                            <div className="text-sm text-gray-400">Total likes earned</div>
-                            <div className="text-xl font-bold text-purple-400">
+                            <div className="text-xs sm:text-sm text-gray-400">Total likes earned</div>
+                            <div className="text-lg sm:text-xl font-bold text-purple-400">
                               {entry.totalLikes.toLocaleString()}
                             </div>
                           </div>
                         </div>
                         
-                        <div className="border-t border-gray-700 pt-4">
-                          <div className="text-sm text-gray-400 mb-2">
+                        <div className="border-t border-gray-700 pt-3 sm:pt-4">
+                          <div className="text-xs sm:text-sm text-gray-400 mb-2">
                             🔥 Best ratio: <span className="text-purple-400 font-bold">{entry.bestRatio.ratio.toFixed(1)}x</span>
                           </div>
-                          <div className="bg-gray-900/50 rounded p-3 mb-3">
+                          <div className="bg-gray-900/50 rounded p-2 sm:p-3 mb-2 sm:mb-3">
                             <p className="text-gray-500 text-xs mb-1">Original post by @{entry.bestRatio.postAuthor}:</p>
-                            <p className="text-gray-300 text-sm mb-2">{entry.bestRatio.postContent}</p>
+                            <p className="text-gray-300 text-xs sm:text-sm mb-2">{entry.bestRatio.postContent}</p>
                             <div className="flex items-center justify-between text-gray-500 text-xs">
                               <span className="flex items-center">
                                 <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
@@ -1257,9 +1242,9 @@ export function App() {
                               </a>
                             </div>
                           </div>
-                          <div className="bg-purple-900/20 rounded p-3 border border-purple-500/30">
+                          <div className="bg-purple-900/20 rounded p-2 sm:p-3 border border-purple-500/30">
                             <p className="text-gray-500 text-xs mb-1">💀 Their reply:</p>
-                            <p className="text-gray-200 text-sm mb-2">{entry.bestRatio.replyContent}</p>
+                            <p className="text-gray-200 text-xs sm:text-sm mb-2">{entry.bestRatio.replyContent}</p>
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-purple-400 font-bold flex items-center">
                                 <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
