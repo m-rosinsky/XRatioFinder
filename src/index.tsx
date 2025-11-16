@@ -1,7 +1,16 @@
 import { serve } from "bun";
 import index from "./index.html";
-import { poller } from "./server/poller";
+import { createPoller } from "./server/poller";
 import { ratioStore } from "./server/store";
+
+// Parse command line arguments
+const args = process.argv.slice(2);
+const useMockData = args.includes('--mock') || args.includes('--use-mock-data');
+
+console.log(`🚀 Starting X Ratio Finder server${useMockData ? ' (MOCK MODE)' : ''}`);
+
+// Create poller with mock data flag
+const poller = createPoller(useMockData);
 
 // CORS headers helper
 const corsHeaders = {
@@ -43,6 +52,15 @@ poller.start(() => {
     stats: ratioStore.getStats(),
   });
 });
+
+// If using mock data, do an immediate poll to load the data
+if (useMockData) {
+  poller.poll().then(() => {
+    console.log("🎭 Mock data loaded successfully");
+  }).catch((error) => {
+    console.error("❌ Failed to load mock data:", error);
+  });
+}
 
 const server = serve({
   routes: {

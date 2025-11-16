@@ -8,7 +8,9 @@
   "module": "src/index.tsx",
   "scripts": {
     "dev": "bun --hot src/index.tsx",
+    "dev:mock": "bun --hot src/index.tsx --mock",
     "start": "NODE_ENV=production bun src/index.tsx",
+    "start:mock": "NODE_ENV=production bun src/index.tsx --mock",
     "build": "bun run build.ts"
   },
   "dependencies": {

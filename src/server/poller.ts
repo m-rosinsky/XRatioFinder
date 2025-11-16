@@ -1,15 +1,201 @@
 // Background polling service for X API
-import { searchRecentRatios, enrichUserRatios, enrichPerpetratorRatios } from "../utils/x-api";
+import { searchRecentRatios, enrichUserRatios, enrichPerpetratorRatios, type RatioData } from "../utils/x-api";
 import { ratioStore, type StoredRatio } from "./store";
+
+// Mock data for testing UI changes
+const mockRatios: RatioData[] = [
+  {
+    parent: {
+      id: "mock1",
+      text: "Just launched my new AI startup! 🚀 Can't wait to see what the future holds. This is going to be amazing!",
+      created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+      author: {
+        username: "techguru",
+        name: "Tech Guru",
+        profile_image_url: "https://pbs.twimg.com/profile_images/1234567890/avatar1.jpg"
+      },
+      public_metrics: {
+        like_count: 1250,
+        reply_count: 45,
+        repost_count: 23
+      },
+      images: ["https://picsum.photos/800/600?random=1", "https://picsum.photos/800/600?random=2"]
+    },
+    reply: {
+      id: "mock1_reply",
+      text: "AI startups are so 2023. What's your unique value prop? This seems like another generic AI company that will fail.",
+      author: {
+        username: "skeptic_dev",
+        name: "Skeptic Dev",
+        profile_image_url: "https://pbs.twimg.com/profile_images/1234567890/avatar2.jpg"
+      },
+      public_metrics: {
+        like_count: 25000,
+        reply_count: 12,
+        repost_count: 8
+      },
+      images: []
+    },
+    ratio: 20,
+    isBrutalRatio: true,
+    isLethalRatio: false
+  },
+  {
+    parent: {
+      id: "mock2",
+      text: "Flat design is dead. Time for brutalism in UI! 💀 What do you think about this approach?",
+      created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
+      author: {
+        username: "design_master",
+        name: "Design Master",
+        profile_image_url: "https://pbs.twimg.com/profile_images/1234567890/avatar3.jpg"
+      },
+      public_metrics: {
+        like_count: 800,
+        reply_count: 23,
+        repost_count: 15
+      },
+      images: ["https://picsum.photos/600/400?random=3"]
+    },
+    reply: {
+      id: "mock2_reply",
+      text: "Actually, brutalism has been around forever. It's not new. This is just another trend cycle.",
+      author: {
+        username: "ux_lover",
+        name: "UX Lover",
+        profile_image_url: "https://pbs.twimg.com/profile_images/1234567890/avatar4.jpg"
+      },
+      public_metrics: {
+        like_count: 56000,
+        reply_count: 34,
+        repost_count: 12
+      },
+      images: ["https://picsum.photos/500/300?random=4"]
+    },
+    ratio: 70,
+    isBrutalRatio: true,
+    isLethalRatio: true
+  },
+  {
+    parent: {
+      id: "mock3",
+      text: "Our team just hit unicorn status! 🦄 Time to celebrate! This has been an incredible journey.",
+      created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
+      author: {
+        username: "ceo_startup",
+        name: "Startup CEO",
+        profile_image_url: "https://pbs.twimg.com/profile_images/1234567890/avatar5.jpg"
+      },
+      public_metrics: {
+        like_count: 3200,
+        reply_count: 67,
+        repost_count: 45
+      },
+      images: []
+    },
+    reply: {
+      id: "mock3_reply",
+      text: "Unicorn? More like a donkey. Your valuation is inflated garbage. Show me the revenue numbers.",
+      author: {
+        username: "finance_guru",
+        name: "Finance Guru",
+        profile_image_url: "https://pbs.twimg.com/profile_images/1234567890/avatar6.jpg"
+      },
+      public_metrics: {
+        like_count: 89000,
+        reply_count: 56,
+        repost_count: 23
+      },
+      images: []
+    },
+    ratio: 27.8,
+    isBrutalRatio: true,
+    isLethalRatio: false
+  },
+  {
+    parent: {
+      id: "mock4",
+      text: "Just dropped my new single! Stream it now 🎵 #NewMusic",
+      created_at: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), // 8 hours ago
+      author: {
+        username: "influencer_pro",
+        name: "Music Influencer",
+        profile_image_url: "https://pbs.twimg.com/profile_images/1234567890/avatar7.jpg"
+      },
+      public_metrics: {
+        like_count: 4500,
+        reply_count: 89,
+        repost_count: 67
+      },
+      images: ["https://picsum.photos/400/400?random=5", "https://picsum.photos/400/400?random=6", "https://picsum.photos/400/400?random=7"]
+    },
+    reply: {
+      id: "mock4_reply",
+      text: "This is absolutely terrible. How do you even call yourself a musician? The production quality is awful.",
+      author: {
+        username: "music_critic",
+        name: "Music Critic",
+        profile_image_url: "https://pbs.twimg.com/profile_images/1234567890/avatar8.jpg"
+      },
+      public_metrics: {
+        like_count: 125000,
+        reply_count: 78,
+        repost_count: 34
+      },
+      images: []
+    },
+    ratio: 27.8,
+    isBrutalRatio: true,
+    isLethalRatio: false
+  },
+  {
+    parent: {
+      id: "mock5",
+      text: "Lost 50lbs in 3 months with this ONE weird trick! 💪 Fitness journey complete!",
+      created_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 hours ago
+      author: {
+        username: "fitness_guru",
+        name: "Fitness Guru",
+        profile_image_url: "https://pbs.twimg.com/profile_images/1234567890/avatar9.jpg"
+      },
+      public_metrics: {
+        like_count: 6800,
+        reply_count: 123,
+        repost_count: 89
+      },
+      images: ["https://picsum.photos/600/800?random=8"]
+    },
+    reply: {
+      id: "mock5_reply",
+      text: "Please stop spreading misinformation. Weight loss requires diet + exercise, not 'weird tricks'.",
+      author: {
+        username: "science_fan",
+        name: "Science Fan",
+        profile_image_url: "https://pbs.twimg.com/profile_images/1234567890/avatar10.jpg"
+      },
+      public_metrics: {
+        like_count: 187000,
+        reply_count: 145,
+        repost_count: 67
+      },
+      images: []
+    },
+    ratio: 27.5,
+    isBrutalRatio: true,
+    isLethalRatio: false
+  }
+];
 
 export class RatioPoller {
   private intervalId: Timer | null = null;
   private isPolling = false;
   private pollIntervalMs: number;
   private onUpdate?: () => void;
+  private useMockData: boolean = false;
 
-  constructor(intervalMinutes: number = 5) {
+  constructor(intervalMinutes: number = 5, useMockData: boolean = false) {
     this.pollIntervalMs = intervalMinutes * 60 * 1000;
+    this.useMockData = useMockData;
   }
 
   // Start polling
@@ -49,12 +235,19 @@ export class RatioPoller {
 
     try {
       this.isPolling = true;
-      console.log("🔍 Polling X API for new ratios...");
 
       const existingIds = new Set(ratioStore.getAllRatios().map(r => r.id));
-      
-      // Search for ratios with minimum 1000 likes
-      const ratios = await searchRecentRatios(1000, 7, 100);
+
+      let ratios: RatioData[];
+
+      if (this.useMockData) {
+        console.log("🎭 Using mock data for testing...");
+        ratios = mockRatios;
+      } else {
+        console.log("🔍 Polling X API for new ratios...");
+        // Search for ratios with minimum 1000 likes
+        ratios = await searchRecentRatios(1000, 7, 100);
+      }
 
       let newCount = 0;
       let updatedCount = 0;
@@ -129,19 +322,23 @@ export class RatioPoller {
       // Update the master tracked users list with current leaderboard members
       ratioStore.updateTrackedUsersFromLeaderboards(topVictims, topPerpetrators);
       
-      // Get all tracked users for enrichment
-      const trackedUsers = ratioStore.getTrackedUsers();
-      
-      if (trackedUsers.length === 0) {
-        console.log(`📋 No tracked users yet, skipping enrichment`);
-      } else {
-        console.log(`🔍 Enriching ${trackedUsers.length} tracked users...`);
-      }
-      
       let totalEnrichedCount = 0;
-      
-      // Enrich all tracked users (checks both their posts and replies)
-      if (trackedUsers.length > 0) {
+
+      // Skip enrichment when using mock data
+      if (this.useMockData) {
+        console.log(`🎭 Skipping enrichment in mock mode`);
+      } else {
+        // Get all tracked users for enrichment
+        const trackedUsers = ratioStore.getTrackedUsers();
+
+        if (trackedUsers.length === 0) {
+          console.log(`📋 No tracked users yet, skipping enrichment`);
+        } else {
+          console.log(`🔍 Enriching ${trackedUsers.length} tracked users...`);
+        }
+
+        // Enrich all tracked users (checks both their posts and replies)
+        if (trackedUsers.length > 0) {
         // Enrich by checking if they got ratio'd
         const victimRatios = await enrichUserRatios(trackedUsers);
         let victimEnrichedCount = 0;
@@ -226,7 +423,8 @@ export class RatioPoller {
         
         totalEnrichedCount += perpetratorEnrichedCount;
         
-        console.log(`✅ Enrichment complete: ${victimEnrichedCount} from victims, ${perpetratorEnrichedCount} from perpetrators (${totalEnrichedCount} total)`);
+          console.log(`✅ Enrichment complete: ${victimEnrichedCount} from victims, ${perpetratorEnrichedCount} from perpetrators (${totalEnrichedCount} total)`);
+        }
       }
 
       newCount += totalEnrichedCount;
@@ -258,6 +456,6 @@ export class RatioPoller {
   }
 }
 
-export const poller = new RatioPoller(5); // Poll every 5 minutes
+export const createPoller = (useMockData: boolean = false) => new RatioPoller(5, useMockData);
 
 
