@@ -204,7 +204,7 @@ const mockPosts: Post[] = [
   }
 ];
 
-const PostCard = ({ post }: { post: Post }) => {
+const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (username: string) => void }) => {
   const hasRatio = post.replies.some(reply => reply.likes > post.likes);
   const hasBrutalRatio = post.replies.some(reply => reply.likes >= post.likes * 10);
   const hasLethalRatio = post.replies.some(reply => reply.likes >= post.likes * 100);
@@ -242,14 +242,12 @@ const PostCard = ({ post }: { post: Post }) => {
             )}
           </a>
           <div className="flex items-center">
-            <a
-              href={`https://x.com/${post.author}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+            <button
+              onClick={() => onUsernameClick?.(post.author)}
+              className="font-semibold text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
             >
               @{post.author}
-            </a>
+            </button>
             <span className="mx-2 text-gray-500">·</span>
             <span className="text-gray-400 text-sm">{formatRelativeTime(post.timestamp)}</span>
           </div>
@@ -345,14 +343,12 @@ const PostCard = ({ post }: { post: Post }) => {
                     </div>
                   )}
                 </a>
-                <a
-                  href={`https://x.com/${reply.author}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-semibold text-purple-400 hover:text-purple-300 text-sm transition-colors"
+                <button
+                  onClick={() => onUsernameClick?.(reply.author)}
+                  className="font-semibold text-purple-400 hover:text-purple-300 text-sm transition-colors cursor-pointer"
                 >
                   @{reply.author}
-                </a>
+                </button>
                 <a
                   href={`https://x.com/${reply.author}/status/${reply.id}`}
                   target="_blank"
@@ -669,6 +665,17 @@ export function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle clicking on usernames to filter by that user
+  const handleUsernameClick = async (username: string) => {
+    const cleanUsername = username.trim().replace(/^@/, '');
+    setFilterUsername(cleanUsername);
+
+    // First enrich the user to ensure we have their data
+    await enrichUser(cleanUsername);
+    // Then load posts filtered by that user
+    loadPosts(cleanUsername);
   };
 
   // Posts are now filtered by backend, so use them directly
@@ -1089,7 +1096,7 @@ export function App() {
                 <div className="space-y-6">
                   {filteredPosts.length > 0 ? (
                     filteredPosts.map(post => (
-                      <PostCard key={post.id} post={post} />
+                      <PostCard key={post.id} post={post} onUsernameClick={handleUsernameClick} />
                     ))
                   ) : (
                     <div className="text-center py-12">
