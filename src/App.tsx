@@ -1,7 +1,33 @@
 import "./index.css";
-import { useState, useEffect, useCallback } from "react";
-import heartIconUrl from "./assets/icons/heart.svg";
-import popoutIconUrl from "./assets/icons/popout.svg";
+import React, { useState, useEffect, useCallback } from "react";
+import { PostCard } from './components/PostCard';
+import { useWebSocket } from './hooks/useWebSocket';
+import { useRatios } from './hooks/useRatios';
+import { useLeaderboards } from './hooks/useLeaderboards';
+import { formatRelativeTime, cleanContent } from './utils/formatting';
+import { Post, VictimLeaderboardEntry, PerpetratorLeaderboardEntry, FeedType, SortType } from './types';
+
+// Inline SVG components
+const HeartIcon = ({ className }: { className?: string }) => (
+  <svg width="16" height="16" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <g id="SVGRepo_bgCarrier" strokeWidth="0"/>
+    <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"/>
+    <g id="SVGRepo_iconCarrier">
+      <path d="M4.03553 1C1.80677 1 0 2.80677 0 5.03553C0 6.10582 0.42517 7.13228 1.18198 7.88909L7.14645 13.8536C7.34171 14.0488 7.65829 14.0488 7.85355 13.8536L13.818 7.88909C14.5748 7.13228 15 6.10582 15 5.03553C15 2.80677 13.1932 1 10.9645 1C9.89418 1 8.86772 1.42517 8.11091 2.18198L7.5 2.79289L6.88909 2.18198C6.13228 1.42517 5.10582 1 4.03553 1Z" fill="#e13737"/>
+    </g>
+  </svg>
+);
+
+const PopoutIcon = ({ className }: { className?: string }) => (
+  <svg fill="currentColor" width="16" height="16" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" className={className}>
+    <g id="SVGRepo_bgCarrier" strokeWidth="0"/>
+    <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"/>
+    <g id="SVGRepo_iconCarrier">
+      <title>popout</title>
+      <path d="M15.694 13.541l2.666 2.665 5.016-5.017 2.59 2.59 0.004-7.734-7.785-0.046 2.526 2.525-5.017 5.017zM25.926 16.945l-1.92-1.947 0.035 9.007-16.015 0.009 0.016-15.973 8.958-0.040-2-2h-7c-1.104 0-2 0.896-2 2v16c0 1.104 0.896 2 2 2h16c1.104 0 2-0.896 2-2l-0.074-7.056z"/>
+    </g>
+  </svg>
+);
 
 // Type for our post data structure
 interface Post {
@@ -258,7 +284,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
             className="ml-2 text-gray-500 hover:text-blue-400 transition-colors text-sm"
             title="View post on X"
           >
-            <img src={popoutIconUrl} className="w-4 h-4" alt="View on X" />
+            <PopoutIcon className="w-4 h-4" />
           </a>
         </div>
         <p className="text-gray-200 text-sm sm:text-base mb-3">{cleanContent(post.content)}</p>
@@ -304,7 +330,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
 
         <div className="flex items-center text-gray-400 text-sm">
           <span className="flex items-center">
-            <img src={heartIconUrl} className="w-4 h-4 mr-1" alt="likes" />
+            <HeartIcon className="w-4 h-4 mr-1" />
             {post.likes} likes
           </span>
         </div>
@@ -356,7 +382,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
                   className="ml-2 text-gray-500 hover:text-purple-400 transition-colors text-xs"
                   title="View reply on X"
                 >
-                  <img src={popoutIconUrl} className="w-3 h-3" alt="View on X" />
+                  <PopoutIcon className="w-3 h-3" />
                 </a>
                 {reply.isLethalRatio && (
                   <span className="ml-auto bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse shadow-md">
@@ -417,7 +443,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
 
               <div className="flex items-center text-gray-500 text-xs">
                 <span className="flex items-center">
-                  <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
+                  <HeartIcon className="w-3 h-3 mr-1" />
                   {reply.likes} likes
                 </span>
                 {reply.isLethalRatio && (
@@ -1216,7 +1242,7 @@ export function App() {
 
                             <div className="flex items-center justify-between text-gray-500 text-xs">
                               <span className="flex items-center">
-                                <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
+                                <HeartIcon className="w-3 h-3 mr-1" />
                                 {entry.worstRatio.postLikes} likes
                               </span>
                               <a
@@ -1256,7 +1282,7 @@ export function App() {
                             )}
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-red-400 font-bold flex items-center">
-                                <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
+                                <HeartIcon className="w-3 h-3 mr-1" />
                                 {entry.worstRatio.replyLikes.toLocaleString()} likes
                               </span>
                               <a
@@ -1365,89 +1391,97 @@ export function App() {
                         </div>
                         
                         <div className="border-t border-gray-700 pt-3 sm:pt-4">
-                          <div className="text-xs sm:text-sm text-gray-400 mb-2">
-                            🔥 Best ratio: <span className="text-purple-400 font-bold">{entry.bestRatio.ratio.toFixed(1)}x</span>
-                          </div>
-                          <div className="bg-gray-900/50 rounded p-2 sm:p-3 mb-2 sm:mb-3">
-                            <p className="text-gray-500 text-xs mb-1">Original post by @{entry.bestRatio.postAuthor}:</p>
-                            <p className="text-gray-300 text-xs sm:text-sm mb-2">{cleanContent(entry.bestRatio.postContent)}</p>
+                          {entry.bestRatio && entry.bestRatio.ratio > 0 ? (
+                            <>
+                              <div className="text-xs sm:text-sm text-gray-400 mb-2">
+                                🔥 Best ratio: <span className="text-purple-400 font-bold">{entry.bestRatio.ratio.toFixed(1)}x</span>
+                              </div>
+                              <div className="bg-gray-900/50 rounded p-2 sm:p-3 mb-2 sm:mb-3">
+                                <p className="text-gray-500 text-xs mb-1">Original post by @{entry.bestRatio.postAuthor}:</p>
+                                <p className="text-gray-300 text-xs sm:text-sm mb-2">{cleanContent(entry.bestRatio.postContent)}</p>
 
-                            {/* Display post images if available */}
-                            {entry.bestRatio.postImages && entry.bestRatio.postImages.length > 0 && (
-                              <div className="mb-2">
-                                <div className={`grid gap-1 ${
-                                  entry.bestRatio.postImages.length === 1 ? 'grid-cols-1' :
-                                  entry.bestRatio.postImages.length === 2 ? 'grid-cols-2' :
-                                  'grid-cols-2'
-                                }`}>
-                                  {entry.bestRatio.postImages.slice(0, 2).map((imageUrl, index) => (
-                                    <div key={index} className="relative overflow-hidden rounded border border-gray-600">
-                                      <img
-                                        src={imageUrl}
-                                        alt={`Post image ${index + 1}`}
-                                        className="w-full h-16 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                        onClick={() => window.open(imageUrl, '_blank')}
-                                      />
+                                {/* Display post images if available */}
+                                {entry.bestRatio.postImages && entry.bestRatio.postImages.length > 0 && (
+                                  <div className="mb-2">
+                                    <div className={`grid gap-1 ${
+                                      entry.bestRatio.postImages.length === 1 ? 'grid-cols-1' :
+                                      entry.bestRatio.postImages.length === 2 ? 'grid-cols-2' :
+                                      'grid-cols-2'
+                                    }`}>
+                                      {entry.bestRatio.postImages.slice(0, 2).map((imageUrl, index) => (
+                                        <div key={index} className="relative overflow-hidden rounded border border-gray-600">
+                                          <img
+                                            src={imageUrl}
+                                            alt={`Post image ${index + 1}`}
+                                            className="w-full h-16 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                            onClick={() => window.open(imageUrl, '_blank')}
+                                          />
+                                        </div>
+                                      ))}
                                     </div>
-                                  ))}
+                                  </div>
+                                )}
+                                <div className="flex items-center justify-between text-gray-500 text-xs">
+                                  <span className="flex items-center">
+                                    <HeartIcon className="w-3 h-3 mr-1" />
+                                    {entry.bestRatio.postLikes} likes
+                                  </span>
+                                  <a
+                                    href={`https://x.com/${entry.bestRatio.postAuthor}/status/${entry.bestRatio.postId}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-400 hover:text-blue-300"
+                                  >
+                                    View post →
+                                  </a>
                                 </div>
                               </div>
-                            )}
-                            <div className="flex items-center justify-between text-gray-500 text-xs">
-                              <span className="flex items-center">
-                                <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
-                                {entry.bestRatio.postLikes} likes
-                              </span>
-                              <a
-                                href={`https://x.com/${entry.bestRatio.postAuthor}/status/${entry.bestRatio.postId}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-400 hover:text-blue-300"
-                              >
-                                View post →
-                              </a>
-                            </div>
-                          </div>
-                          <div className="bg-purple-900/20 rounded p-2 sm:p-3 border border-purple-500/30">
-                            <p className="text-gray-500 text-xs mb-1">💀 Their reply:</p>
-                            <p className="text-gray-200 text-xs sm:text-sm mb-2">{cleanContent(entry.bestRatio.replyContent)}</p>
+                              <div className="bg-purple-900/20 rounded p-2 sm:p-3 border border-purple-500/30">
+                                <p className="text-gray-500 text-xs mb-1">💀 Their reply:</p>
+                                <p className="text-gray-200 text-xs sm:text-sm mb-2">{cleanContent(entry.bestRatio.replyContent)}</p>
 
-                            {/* Display reply images if available */}
-                            {entry.bestRatio.replyImages && entry.bestRatio.replyImages.length > 0 && (
-                              <div className="mb-2">
-                                <div className={`grid gap-1 ${
-                                  entry.bestRatio.replyImages.length === 1 ? 'grid-cols-1' :
-                                  entry.bestRatio.replyImages.length === 2 ? 'grid-cols-2' :
-                                  'grid-cols-2'
-                                }`}>
-                                  {entry.bestRatio.replyImages.slice(0, 2).map((imageUrl, index) => (
-                                    <div key={index} className="relative overflow-hidden rounded border border-purple-500/30">
-                                      <img
-                                        src={imageUrl}
-                                        alt={`Reply image ${index + 1}`}
-                                        className="w-full h-16 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                        onClick={() => window.open(imageUrl, '_blank')}
-                                      />
+                                {/* Display reply images if available */}
+                                {entry.bestRatio.replyImages && entry.bestRatio.replyImages.length > 0 && (
+                                  <div className="mb-2">
+                                    <div className={`grid gap-1 ${
+                                      entry.bestRatio.replyImages.length === 1 ? 'grid-cols-1' :
+                                      entry.bestRatio.replyImages.length === 2 ? 'grid-cols-2' :
+                                      'grid-cols-2'
+                                    }`}>
+                                      {entry.bestRatio.replyImages.slice(0, 2).map((imageUrl, index) => (
+                                        <div key={index} className="relative overflow-hidden rounded border border-purple-500/30">
+                                          <img
+                                            src={imageUrl}
+                                            alt={`Reply image ${index + 1}`}
+                                            className="w-full h-16 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                            onClick={() => window.open(imageUrl, '_blank')}
+                                          />
+                                        </div>
+                                      ))}
                                     </div>
-                                  ))}
+                                  </div>
+                                )}
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-purple-400 font-bold flex items-center">
+                                    <HeartIcon className="w-3 h-3 mr-1" />
+                                    {entry.bestRatio.replyLikes.toLocaleString()} likes
+                                  </span>
+                                  <a
+                                    href={`https://x.com/${entry.username}/status/${entry.bestRatio.replyId}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-purple-400 hover:text-purple-300"
+                                  >
+                                    View reply →
+                                  </a>
                                 </div>
                               </div>
-                            )}
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-purple-400 font-bold flex items-center">
-                                <img src={heartIconUrl} className="w-3 h-3 mr-1" alt="likes" />
-                                {entry.bestRatio.replyLikes.toLocaleString()} likes
-                              </span>
-                              <a
-                                href={`https://x.com/${entry.username}/status/${entry.bestRatio.replyId}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-purple-400 hover:text-purple-300"
-                              >
-                                View reply →
-                              </a>
+                            </>
+                          ) : (
+                            <div className="text-xs sm:text-sm text-gray-500 italic">
+                              No ratios yet
                             </div>
-                          </div>
+                          )}
                         </div>
                       </div>
                     ))}
