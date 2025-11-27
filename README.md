@@ -8,9 +8,13 @@ Built with React, Tailwind CSS, and powered by the [X API](https://docs.x.com/x-
 
 - 🔍 **Real-time Search**: Fetch recent posts from X using the official X API
 - 📊 **Engagement Filtering**: Filter posts by minimum likes (500-10k range)
-- 🎯 **Ratio Detection**: Identify posts with replies that have more engagement (coming soon)
+- 🎯 **Ratio Detection**: Identify posts with replies that have more engagement
 - 🔥 **Brutal Ratio Highlighting**: Special highlighting for extreme ratios (10x+ likes)
-- 🌙 **Modern Dark UI**: Beautiful, responsive interface with gradient accents
+- 💀 **Lethal Ratio Detection**: Ultra-extreme ratios (100x+ likes)
+- 🔐 **X OAuth2 Authentication**: Login with X to share ratios directly
+- 👁️ **Share Preview**: Preview and confirm before posting ratios to X
+- 📤 **Share to X**: Post discovered ratios back to X with one click
+- 🌙 **Modern Dark UI**: Beautiful, responsive interface inspired by X's design
 - ⚡ **Fast Performance**: Built with Bun for lightning-fast bundling and runtime
 
 ## Quick Start
@@ -35,7 +39,24 @@ cp env.example .env
 X_BEARER_TOKEN=your_actual_bearer_token_here
 ```
 
-4. Follow [@XDevelopers](https://x.com/XDevelopers) for API updates
+4. **Optional: Enable User Authentication & Sharing**
+
+   For users to login with X and share ratios, add OAuth2 credentials:
+   ```bash
+   # OAuth2 for user authentication (optional)
+   X_CLIENT_ID=your_oauth2_client_id
+   X_CLIENT_SECRET=your_oauth2_client_secret
+   SESSION_SECRET=your_random_session_secret
+   ```
+
+   To set up OAuth2:
+   - Go to your [X Developer Portal app](https://console.x.com)
+   - Navigate to "Authentication settings"
+   - Enable OAuth 2.0
+   - Add `http://localhost:3000/api/auth/callback` to callback URLs
+   - Copy the Client ID and Client Secret
+
+5. Follow [@XDevelopers](https://x.com/XDevelopers) for API updates
 
 **Note**: Never commit your `.env` file to version control. It's already in `.gitignore`.
 
@@ -73,12 +94,18 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed technical information.
 - ✅ **Backend Polling**: Single X API polling source (efficient rate limit usage)
 - ✅ **Real-time Updates**: WebSocket broadcasts new ratios to all clients
 - ✅ **Ratio Detection**: Automatically finds posts being ratioed (2x+ likes)
-- ✅ **Brutal Ratio Highlighting**: Special indicators for 10x+ ratios
-- ✅ **Profile Pictures**: Real user avatars from X
+- ✅ **Brutal Ratio Highlighting**: Special indicators for 10x+ ratios (💀)
+- ✅ **Lethal Ratio Detection**: Ultra-extreme ratios (100x+ likes) 💀💀💀
+- ✅ **X OAuth2 Authentication**: Secure login with X accounts
+- ✅ **Share Preview**: Preview and confirm before posting ratios to X
+- ✅ **Share to X**: Post discovered ratios directly to X with one click
+- ✅ **Profile Pictures**: Real user avatars from X API
 - ✅ **Clickable Links**: Direct links to posts and user profiles
 - ✅ **Client-side Filtering**: Sort by recency or brutality
 - ✅ **Connection Status**: Visual indicator of backend connection
 - ✅ **Manual Refresh**: Trigger immediate X API poll
+- ✅ **Leaderboard System**: Track most ratio'd users and top ratio-ers
+- ✅ **User Enrichment**: Deep-dive analysis of specific users
 
 ## Tech Stack
 

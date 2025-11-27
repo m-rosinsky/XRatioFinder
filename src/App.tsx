@@ -1,9 +1,12 @@
 import "./index.css";
 import React, { useState, useEffect, useCallback } from "react";
 import { PostCard } from './components/PostCard';
+import { AuthButton } from './components/AuthButton';
+import { ShareButton } from './components/ShareButton';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useRatios } from './hooks/useRatios';
 import { useLeaderboards } from './hooks/useLeaderboards';
+import { useAuth } from './hooks/useAuth';
 import { formatRelativeTime, cleanContent } from './utils/formatting';
 import { Post, VictimLeaderboardEntry, PerpetratorLeaderboardEntry, FeedType, SortType } from './types';
 
@@ -471,6 +474,17 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
           ))}
         </div>
       )}
+
+      {/* Share to X Button */}
+      <div className="flex justify-end pt-4 border-t border-gray-700">
+        <ShareButton
+          ratio={post.replies[0]?.isRatio ? (post.replies[0].likes / post.likes) : 0}
+          parentAuthor={post.author}
+          replyAuthor={post.replies[0]?.author || ''}
+          parentTweetId={post.id}
+          replyTweetId={post.replies[0]?.id || ''}
+        />
+      </div>
     </div>
   );
 };
@@ -485,6 +499,9 @@ export function App() {
   const [showOnlyBrutal, setShowOnlyBrutal] = useState(false);
   const [showOnlyLethal, setShowOnlyLethal] = useState(false);
   const [filterUsername, setFilterUsername] = useState('');
+
+  // Authentication hook
+  const { user: currentUser, isAuthenticated } = useAuth();
 
   const [wsConnected, setWsConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
@@ -793,15 +810,18 @@ export function App() {
               </span>
             </div>
           </div>
-          <a
-            href="https://console.x.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="transition-opacity hover:opacity-80"
-            title="X API Console"
-          >
-            <PoweredByXIcon className="w-48 h-14 sm:w-52 sm:h-13" />
-          </a>
+          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:gap-4">
+            <AuthButton />
+            <a
+              href="https://console.x.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-opacity hover:opacity-80"
+              title="X API Console"
+            >
+              <PoweredByXIcon className="w-48 h-14 sm:w-52 sm:h-13" />
+            </a>
+          </div>
         </div>
       </header>
 

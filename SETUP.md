@@ -12,17 +12,36 @@ This application uses the X API to fetch and display posts with high engagement.
 4. Generate a Bearer Token (App-only authentication)
 5. Copy the Bearer Token
 
-### 2. Configure the Application
+### 2. Set Up OAuth2 for User Authentication (Optional)
 
-Open `src/utils/x-api.ts` and replace the placeholder bearer token:
+If you want to enable users to log in with X and share ratios:
 
-```typescript
-// Replace this line:
-const BEARER_TOKEN = "YOUR_BEARER_TOKEN_HERE";
+1. In your X Developer Portal app settings, go to "Authentication settings"
+2. Enable "OAuth 2.0" and configure:
+   - **Type of App**: Web App
+   - **Callback URLs**: `http://localhost:3000/api/auth/callback` (for development)
+   - **Website URL**: Your app's website URL
+3. Note your Client ID and Client Secret from the "OAuth 2.0 Client ID and Client Secret" section
 
-// With your actual token:
-const BEARER_TOKEN = "AAAAAAAAAAAAAAAAAAAAABcdefg...";
+### 3. Configure Environment Variables
+
+Create a `.env` file in the project root with the following variables:
+
+```env
+# Required: X API Bearer Token for reading data
+X_BEARER_TOKEN=AAAAAAAAAAAAAAAAAAAAABcdefg...
+
+# Optional: OAuth2 for user authentication and sharing
+X_CLIENT_ID=your_oauth2_client_id_here
+X_CLIENT_SECRET=your_oauth2_client_secret_here
+
+# Optional: Session secret for user authentication
+SESSION_SECRET=your_random_session_secret_here
 ```
+
+### 4. Configure the Application
+
+The X Bearer Token is now loaded from environment variables automatically.
 
 ### 3. Run the Application
 

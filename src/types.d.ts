@@ -4,3 +4,12 @@ declare module '*.svg' {
   const content: string;
   export default content;
 }
+
+// X OAuth2 User type
+export interface XUser {
+  id: string;
+  username: string;
+  name: string;
+  profile_image_url?: string;
+  verified?: boolean;
+}
