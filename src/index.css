@@ -6,7 +6,7 @@
   }
 
   body {
-    @apply bg-gray-900 text-white antialiased;
+    @apply bg-[#0A0A0A] text-white antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
@@ -15,36 +15,53 @@
   .text-balance {
     text-wrap: balance;
   }
+  
+  .animate-drop-in {
+    animation: dropIn 0.2s ease-out forwards;
+  }
+  
+  @keyframes dropIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
 }
 
-/* Custom slider styling */
+/* Custom slider styling matching the dark theme */
 .slider::-webkit-slider-thumb {
   appearance: none;
-  height: 20px;
-  width: 20px;
+  height: 16px;
+  width: 16px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: #ffffff;
   cursor: pointer;
-  border: 2px solid #1f2937;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  border: 2px solid #0A0A0A;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+  transition: transform 0.1s, box-shadow 0.1s;
 }
 
 .slider::-webkit-slider-thumb:hover {
-  background: #2563eb;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4);
+  transform: scale(1.1);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
 }
 
 .slider::-moz-range-thumb {
-  height: 20px;
-  width: 20px;
+  height: 16px;
+  width: 16px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: #ffffff;
   cursor: pointer;
-  border: 2px solid #1f2937;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  border: 2px solid #0A0A0A;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+  transition: transform 0.1s, box-shadow 0.1s;
 }
 
 .slider::-moz-range-thumb:hover {
-  background: #2563eb;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4);
+  transform: scale(1.1);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
 }
