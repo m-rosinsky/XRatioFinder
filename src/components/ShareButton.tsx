@@ -76,11 +76,7 @@ export function ShareButton({
     return (
       <button
         disabled
-        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium opacity-50 cursor-not-allowed ${className}`}
-        style={{
-          backgroundColor: 'var(--x-dark-gray-4)',
-          color: 'var(--x-text-muted)'
-        }}
+        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-mono uppercase tracking-wide opacity-50 cursor-not-allowed border border-white/10 text-white/40 ${className}`}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
           <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
@@ -94,11 +90,7 @@ export function ShareButton({
     return (
       <button
         disabled
-        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${className}`}
-        style={{
-          backgroundColor: 'var(--x-green)',
-          color: 'white'
-        }}
+        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-mono uppercase tracking-wide bg-emerald-500 text-white border border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)] ${className}`}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
           <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
@@ -114,32 +106,16 @@ export function ShareButton({
         <button
           onClick={handleShareClick}
           disabled={sharing}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${className} ${
-            sharing ? 'opacity-75 cursor-not-allowed' : 'hover:opacity-90'
-          }`}
-          style={{
-            backgroundColor: 'var(--x-blue)',
-            color: 'var(--x-text-primary)'
-          }}
-          onMouseEnter={(e) => {
-            if (!sharing) {
-              e.currentTarget.style.backgroundColor = 'var(--x-blue-hover)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!sharing) {
-              e.currentTarget.style.backgroundColor = 'var(--x-blue)';
-            }
-          }}
+          className={`group relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-mono uppercase tracking-wide bg-white text-black transition-all hover:bg-white/90 disabled:opacity-75 disabled:cursor-not-allowed hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] ${className}`}
         >
           {sharing ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-black/30 border-t-black"></div>
               Sharing...
             </>
           ) : (
             <>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="transition-transform group-hover:scale-110">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
               </svg>
               Share Ratio
@@ -147,7 +123,7 @@ export function ShareButton({
           )}
         </button>
         {error && (
-          <div className="text-xs text-red-400 px-1">
+          <div className="text-[10px] text-red-400 px-1">
             {error}
           </div>
         )}
@@ -155,73 +131,44 @@ export function ShareButton({
 
       {/* Preview Modal */}
       {showPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black bg-opacity-50"
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             onClick={handleCancel}
           />
 
           {/* Modal */}
-          <div
-            className="relative w-full max-w-md p-6 rounded-2xl shadow-2xl"
-            style={{
-              backgroundColor: 'var(--x-dark-gray-2)',
-              border: '1px solid var(--x-border)'
-            }}
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--x-blue)' }}>
+          <div className="relative w-full max-w-md p-6 rounded-2xl border border-white/10 bg-[#0A0A0A] shadow-2xl animate-drop-in">
+            <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-4">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="text-white">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
               </svg>
-              <h3 className="text-lg font-semibold" style={{ color: 'var(--x-text-primary)' }}>
+              <h3 className="text-lg font-medium text-white">
                 Share Ratio
               </h3>
             </div>
 
-            <div className="mb-6">
-              <p className="text-sm mb-3" style={{ color: 'var(--x-text-secondary)' }}>
+            <div className="mb-8">
+              <p className="text-sm mb-3 text-white/60">
                 This will be posted to your X timeline:
               </p>
 
-              <div
-                className="p-4 rounded-xl border text-sm"
-                style={{
-                  backgroundColor: 'var(--x-dark-gray-1)',
-                  borderColor: 'var(--x-border)',
-                  color: 'var(--x-text-primary)',
-                  fontFamily: 'system-ui, -apple-system, sans-serif'
-                }}
-              >
-                <pre className="whitespace-pre-wrap font-sans">{generateShareText()}</pre>
+              <div className="p-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white/90">
+                <pre className="whitespace-pre-wrap font-sans leading-relaxed">{generateShareText()}</pre>
               </div>
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={handleCancel}
-                className="flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-colors"
-                style={{
-                  backgroundColor: 'var(--x-dark-gray-4)',
-                  color: 'var(--x-text-secondary)',
-                  border: '1px solid var(--x-border)'
-                }}
+                className="flex-1 px-4 py-2.5 rounded-full text-sm font-mono uppercase tracking-wide border border-white/10 text-white/70 hover:bg-white/5 hover:text-white transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmShare}
-                className="flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-colors"
-                style={{
-                  backgroundColor: 'var(--x-blue)',
-                  color: 'var(--x-text-primary)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--x-blue-hover)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--x-blue)';
-                }}
+                className="flex-1 px-4 py-2.5 rounded-full text-sm font-mono uppercase tracking-wide bg-white text-black hover:bg-white/90 transition-colors font-medium"
               >
                 Post to X
               </button>

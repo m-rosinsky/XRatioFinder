@@ -1,6 +1,5 @@
 import "./index.css";
 import React, { useState, useEffect, useCallback } from "react";
-import { PostCard } from './components/PostCard';
 import { AuthButton } from './components/AuthButton';
 import { ShareButton } from './components/ShareButton';
 import { useWebSocket } from './hooks/useWebSocket';
@@ -249,79 +248,82 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
   const hasLethalRatio = post.replies.some(reply => reply.likes >= post.likes * 100);
 
   return (
-    <div className={`bg-gray-800 rounded-lg border p-3 sm:p-4 md:p-6 mb-4 sm:mb-6 ${
+    <div className={`group relative rounded-xl border transition-all duration-300 ${
       hasLethalRatio
-        ? 'border-purple-500 bg-purple-900/30 shadow-xl shadow-purple-500/30 ring-2 ring-purple-500/50'
+        ? 'border-purple-500/50 bg-purple-900/10 shadow-[0_0_30px_rgba(168,85,247,0.15)] hover:shadow-[0_0_40px_rgba(168,85,247,0.25)]'
         : hasBrutalRatio
-        ? 'border-orange-500 bg-orange-900/30 shadow-lg shadow-orange-500/20'
+        ? 'border-orange-500/50 bg-orange-900/10 shadow-[0_0_30px_rgba(249,115,22,0.15)] hover:shadow-[0_0_40px_rgba(249,115,22,0.25)]'
         : hasRatio
-        ? 'border-red-500 bg-red-900/20'
-        : 'border-gray-700'
-    }`}>
+        ? 'border-red-500/40 bg-red-900/10 shadow-[0_0_20px_rgba(239,68,68,0.1)]'
+        : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.07]'
+    } p-5`}>
+      
       {/* Original Post */}
-      <div className="mb-4">
-        <div className="flex items-center mb-2">
-          <a
-            href={`https://x.com/${post.author}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full mr-2 sm:mr-3 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0 overflow-hidden bg-blue-500"
-            title={`@${post.author}'s profile`}
-          >
-            {post.authorProfileImage ? (
-              <img 
-                src={post.authorProfileImage} 
-                alt={`@${post.author}`}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-white font-bold">
-                {post.author[0].toUpperCase()}
-              </div>
-            )}
-          </a>
-          <div className="flex items-center">
-            <button
-              onClick={() => onUsernameClick?.(post.author)}
-              className="font-semibold text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <a
+              href={`https://x.com/${post.author}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 rounded-full overflow-hidden border border-white/10 transition-transform hover:scale-105"
+              title={`@${post.author}'s profile`}
             >
-              @{post.author}
-            </button>
-            <span className="mx-2 text-gray-500">·</span>
-            <span className="text-gray-400 text-sm">{formatRelativeTime(post.timestamp)}</span>
+              {post.authorProfileImage ? (
+                <img 
+                  src={post.authorProfileImage} 
+                  alt={`@${post.author}`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900 text-white font-medium">
+                  {post.author[0].toUpperCase()}
+                </div>
+              )}
+            </a>
+            <div className="flex flex-col leading-tight">
+              <button
+                onClick={() => onUsernameClick?.(post.author)}
+                className="font-medium text-white hover:underline text-left"
+              >
+                @{post.author}
+              </button>
+              <span className="text-xs text-white/40">{formatRelativeTime(post.timestamp)}</span>
+            </div>
           </div>
+          
           <a
             href={`https://x.com/${post.author}/status/${post.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-2 text-gray-500 hover:text-blue-400 transition-colors text-sm"
+            className="p-2 rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-colors"
             title="View post on X"
           >
             <PopoutIcon className="w-4 h-4" />
           </a>
         </div>
-        <p className="text-gray-200 text-sm sm:text-base mb-3">{cleanContent(post.content)}</p>
+
+        <p className="text-white/90 text-[15px] leading-relaxed mb-4 whitespace-pre-wrap">{cleanContent(post.content)}</p>
 
         {/* Display images if available */}
         {post.images && post.images.length > 0 && (
-          <div className="mb-3">
+          <div className="mb-4">
             <div className={`grid gap-2 ${
               post.images.length === 1 ? 'grid-cols-1' :
               post.images.length === 2 ? 'grid-cols-2' :
-              post.images.length === 3 ? 'grid-cols-2' :
               'grid-cols-2'
             }`}>
               {post.images.slice(0, 4).map((imageUrl, index) => (
                 <div
                   key={index}
-                  className={`relative overflow-hidden rounded-lg bg-gray-700 ${
+                  className={`relative overflow-hidden rounded-lg border border-white/10 ${
                     post.images!.length === 3 && index === 0 ? 'row-span-2' : ''
                   }`}
                 >
                   <img
                     src={imageUrl}
                     alt={`Post image ${index + 1}`}
-                    className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                    className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-500"
                     onClick={() => window.open(imageUrl, '_blank')}
                     style={{
                       aspectRatio: post.images!.length === 1 ? '16/9' :
@@ -330,144 +332,124 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
                                    '1/1'
                     }}
                   />
-                  {post.images!.length > 4 && index === 3 && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                      <span className="text-white font-bold">+{post.images!.length - 4}</span>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        <div className="flex items-center text-gray-400 text-sm">
-          <span className="flex items-center">
-            <HeartIcon className="w-4 h-4 mr-1" />
-            {post.likes} likes
-          </span>
+        <div className="flex items-center gap-4 text-sm text-white/40 font-mono">
+          <div className="flex items-center gap-1.5">
+            <HeartIcon className="w-3.5 h-3.5" />
+            <span>{post.likes.toLocaleString()} likes</span>
+          </div>
+          {hasRatio && (
+            <div className="flex items-center gap-1.5 text-red-400/80">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+              <span>Ratio detected</span>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Replies */}
       {post.replies.length > 0 && (
-        <div className="border-t border-gray-700 pt-4">
+        <div className="space-y-3 pl-4 sm:pl-8 border-l border-white/10 relative before:absolute before:left-0 before:top-0 before:w-px before:h-full before:bg-gradient-to-b before:from-white/20 before:to-transparent">
           {post.replies.map(reply => (
-            <div key={reply.id} className={`mb-3 p-3 rounded border ${
+            <div key={reply.id} className={`relative rounded-lg p-4 border backdrop-blur-sm transition-all ${
               reply.isLethalRatio
-                ? 'border-purple-500 bg-purple-900/30 shadow-lg shadow-purple-500/20 ring-1 ring-purple-500/30'
+                ? 'border-purple-500/40 bg-purple-500/10'
                 : reply.isBrutalRatio
-                ? 'border-orange-500 bg-orange-900/20 shadow-md shadow-orange-500/10'
+                ? 'border-orange-500/40 bg-orange-500/10'
                 : reply.isRatio
-                ? 'border-red-500 bg-red-900/10'
-                : 'border-gray-600 bg-gray-700/50'
+                ? 'border-red-500/30 bg-red-500/5'
+                : 'border-white/10 bg-white/5'
             }`}>
-              <div className="flex items-center mb-2">
-                <a
-                  href={`https://x.com/${reply.author}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-6 h-6 sm:w-8 sm:h-8 rounded-full mr-2 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0 overflow-hidden bg-purple-500"
-                  title={`@${reply.author}'s profile`}
-                >
-                  {reply.authorProfileImage ? (
-                    <img 
-                      src={reply.authorProfileImage} 
-                      alt={`@${reply.author}`}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white font-bold text-sm">
-                      {reply.author[0].toUpperCase()}
-                    </div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`https://x.com/${reply.author}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-6 h-6 rounded-full overflow-hidden border border-white/10"
+                  >
+                    {reply.authorProfileImage ? (
+                      <img 
+                        src={reply.authorProfileImage} 
+                        alt={`@${reply.author}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white text-[10px]">
+                        {reply.author[0].toUpperCase()}
+                      </div>
+                    )}
+                  </a>
+                  <button
+                    onClick={() => onUsernameClick?.(reply.author)}
+                    className="font-medium text-white/90 text-sm hover:text-white"
+                  >
+                    @{reply.author}
+                  </button>
+                  
+                  {reply.isLethalRatio && (
+                    <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                      Lethal
+                    </span>
                   )}
-                </a>
-                <button
-                  onClick={() => onUsernameClick?.(reply.author)}
-                  className="font-semibold text-purple-400 hover:text-purple-300 text-sm transition-colors cursor-pointer"
-                >
-                  @{reply.author}
-                </button>
+                  {reply.isBrutalRatio && !reply.isLethalRatio && (
+                    <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                      Brutal
+                    </span>
+                  )}
+                </div>
+                
                 <a
                   href={`https://x.com/${reply.author}/status/${reply.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="ml-2 text-gray-500 hover:text-purple-400 transition-colors text-xs"
-                  title="View reply on X"
+                  className="text-white/30 hover:text-white transition-colors"
                 >
                   <PopoutIcon className="w-3 h-3" />
                 </a>
-                {reply.isLethalRatio && (
-                  <span className="ml-auto bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse shadow-md">
-                    LETHAL!
-                  </span>
-                )}
-                {reply.isBrutalRatio && !reply.isLethalRatio && (
-                  <span className="ml-auto bg-gradient-to-r from-orange-500 to-red-600 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse">
-                    BRUTAL!
-                  </span>
-                )}
-                {reply.isRatio && !reply.isBrutalRatio && !reply.isLethalRatio && (
-                  <span className="ml-auto bg-red-500 text-white px-2 py-0.5 rounded text-xs font-bold">
-                    RATIO!
-                  </span>
-                )}
               </div>
-              <p className="text-gray-300 text-xs sm:text-sm mb-2">{cleanContent(reply.content)}</p>
 
-              {/* Display reply images if available */}
+              <p className="text-white/80 text-sm leading-relaxed mb-3 whitespace-pre-wrap">{cleanContent(reply.content)}</p>
+
+              {/* Reply Images */}
               {reply.images && reply.images.length > 0 && (
-                <div className="mb-2">
+                <div className="mb-3">
                   <div className={`grid gap-1 ${
-                    reply.images.length === 1 ? 'grid-cols-1' :
-                    reply.images.length === 2 ? 'grid-cols-2' :
-                    reply.images.length === 3 ? 'grid-cols-2' :
-                    'grid-cols-2'
+                    reply.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
                   }`}>
-                    {reply.images.slice(0, 4).map((imageUrl, index) => (
-                      <div
-                        key={index}
-                        className={`relative overflow-hidden rounded border border-gray-600 ${
-                          reply.images!.length === 3 && index === 0 ? 'row-span-2' : ''
-                        }`}
-                      >
+                    {reply.images.slice(0, 2).map((imageUrl, index) => (
+                      <div key={index} className="relative overflow-hidden rounded border border-white/10 h-24">
                         <img
                           src={imageUrl}
                           alt={`Reply image ${index + 1}`}
-                          className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => window.open(imageUrl, '_blank')}
-                          style={{
-                            aspectRatio: reply.images!.length === 1 ? '16/9' :
-                                         reply.images!.length === 2 ? '1/1' :
-                                         reply.images!.length === 3 && index === 0 ? '1/2' :
-                                         '1/1'
-                          }}
                         />
-                        {reply.images!.length > 4 && index === 3 && (
-                          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                            <span className="text-white font-bold text-xs">+{reply.images!.length - 4}</span>
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              <div className="flex items-center text-gray-500 text-xs">
-                <span className="flex items-center">
-                  <HeartIcon className="w-3 h-3 mr-1" />
-                  {reply.likes} likes
-                </span>
-                {reply.isLethalRatio && (
-                  <span className="ml-2 text-purple-400 font-bold">
-                    ({Math.round(reply.likes / post.likes * 10) / 10}x the original! 💀💀💀)
-                  </span>
-                )}
-                {reply.isBrutalRatio && !reply.isLethalRatio && (
-                  <span className="ml-2 text-orange-400 font-semibold">
-                    ({Math.round(reply.likes / post.likes * 10) / 10}x the original!)
-                  </span>
+              <div className="flex items-center justify-between text-xs font-mono">
+                <div className="flex items-center gap-1.5 text-white/40">
+                  <HeartIcon className="w-3 h-3" />
+                  <span className="text-white/60">{reply.likes.toLocaleString()} likes</span>
+                </div>
+                
+                {reply.likes > post.likes && (
+                  <div className={`font-bold ${
+                    reply.isLethalRatio ? 'text-purple-400' :
+                    reply.isBrutalRatio ? 'text-orange-400' :
+                    'text-red-400'
+                  }`}>
+                    {(reply.likes / Math.max(1, post.likes)).toFixed(1)}x ratio
+                  </div>
                 )}
               </div>
             </div>
@@ -475,8 +457,8 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
         </div>
       )}
 
-      {/* Share to X Button */}
-      <div className="flex justify-end pt-4 border-t border-gray-700">
+      {/* Share Action */}
+      <div className="mt-4 pt-4 border-t border-white/5 flex justify-end">
         <ShareButton
           ratio={post.replies[0]?.isRatio ? (post.replies[0].likes / post.likes) : 0}
           parentAuthor={post.author}
@@ -794,39 +776,45 @@ export function App() {
   }, [activeFeed]);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-[#0A0A0A] text-white font-sans antialiased selection:bg-white/20 overflow-x-hidden">
+      {/* Background Effects */}
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute inset-0 [background:radial-gradient(100%_120%_at_50%_0%,rgba(0,0,0,0.6),transparent_60%)]"></div>
+        <div className="absolute inset-0 [mask-image:radial-gradient(75%_75%_at_50%_45%,black,transparent)] [background:radial-gradient(65%_60%_at_50%_40%,rgba(255,255,255,0.02),rgba(255,255,255,0)_70%)]"></div>
+      </div>
+
       {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700 px-4 sm:px-6 py-3 sm:py-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-          <div className="flex items-center">
-            <div className="text-xl sm:text-2xl mr-3">⚖️</div>
-            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-              X Ratio Finder
-            </h1>
-            <div className="ml-2 sm:ml-4 flex items-center">
-              <div className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green-500' : 'bg-red-500'} mr-1 sm:mr-2`}></div>
-              <span className="text-xs text-gray-400 hidden sm:inline">
-                {wsConnected ? 'Connected' : 'Disconnected'}
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/5 bg-[#0A0A0A]/80 backdrop-blur-md transition-all duration-200">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => window.location.href = '/'}>
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-white">
+                <g><path d="M21.742 21.75l-7.563-11.179 7.056-8.321h-2.456l-5.691 6.714-4.54-6.714H2.359l7.29 10.776L2.25 21.75h2.456l6.035-7.118 4.818 7.118h6.191-.008zM7.739 3.818L18.81 20.182h-2.447L5.29 3.818h2.447z"></path></g>
+              </svg>
+              <span className="font-mono text-sm tracking-widest uppercase text-white/90 hidden sm:block group-hover:text-white transition-colors">Ratio Finder</span>
+            </div>
+            
+            <div className="h-4 w-[1px] bg-white/10 hidden sm:block"></div>
+            
+            <div className="flex items-center gap-2">
+              <div className={`w-1.5 h-1.5 rounded-full ${wsConnected ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-red-500'} transition-colors`}></div>
+              <span className="font-mono text-[10px] tracking-wider uppercase text-white/40 hidden sm:inline-block">
+                {wsConnected ? 'System Online' : 'Disconnected'}
               </span>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:gap-4">
+
+          <div className="flex items-center gap-3 sm:gap-6">
             <AuthButton />
-            <a
-              href="https://console.x.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-opacity hover:opacity-80"
-              title="X API Console"
-            >
-              <PoweredByXIcon className="w-48 h-14 sm:w-52 sm:h-13" />
-            </a>
           </div>
         </div>
       </header>
 
+      {/* Spacer for fixed header */}
+      <div className="h-16"></div>
+
       {/* Mobile Filters - Show only on mobile */}
-      <div className="md:hidden bg-gray-800 border-b border-gray-700 px-4 py-4">
+      <div className="md:hidden border-b border-white/10 bg-[#0A0A0A] px-4 py-4 relative z-10">
         <div className="flex flex-col gap-4">
           {/* Mobile Refresh Button */}
           <button
@@ -935,216 +923,271 @@ export function App() {
         </div>
       </div>
 
-      <div className="flex">
+      <div className="flex max-w-[1400px] mx-auto relative z-10">
         {/* Sidebar - Hidden on mobile */}
-        <aside className="hidden md:block w-80 bg-gray-800 border-r border-gray-700 p-6 min-h-screen">
+        <aside className="hidden md:block w-80 border-r border-white/10 p-6 min-h-[calc(100vh-4rem)] sticky top-16">
           {/* Refresh Button */}
           <button
             onClick={() => loadPosts(filterUsername || undefined)}
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-4 py-3 rounded-lg text-sm font-semibold transition-colors mb-6 min-h-[44px]"
+            className="w-full group relative inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-all hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed mb-8 shadow-[0_0_15px_rgba(255,255,255,0.15)] hover:shadow-[0_0_20px_rgba(255,255,255,0.25)]"
           >
-            {loading ? '⏳ Loading...' : '🔄 Refresh View'}
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Checking X...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                Refresh Feed
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-refresh-cw transition-transform group-hover:rotate-180"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+              </span>
+            )}
           </button>
 
-          <div className="mt-2">
-            <h3 className="text-md font-semibold mb-4 text-gray-200">Sort By</h3>
-            <div className="mb-6">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'recency' | 'brutality')}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="recency">🕒 Most Recent</option>
-                <option value="brutality">💀 Most Brutal</option>
-              </select>
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-xs font-mono tracking-widest text-white/50 uppercase mb-4 flex items-center gap-2">
+                [<span>Sort Order</span>]
+              </h3>
+              <div className="relative">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'recency' | 'brutality')}
+                  className="w-full appearance-none bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all hover:border-white/20 cursor-pointer"
+                >
+                  <option value="recency" className="bg-[#161616]">Most Recent First</option>
+                  <option value="brutality" className="bg-[#161616]">Highest Ratio Impact</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/40">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </div>
+              </div>
             </div>
 
-            <h3 className="text-md font-semibold mb-4 text-gray-200">Filters</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Min. Reply Likes: {minLikes.toLocaleString()}
-                </label>
-                <input
-                  type="range"
-                  min="1000"
-                  max="10000"
-                  step="100"
-                  value={minLikes}
-                  onChange={(e) => setMinLikes(Number(e.target.value))}
-                  className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-                />
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>1k</span>
-                  <span>10k</span>
+            <div>
+              <h3 className="text-xs font-mono tracking-widest text-white/50 uppercase mb-4 flex items-center gap-2">
+                [<span>Filters</span>]
+              </h3>
+              
+              <div className="space-y-6">
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="text-sm text-white/80">Min. Reply Likes</label>
+                    <span className="font-mono text-xs text-[#00BA7C]">{minLikes.toLocaleString()}</span>
+                  </div>
+                  
+                  <div className="relative py-2">
+                    <input
+                      type="range"
+                      min="1000"
+                      max="10000"
+                      step="100"
+                      value={minLikes}
+                      onChange={(e) => setMinLikes(Number(e.target.value))}
+                      className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer slider accent-white"
+                    />
+                    <div className="flex justify-between text-[10px] font-mono text-white/30 mt-2">
+                      <span>1K</span>
+                      <span>10K</span>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-400 mt-2">
-                  Showing {filteredPosts.length} of {totalRatios} ratios
-                </p>
-              </div>
 
-              <div className="space-y-3">
-                <label className="flex items-center cursor-pointer min-h-[44px]">
-                  <input
-                    type="checkbox"
-                    checked={showOnlyLethal}
-                    onChange={(e) => {
-                      setShowOnlyLethal(e.target.checked);
-                      if (e.target.checked) setShowOnlyBrutal(false);
-                    }}
-                    className="mr-3 w-5 h-5 cursor-pointer"
-                  />
-                  <span className="text-sm">Show only lethal ratios (100x+)</span>
-                </label>
-                <label className="flex items-center cursor-pointer min-h-[44px]">
-                  <input
-                    type="checkbox"
-                    checked={showOnlyBrutal}
-                    onChange={(e) => {
-                      setShowOnlyBrutal(e.target.checked);
-                      if (e.target.checked) setShowOnlyLethal(false);
-                    }}
-                    className="mr-3 w-5 h-5 cursor-pointer"
-                  />
-                  <span className="text-sm">Show only brutal ratios (10x+)</span>
-                </label>
-              </div>
+                <div className="space-y-3 pt-2">
+                  <label className="flex items-center cursor-pointer group">
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${showOnlyLethal ? 'bg-white border-white' : 'bg-transparent border-white/30 group-hover:border-white/50'}`}>
+                      {showOnlyLethal && <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                    </div>
+                    <input
+                      type="checkbox"
+                      className="hidden"
+                      checked={showOnlyLethal}
+                      onChange={(e) => {
+                        setShowOnlyLethal(e.target.checked);
+                        if (e.target.checked) setShowOnlyBrutal(false);
+                      }}
+                    />
+                    <span className="ml-3 text-sm text-white/70 group-hover:text-white transition-colors">Lethal ratios only (100x+)</span>
+                  </label>
+                  
+                  <label className="flex items-center cursor-pointer group">
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${showOnlyBrutal ? 'bg-white border-white' : 'bg-transparent border-white/30 group-hover:border-white/50'}`}>
+                      {showOnlyBrutal && <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                    </div>
+                    <input
+                      type="checkbox"
+                      className="hidden"
+                      checked={showOnlyBrutal}
+                      onChange={(e) => {
+                        setShowOnlyBrutal(e.target.checked);
+                        if (e.target.checked) setShowOnlyLethal(false);
+                      }}
+                    />
+                    <span className="ml-3 text-sm text-white/70 group-hover:text-white transition-colors">Brutal ratios only (10x+)</span>
+                  </label>
+                </div>
 
-              {/* User Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Filter by User
-                </label>
-                <input
-                  type="text"
-                  value={filterUsername}
-                  onChange={(e) => setFilterUsername(e.target.value)}
-                  onKeyDown={async (e) => {
-                    if (e.key === 'Enter' && filterUsername.trim()) {
-                      // First enrich the user to ensure we have their data
-                      await enrichUser(filterUsername);
-                      // Then load posts filtered by that user
-                      loadPosts(filterUsername);
-                    }
-                  }}
-                  placeholder="@username or username (press Enter to filter)"
-                  className="w-full px-3 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm min-h-[44px]"
-                  disabled={loading}
-                />
-                {filterUsername && (
-                  <button
-                    onClick={() => {
-                      setFilterUsername('');
-                      loadPosts(); // Reload without filter
-                    }}
-                    className="mt-2 text-sm text-blue-400 hover:text-blue-300 transition-colors min-h-[44px] py-2"
-                    disabled={loading}
-                  >
-                    Clear filter
-                  </button>
-                )}
-                <p className="text-xs text-gray-500 mt-1">
-                  Shows ratios where user was ratio'd or did the ratioing. Entering a username automatically enriches their timeline for missed ratios.
-                </p>
+                {/* User Filter */}
+                <div className="pt-2 border-t border-white/5 mt-4">
+                  <label className="block text-sm text-white/80 mb-3">
+                    Track Specific User
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-white/30">@</span>
+                    </div>
+                    <input
+                      type="text"
+                      value={filterUsername}
+                      onChange={(e) => setFilterUsername(e.target.value)}
+                      onKeyDown={async (e) => {
+                        if (e.key === 'Enter' && filterUsername.trim()) {
+                          await enrichUser(filterUsername);
+                          loadPosts(filterUsername);
+                        }
+                      }}
+                      placeholder="username"
+                      className="w-full pl-8 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/20 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all text-sm"
+                      disabled={loading}
+                    />
+                  </div>
+                  {filterUsername && (
+                    <button
+                      onClick={() => {
+                        setFilterUsername('');
+                        loadPosts(); 
+                      }}
+                      className="mt-2 text-xs text-white/50 hover:text-white transition-colors flex items-center gap-1"
+                      disabled={loading}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                      Clear filter
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="pt-6 border-t border-white/10">
+              <div className="bg-white/5 rounded-lg p-4 border border-white/5">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-white/40 uppercase tracking-wider">Total Ratios</span>
+                  <span className="text-xs text-[#00BA7C] flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#00BA7C] animate-pulse"></div>
+                    Live
+                  </span>
+                </div>
+                <div className="text-2xl font-mono font-medium text-white">
+                  {totalRatios.toLocaleString()}
+                </div>
               </div>
             </div>
           </div>
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-6">
-          <div className="max-w-4xl mx-auto">
+        <main className="flex-1 p-4 md:p-8 pb-20">
+          <div className="max-w-3xl mx-auto">
             {/* Feed Tabs */}
-            <div className="mb-4 sm:mb-6">
-              <div className="flex items-center gap-2 sm:gap-4 mb-3 sm:mb-4 border-b border-gray-700">
+            <div className="mb-8">
+              <div className="flex items-center gap-6 mb-6 border-b border-white/10">
                 <button
                   onClick={() => setActiveFeed('recents')}
-                  className={`px-3 sm:px-4 py-2 sm:py-2 font-semibold transition-all relative cursor-pointer text-sm sm:text-base ${
+                  className={`pb-3 font-mono text-sm tracking-wide uppercase transition-all relative cursor-pointer ${
                     activeFeed === 'recents'
-                      ? 'text-blue-400'
-                      : 'text-gray-400 hover:text-gray-300'
+                      ? 'text-white font-medium'
+                      : 'text-white/40 hover:text-white/70'
                   }`}
                 >
-                  Recents
+                  Recent Discoveries
                   {activeFeed === 'recents' && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-px bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]"></div>
                   )}
                 </button>
                 <button
                   onClick={() => setActiveFeed('victims')}
-                  className={`px-3 sm:px-4 py-2 sm:py-2 font-semibold transition-all relative cursor-pointer text-sm sm:text-base ${
+                  className={`pb-3 font-mono text-sm tracking-wide uppercase transition-all relative cursor-pointer ${
                     activeFeed === 'victims'
-                      ? 'text-blue-400'
-                      : 'text-gray-400 hover:text-gray-300'
+                      ? 'text-white font-medium'
+                      : 'text-white/40 hover:text-white/70'
                   }`}
                 >
-                  😭 Most Ratio'd
+                  Top Victims
                   {activeFeed === 'victims' && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-px bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]"></div>
                   )}
                 </button>
                 <button
                   onClick={() => setActiveFeed('perpetrators')}
-                  className={`px-3 sm:px-4 py-2 sm:py-2 font-semibold transition-all relative cursor-pointer text-sm sm:text-base ${
+                  className={`pb-3 font-mono text-sm tracking-wide uppercase transition-all relative cursor-pointer ${
                     activeFeed === 'perpetrators'
-                      ? 'text-blue-400'
-                      : 'text-gray-400 hover:text-gray-300'
+                      ? 'text-white font-medium'
+                      : 'text-white/40 hover:text-white/70'
                   }`}
                 >
-                  💀 Top Ratio-ers
+                  Top Ratio-ers
                   {activeFeed === 'perpetrators' && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-px bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]"></div>
                   )}
                 </button>
               </div>
               
-              <div>
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-200 mb-2">
+              <div className="flex flex-col gap-2">
+                <h2 className="text-3xl font-medium tracking-tight text-white">
                   {activeFeed === 'recents'
-                    ? 'Latest Posts & Ratios'
+                    ? 'Live Feed'
                     : activeFeed === 'victims'
-                    ? 'Most Ratio\'d Users'
-                    : 'Top Ratio-ers'}
+                    ? 'Hall of Shame'
+                    : 'Hall of Fame'}
                 </h2>
-                <p className="text-gray-400 text-xs sm:text-sm">
+                <p className="text-white/50 text-sm max-w-xl">
                   {activeFeed === 'recents'
-                    ? 'Monitoring X for ratio opportunities in real-time (last 7 days)'
+                    ? 'Real-time detection of ratio events across X. Auto-updating as new ratios are discovered.'
                     : activeFeed === 'victims'
-                    ? 'Users who got ratio\'d the most in the past 7 days'
-                    : 'Users who ratio\'d others the most in the past 7 days'}
+                    ? 'Users who have suffered the most devastating ratios in the past 7 days.'
+                    : 'The most ruthless ratio-ers on the platform in the past 7 days.'}
                 </p>
               </div>
             </div>
 
             {error && (
-              <div className="bg-red-900/20 border border-red-500 rounded-lg p-4 mb-6">
-                <p className="text-red-400 font-semibold mb-2">⚠️ Error Loading Posts</p>
-                <p className="text-red-300 text-sm">{error}</p>
-                <p className="text-gray-400 text-xs mt-2">
-                  Make sure to update the BEARER_TOKEN in src/utils/x-api.ts
-                </p>
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6 backdrop-blur-sm">
+                <div className="flex items-start gap-3">
+                  <div className="text-red-500 mt-0.5">⚠️</div>
+                  <div>
+                    <p className="text-white font-medium mb-1">System Error</p>
+                    <p className="text-white/60 text-sm mb-2">{error}</p>
+                    <p className="text-white/40 text-xs font-mono">
+                      Check BEARER_TOKEN configuration
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
             {activeFeed === 'recents' ? (
               // Recents Feed
               loading && posts.length === 0 ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="text-gray-400">Loading posts from X...</p>
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="relative w-12 h-12 mb-4">
+                    <div className="absolute inset-0 rounded-full border-2 border-white/10"></div>
+                    <div className="absolute inset-0 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
                   </div>
+                  <p className="text-white/60 font-mono text-sm animate-pulse">Scanning network for ratios...</p>
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-8">
                   {filteredPosts.length > 0 ? (
                     filteredPosts.map(post => (
                       <PostCard key={post.id} post={post} onUsernameClick={handleUsernameClick} />
                     ))
                   ) : (
-                    <div className="text-center py-12">
-                      <p className="text-gray-400">No posts found matching your filters.</p>
+                    <div className="text-center py-20 border border-dashed border-white/10 rounded-xl bg-white/[0.02]">
+                      <p className="text-white/40 font-mono text-sm">No ratios detected with current filters.</p>
                     </div>
                   )}
                 </div>
@@ -1154,53 +1197,63 @@ export function App() {
               <div className="space-y-4">
                 {victimsLeaderboard.length > 0 ? (
                   <>
-                    <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-4">
-                      <div className="flex items-center justify-between text-sm text-gray-400">
-                        <span>😭 Top {victimsLeaderboard.length} most ratio'd users</span>
-                        <span>From {totalRatios} total ratios</span>
-                      </div>
+                    <div className="bg-white/5 border border-white/10 rounded-lg p-4 mb-4 flex items-center justify-between text-sm text-white/60 font-mono">
+                      <span>Top {victimsLeaderboard.length} Victims</span>
+                      <span>Based on {totalRatios} total ratios</span>
                     </div>
                     
                     {victimsLeaderboard.map((entry, index) => (
                       <div
                         key={entry.username}
-                        className={`bg-gray-800 rounded-lg border p-3 sm:p-4 md:p-6 ${
+                        className={`group relative rounded-xl border transition-all p-6 ${
                           index === 0
-                            ? 'border-yellow-500 bg-yellow-900/20 shadow-lg shadow-yellow-500/20'
+                            ? 'border-yellow-500/50 bg-yellow-500/10 shadow-[0_0_30px_rgba(234,179,8,0.1)]'
                             : index === 1
-                            ? 'border-gray-400 bg-gray-700/20'
+                            ? 'border-slate-400/50 bg-slate-400/10 shadow-[0_0_20px_rgba(148,163,184,0.1)]'
                             : index === 2
-                            ? 'border-orange-600 bg-orange-900/20'
-                            : 'border-gray-700'
+                            ? 'border-orange-700/50 bg-orange-700/10 shadow-[0_0_20px_rgba(194,65,12,0.1)]'
+                            : 'border-white/10 bg-white/5 hover:bg-white/[0.07]'
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-3 sm:mb-4">
-                          <div className="flex items-center">
-                            <div className={`text-2xl sm:text-3xl font-bold mr-2 sm:mr-4 ${
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center gap-4">
+                            <div className={`font-mono font-bold text-2xl w-8 text-center ${
                               index === 0 ? 'text-yellow-500' :
-                              index === 1 ? 'text-gray-400' :
-                              index === 2 ? 'text-orange-600' :
-                              'text-gray-500'
+                              index === 1 ? 'text-slate-400' :
+                              index === 2 ? 'text-orange-700' :
+                              'text-white/20'
                             }`}>
-                              {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                              {index + 1}
                             </div>
 
                             <a
                               href={`https://x.com/${entry.username}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full mr-2 sm:mr-3 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0 overflow-hidden bg-blue-500"
+                              className="relative"
                               title={`@${entry.username}'s profile`}
                             >
-                              {entry.profileImage ? (
-                                <img 
-                                  src={entry.profileImage} 
-                                  alt={`@${entry.username}`}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-white font-bold">
-                                  {entry.username[0].toUpperCase()}
+                              <div className={`w-12 h-12 rounded-full overflow-hidden border-2 ${
+                                index === 0 ? 'border-yellow-500' :
+                                index === 1 ? 'border-slate-400' :
+                                index === 2 ? 'border-orange-700' :
+                                'border-white/10'
+                              }`}>
+                                {entry.profileImage ? (
+                                  <img 
+                                    src={entry.profileImage} 
+                                    alt={`@${entry.username}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white font-bold">
+                                    {entry.username[0].toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
+                              {index < 3 && (
+                                <div className="absolute -top-1 -right-1 text-lg">
+                                  {index === 0 ? '👑' : index === 1 ? '🥈' : '🥉'}
                                 </div>
                               )}
                             </a>
@@ -1210,107 +1263,61 @@ export function App() {
                                 href={`https://x.com/${entry.username}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="font-semibold text-blue-400 hover:text-blue-300 transition-colors text-base sm:text-lg"
+                                className="font-medium text-white text-lg hover:underline"
                               >
                                 @{entry.username}
                               </a>
-                              <div className="text-xs sm:text-sm text-gray-400 mt-1">
-                                Got ratio'd <span className="text-red-400 font-bold">{entry.ratioCount}</span> time{entry.ratioCount !== 1 ? 's' : ''} this week
+                              <div className="text-sm text-white/40 mt-0.5">
+                                Ratio'd <span className="text-red-400 font-bold">{entry.ratioCount}x</span> this week
                               </div>
                             </div>
                           </div>
                           
-                          <div className="text-right">
-                            <div className="text-xs sm:text-sm text-gray-400">Total likes against</div>
-                            <div className="text-lg sm:text-xl font-bold text-red-400">
-                              {entry.totalLikes.toLocaleString()}
+                          <div className="text-right hidden sm:block">
+                            <div className="text-xs text-white/40 uppercase tracking-wider mb-1">Total Damage</div>
+                            <div className="text-xl font-mono font-medium text-red-400">
+                              {entry.totalLikes.toLocaleString()} <span className="text-xs text-white/40">likes against</span>
                             </div>
                           </div>
                         </div>
                         
-                        <div className="border-t border-gray-700 pt-3 sm:pt-4">
-                          <div className="text-xs sm:text-sm text-gray-400 mb-2">
-                            💀 Worst ratio: <span className="text-orange-400 font-bold">{entry.worstRatio.ratio.toFixed(1)}x</span>
+                        <div className="border-t border-white/10 pt-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-xs font-mono text-white/40 uppercase tracking-wider">Worst Defeat</span>
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 font-mono border border-red-500/20">
+                              {entry.worstRatio.ratio.toFixed(1)}x Ratio
+                            </span>
                           </div>
-                          <div className="bg-gray-900/50 rounded p-2 sm:p-3 mb-2 sm:mb-3">
-                            <p className="text-gray-500 text-xs mb-1">Their post:</p>
-                            <p className="text-gray-300 text-xs sm:text-sm mb-2">{cleanContent(entry.worstRatio.postContent)}</p>
-
-                            {/* Display post images if available */}
-                            {entry.worstRatio.postImages && entry.worstRatio.postImages.length > 0 && (
-                              <div className="mb-2">
-                                <div className={`grid gap-1 ${
-                                  entry.worstRatio.postImages.length === 1 ? 'grid-cols-1' :
-                                  entry.worstRatio.postImages.length === 2 ? 'grid-cols-2' :
-                                  'grid-cols-2'
-                                }`}>
-                                  {entry.worstRatio.postImages.slice(0, 2).map((imageUrl, index) => (
-                                    <div key={index} className="relative overflow-hidden rounded border border-gray-600">
-                                      <img
-                                        src={imageUrl}
-                                        alt={`Post image ${index + 1}`}
-                                        className="w-full h-16 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                        onClick={() => window.open(imageUrl, '_blank')}
-                                      />
-                                    </div>
-                                  ))}
-                                </div>
+                          
+                          <div className="grid gap-4 relative">
+                            {/* Connection Line */}
+                            <div className="absolute left-4 top-8 bottom-8 w-0.5 bg-gradient-to-b from-white/10 to-red-500/20 hidden sm:block"></div>
+                            
+                            {/* Victim's Post */}
+                            <div className="bg-black/20 rounded-lg p-4 border border-white/5 relative z-10">
+                              <p className="text-white/60 text-sm mb-3 line-clamp-2">{cleanContent(entry.worstRatio.postContent)}</p>
+                              <div className="flex items-center justify-between text-xs text-white/30">
+                                <span className="flex items-center gap-1.5">
+                                  <HeartIcon className="w-3 h-3" />
+                                  {entry.worstRatio.postLikes.toLocaleString()}
+                                </span>
+                                <a href={`https://x.com/${entry.username}/status/${entry.worstRatio.postId}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">View →</a>
                               </div>
-                            )}
-
-                            <div className="flex items-center justify-between text-gray-500 text-xs">
-                              <span className="flex items-center">
-                                <HeartIcon className="w-3 h-3 mr-1" />
-                                {entry.worstRatio.postLikes} likes
-                              </span>
-                              <a
-                                href={`https://x.com/${entry.username}/status/${entry.worstRatio.postId}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-400 hover:text-blue-300"
-                              >
-                                View post →
-                              </a>
                             </div>
-                          </div>
-                          <div className="bg-red-900/20 rounded p-2 sm:p-3 border border-red-500/30">
-                            <p className="text-gray-500 text-xs mb-1">💀 Ratio'd by @{entry.worstRatio.replyAuthor}:</p>
-                            <p className="text-gray-200 text-xs sm:text-sm mb-2">{cleanContent(entry.worstRatio.replyContent)}</p>
-
-                            {/* Display reply images if available */}
-                            {entry.worstRatio.replyImages && entry.worstRatio.replyImages.length > 0 && (
-                              <div className="mb-2">
-                                <div className={`grid gap-1 ${
-                                  entry.worstRatio.replyImages.length === 1 ? 'grid-cols-1' :
-                                  entry.worstRatio.replyImages.length === 2 ? 'grid-cols-2' :
-                                  'grid-cols-2'
-                                }`}>
-                                  {entry.worstRatio.replyImages.slice(0, 2).map((imageUrl, index) => (
-                                    <div key={index} className="relative overflow-hidden rounded border border-red-500/30">
-                                      <img
-                                        src={imageUrl}
-                                        alt={`Reply image ${index + 1}`}
-                                        className="w-full h-16 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                        onClick={() => window.open(imageUrl, '_blank')}
-                                      />
-                                    </div>
-                                  ))}
-                                </div>
+                            
+                            {/* The Ratio Reply */}
+                            <div className="bg-red-500/5 rounded-lg p-4 border border-red-500/10 relative z-10 sm:ml-8">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs text-red-400 font-medium">@{entry.worstRatio.replyAuthor} replied:</span>
                               </div>
-                            )}
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-red-400 font-bold flex items-center">
-                                <HeartIcon className="w-3 h-3 mr-1" />
-                                {entry.worstRatio.replyLikes.toLocaleString()} likes
-                              </span>
-                              <a
-                                href={`https://x.com/${entry.worstRatio.replyAuthor}/status/${entry.worstRatio.replyId}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-red-400 hover:text-red-300"
-                              >
-                                View reply →
-                              </a>
+                              <p className="text-white/90 text-sm mb-3 line-clamp-3">{cleanContent(entry.worstRatio.replyContent)}</p>
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="flex items-center gap-1.5 text-red-400">
+                                  <HeartIcon className="w-3 h-3" />
+                                  {entry.worstRatio.replyLikes.toLocaleString()}
+                                </span>
+                                <a href={`https://x.com/${entry.worstRatio.replyAuthor}/status/${entry.worstRatio.replyId}`} target="_blank" rel="noopener noreferrer" className="text-white/30 hover:text-white transition-colors">View →</a>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1318,14 +1325,12 @@ export function App() {
                     ))}
                   </>
                 ) : (
-                  <div className="text-center py-12">
-                    <div className="bg-gray-800 border border-gray-700 rounded-lg p-8 max-w-md mx-auto">
-                      <div className="text-6xl mb-4">📊</div>
-                      <h3 className="text-xl font-semibold text-gray-200 mb-2">No Data Yet</h3>
-                      <p className="text-gray-400">
-                        The leaderboard will populate as ratios are discovered.
-                      </p>
-                    </div>
+                  <div className="text-center py-20 border border-dashed border-white/10 rounded-xl bg-white/[0.02]">
+                    <div className="text-4xl mb-4 opacity-50">📊</div>
+                    <h3 className="text-lg font-medium text-white mb-2">No Data Available</h3>
+                    <p className="text-white/40 max-w-md mx-auto">
+                      The leaderboard is currently empty. Wait for ratio events to be detected.
+                    </p>
                   </div>
                 )}
               </div>
@@ -1334,53 +1339,63 @@ export function App() {
               <div className="space-y-4">
                 {perpetratorsLeaderboard.length > 0 ? (
                   <>
-                    <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-4">
-                      <div className="flex items-center justify-between text-sm text-gray-400">
-                        <span>💀 Top {perpetratorsLeaderboard.length} ratio assassins</span>
-                        <span>From {totalRatios} total ratios</span>
-                      </div>
+                    <div className="bg-white/5 border border-white/10 rounded-lg p-4 mb-4 flex items-center justify-between text-sm text-white/60 font-mono">
+                      <span>Top {perpetratorsLeaderboard.length} Ratio Assassins</span>
+                      <span>From {totalRatios} total ratios</span>
                     </div>
                     
                     {perpetratorsLeaderboard.map((entry, index) => (
                       <div
                         key={entry.username}
-                        className={`bg-gray-800 rounded-lg border p-3 sm:p-4 md:p-6 ${
+                        className={`group relative rounded-xl border transition-all p-6 ${
                           index === 0
-                            ? 'border-yellow-500 bg-yellow-900/20 shadow-lg shadow-yellow-500/20'
+                            ? 'border-yellow-500/50 bg-yellow-500/10 shadow-[0_0_30px_rgba(234,179,8,0.1)]'
                             : index === 1
-                            ? 'border-gray-400 bg-gray-700/20'
+                            ? 'border-slate-400/50 bg-slate-400/10 shadow-[0_0_20px_rgba(148,163,184,0.1)]'
                             : index === 2
-                            ? 'border-orange-600 bg-orange-900/20'
-                            : 'border-gray-700'
+                            ? 'border-orange-700/50 bg-orange-700/10 shadow-[0_0_20px_rgba(194,65,12,0.1)]'
+                            : 'border-white/10 bg-white/5 hover:bg-white/[0.07]'
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-3 sm:mb-4">
-                          <div className="flex items-center">
-                            <div className={`text-2xl sm:text-3xl font-bold mr-2 sm:mr-4 ${
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center gap-4">
+                            <div className={`font-mono font-bold text-2xl w-8 text-center ${
                               index === 0 ? 'text-yellow-500' :
-                              index === 1 ? 'text-gray-400' :
-                              index === 2 ? 'text-orange-600' :
-                              'text-gray-500'
+                              index === 1 ? 'text-slate-400' :
+                              index === 2 ? 'text-orange-700' :
+                              'text-white/20'
                             }`}>
-                              {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                              {index + 1}
                             </div>
 
                             <a
                               href={`https://x.com/${entry.username}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full mr-2 sm:mr-3 hover:opacity-80 transition-opacity cursor-pointer flex-shrink-0 overflow-hidden bg-purple-500"
+                              className="relative"
                               title={`@${entry.username}'s profile`}
                             >
-                              {entry.profileImage ? (
-                                <img 
-                                  src={entry.profileImage} 
-                                  alt={`@${entry.username}`}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-white font-bold">
-                                  {entry.username[0].toUpperCase()}
+                              <div className={`w-12 h-12 rounded-full overflow-hidden border-2 ${
+                                index === 0 ? 'border-yellow-500' :
+                                index === 1 ? 'border-slate-400' :
+                                index === 2 ? 'border-orange-700' :
+                                'border-white/10'
+                              }`}>
+                                {entry.profileImage ? (
+                                  <img 
+                                    src={entry.profileImage} 
+                                    alt={`@${entry.username}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white font-bold">
+                                    {entry.username[0].toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
+                              {index < 3 && (
+                                <div className="absolute -top-1 -right-1 text-lg">
+                                  {index === 0 ? '👑' : index === 1 ? '🥈' : '🥉'}
                                 </div>
                               )}
                             </a>
@@ -1390,114 +1405,69 @@ export function App() {
                                 href={`https://x.com/${entry.username}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="font-semibold text-purple-400 hover:text-purple-300 transition-colors text-base sm:text-lg"
+                                className="font-medium text-white text-lg hover:underline"
                               >
                                 @{entry.username}
                               </a>
-                              <div className="text-xs sm:text-sm text-gray-400 mt-1">
+                              <div className="text-sm text-white/40 mt-0.5">
                                 Ratio'd <span className="text-purple-400 font-bold">{entry.ratioCount}</span> user{entry.ratioCount !== 1 ? 's' : ''} this week
                               </div>
                             </div>
                           </div>
                           
-                          <div className="text-right">
-                            <div className="text-xs sm:text-sm text-gray-400">Total likes earned</div>
-                            <div className="text-lg sm:text-xl font-bold text-purple-400">
+                          <div className="text-right hidden sm:block">
+                            <div className="text-xs text-white/40 uppercase tracking-wider mb-1">Total Likes Earned</div>
+                            <div className="text-xl font-mono font-medium text-purple-400">
                               {entry.totalLikes.toLocaleString()}
                             </div>
                           </div>
                         </div>
                         
-                        <div className="border-t border-gray-700 pt-3 sm:pt-4">
+                        <div className="border-t border-white/10 pt-4">
                           {entry.bestRatio && entry.bestRatio.ratio > 0 ? (
                             <>
-                              <div className="text-xs sm:text-sm text-gray-400 mb-2">
-                                🔥 Best ratio: <span className="text-purple-400 font-bold">{entry.bestRatio.ratio.toFixed(1)}x</span>
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className="text-xs font-mono text-white/40 uppercase tracking-wider">Best Ratio</span>
+                                <span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 font-mono border border-purple-500/20">
+                                  {entry.bestRatio.ratio.toFixed(1)}x
+                                </span>
                               </div>
-                              <div className="bg-gray-900/50 rounded p-2 sm:p-3 mb-2 sm:mb-3">
-                                <p className="text-gray-500 text-xs mb-1">Original post by @{entry.bestRatio.postAuthor}:</p>
-                                <p className="text-gray-300 text-xs sm:text-sm mb-2">{cleanContent(entry.bestRatio.postContent)}</p>
-
-                                {/* Display post images if available */}
-                                {entry.bestRatio.postImages && entry.bestRatio.postImages.length > 0 && (
-                                  <div className="mb-2">
-                                    <div className={`grid gap-1 ${
-                                      entry.bestRatio.postImages.length === 1 ? 'grid-cols-1' :
-                                      entry.bestRatio.postImages.length === 2 ? 'grid-cols-2' :
-                                      'grid-cols-2'
-                                    }`}>
-                                      {entry.bestRatio.postImages.slice(0, 2).map((imageUrl, index) => (
-                                        <div key={index} className="relative overflow-hidden rounded border border-gray-600">
-                                          <img
-                                            src={imageUrl}
-                                            alt={`Post image ${index + 1}`}
-                                            className="w-full h-16 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                            onClick={() => window.open(imageUrl, '_blank')}
-                                          />
-                                        </div>
-                                      ))}
-                                    </div>
+                              
+                              <div className="grid gap-4 relative">
+                                {/* Connection Line */}
+                                <div className="absolute left-4 top-8 bottom-8 w-0.5 bg-gradient-to-b from-white/10 to-purple-500/20 hidden sm:block"></div>
+                                
+                                {/* Victim's Post */}
+                                <div className="bg-black/20 rounded-lg p-4 border border-white/5 relative z-10">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs text-white/40">Original post by @{entry.bestRatio.postAuthor}:</span>
                                   </div>
-                                )}
-                                <div className="flex items-center justify-between text-gray-500 text-xs">
-                                  <span className="flex items-center">
-                                    <HeartIcon className="w-3 h-3 mr-1" />
-                                    {entry.bestRatio.postLikes} likes
-                                  </span>
-                                  <a
-                                    href={`https://x.com/${entry.bestRatio.postAuthor}/status/${entry.bestRatio.postId}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-400 hover:text-blue-300"
-                                  >
-                                    View post →
-                                  </a>
+                                  <p className="text-white/60 text-sm mb-3 line-clamp-2">{cleanContent(entry.bestRatio.postContent)}</p>
+                                  <div className="flex items-center justify-between text-xs text-white/30">
+                                    <span className="flex items-center gap-1.5">
+                                      <HeartIcon className="w-3 h-3" />
+                                      {entry.bestRatio.postLikes.toLocaleString()}
+                                    </span>
+                                    <a href={`https://x.com/${entry.bestRatio.postAuthor}/status/${entry.bestRatio.postId}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">View →</a>
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="bg-purple-900/20 rounded p-2 sm:p-3 border border-purple-500/30">
-                                <p className="text-gray-500 text-xs mb-1">💀 Their reply:</p>
-                                <p className="text-gray-200 text-xs sm:text-sm mb-2">{cleanContent(entry.bestRatio.replyContent)}</p>
-
-                                {/* Display reply images if available */}
-                                {entry.bestRatio.replyImages && entry.bestRatio.replyImages.length > 0 && (
-                                  <div className="mb-2">
-                                    <div className={`grid gap-1 ${
-                                      entry.bestRatio.replyImages.length === 1 ? 'grid-cols-1' :
-                                      entry.bestRatio.replyImages.length === 2 ? 'grid-cols-2' :
-                                      'grid-cols-2'
-                                    }`}>
-                                      {entry.bestRatio.replyImages.slice(0, 2).map((imageUrl, index) => (
-                                        <div key={index} className="relative overflow-hidden rounded border border-purple-500/30">
-                                          <img
-                                            src={imageUrl}
-                                            alt={`Reply image ${index + 1}`}
-                                            className="w-full h-16 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                            onClick={() => window.open(imageUrl, '_blank')}
-                                          />
-                                        </div>
-                                      ))}
-                                    </div>
+                                
+                                {/* The Killer Ratio */}
+                                <div className="bg-purple-500/5 rounded-lg p-4 border border-purple-500/10 relative z-10 sm:ml-8">
+                                  <p className="text-white/90 text-sm mb-3 line-clamp-3">{cleanContent(entry.bestRatio.replyContent)}</p>
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="flex items-center gap-1.5 text-purple-400">
+                                      <HeartIcon className="w-3 h-3" />
+                                      {entry.bestRatio.replyLikes.toLocaleString()}
+                                    </span>
+                                    <a href={`https://x.com/${entry.username}/status/${entry.bestRatio.replyId}`} target="_blank" rel="noopener noreferrer" className="text-white/30 hover:text-white transition-colors">View →</a>
                                   </div>
-                                )}
-                                <div className="flex items-center justify-between text-xs">
-                                  <span className="text-purple-400 font-bold flex items-center">
-                                    <HeartIcon className="w-3 h-3 mr-1" />
-                                    {entry.bestRatio.replyLikes.toLocaleString()} likes
-                                  </span>
-                                  <a
-                                    href={`https://x.com/${entry.username}/status/${entry.bestRatio.replyId}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-purple-400 hover:text-purple-300"
-                                  >
-                                    View reply →
-                                  </a>
                                 </div>
                               </div>
                             </>
                           ) : (
-                            <div className="text-xs sm:text-sm text-gray-500 italic">
-                              No ratios yet
+                            <div className="text-xs font-mono text-white/30 text-center py-4">
+                              No ratios detected yet
                             </div>
                           )}
                         </div>
@@ -1505,14 +1475,12 @@ export function App() {
                     ))}
                   </>
                 ) : (
-                  <div className="text-center py-12">
-                    <div className="bg-gray-800 border border-gray-700 rounded-lg p-8 max-w-md mx-auto">
-                      <div className="text-6xl mb-4">📊</div>
-                      <h3 className="text-xl font-semibold text-gray-200 mb-2">No Data Yet</h3>
-                      <p className="text-gray-400">
-                        The leaderboard will populate as ratios are discovered.
-                      </p>
-                    </div>
+                  <div className="text-center py-20 border border-dashed border-white/10 rounded-xl bg-white/[0.02]">
+                    <div className="text-4xl mb-4 opacity-50">📊</div>
+                    <h3 className="text-lg font-medium text-white mb-2">No Data Available</h3>
+                    <p className="text-white/40 max-w-md mx-auto">
+                      The leaderboard is currently empty. Wait for ratio events to be detected.
+                    </p>
                   </div>
                 )}
               </div>
