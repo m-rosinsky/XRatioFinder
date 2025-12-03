@@ -199,7 +199,7 @@ export async function postTweet(accessToken: string, text: string): Promise<{ id
  */
 function getBaseUrl(): string {
   // In production, this should be set via environment variable
-  return process.env.BASE_URL || 'http://localhost:3005';
+  return process.env.BASE_URL || 'http://localhost:3000';
 }
 
 /**

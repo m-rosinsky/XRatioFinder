@@ -182,7 +182,7 @@ The server will:
 
 Check server status:
 ```bash
-curl http://localhost:3005/api/status
+curl http://localhost:3000/api/status
 ```
 
 Returns:

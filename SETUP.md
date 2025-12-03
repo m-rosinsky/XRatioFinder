@@ -19,7 +19,7 @@ If you want to enable users to log in with X and share ratios:
 1. In your X Developer Portal app settings, go to "Authentication settings"
 2. Enable "OAuth 2.0" and configure:
    - **Type of App**: Web App
-   - **Callback URLs**: `http://localhost:3005/api/auth/callback` (for development)
+   - **Callback URLs**: `http://localhost:3000/api/auth/callback` (for development)
    - **Website URL**: Your app's website URL
 3. Note your Client ID and Client Secret from the "OAuth 2.0 Client ID and Client Secret" section
 
@@ -53,7 +53,7 @@ bun install
 bun run dev
 ```
 
-The app will be available at the URL shown in your terminal (typically http://localhost:3005).
+The app will be available at the URL shown in your terminal (typically http://localhost:3000).
 
 ## How It Works
 
