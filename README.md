@@ -53,7 +53,7 @@ X_BEARER_TOKEN=your_actual_bearer_token_here
    - Go to your [X Developer Portal app](https://console.x.com)
    - Navigate to "Authentication settings"
    - Enable OAuth 2.0
-   - Add `http://localhost:3000/api/auth/callback` to callback URLs
+   - Add `http://localhost:3005/api/auth/callback` to callback URLs
    - Copy the Client ID and Client Secret
 
 5. Follow [@XDevelopers](https://x.com/XDevelopers) for API updates

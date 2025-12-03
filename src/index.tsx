@@ -72,6 +72,7 @@ if (useMockData) {
 }
 
 const server = serve({
+  port: 3005,
   routes: {
     // API routes
     "/api/ratios": {
