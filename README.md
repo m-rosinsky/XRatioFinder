@@ -84,7 +84,7 @@ The application uses a **client-server architecture** with backend polling for e
 1. **Backend polls X API** every 5 minutes searching for high-engagement replies
 2. **Ratios are calculated** by comparing reply likes to original post likes
 3. **Data is cached** in memory and shared across all clients
-4. **WebSocket broadcasts** real-time updates to connected clients
+4. **Users manually refresh** to see new posts and ratios
 5. **Clients filter/sort** data locally for instant responsiveness
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed technical information.
@@ -92,7 +92,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed technical information.
 ### Features
 
 - ✅ **Backend Polling**: Single X API polling source (efficient rate limit usage)
-- ✅ **Real-time Updates**: WebSocket broadcasts new ratios to all clients
+- ✅ **Manual Refresh**: Users refresh to see new ratios and posts
 - ✅ **Ratio Detection**: Automatically finds posts being ratioed (2x+ likes)
 - ✅ **Brutal Ratio Highlighting**: Special indicators for 10x+ ratios (💀)
 - ✅ **Lethal Ratio Detection**: Ultra-extreme ratios (100x+ likes) 💀💀💀

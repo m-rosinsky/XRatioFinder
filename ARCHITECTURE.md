@@ -16,13 +16,13 @@ The X Ratio Finder uses a **client-server architecture** with backend polling to
                            ▼
 ┌─────────────────────────────────────────────────────────┐
 │                   Backend Server                        │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
-│  │   Poller     │──│  Data Store  │──│  WebSocket   │ │
-│  │ (5min cycle) │  │ (In-memory)  │  │   Server     │ │
-│  └──────────────┘  └──────────────┘  └──────────────┘ │
+│  ┌──────────────┐  ┌──────────────┐                    │
+│  │   Poller     │──│  Data Store  │                    │
+│  │ (5min cycle) │  │ (In-memory)  │                    │
+│  └──────────────┘  └──────────────┘                    │
 └─────────────────────────────────────────────────────────┘
                            │
-                           │ WebSocket + REST
+                           │ REST API
                            ▼
             ┌──────────────────────────────────┐
             │        Multiple Clients          │
@@ -40,14 +40,11 @@ The X Ratio Finder uses a **client-server architecture** with backend polling to
 - Start and manage the polling service
 - Serve frontend static files
 - Expose REST API endpoints
-- Manage WebSocket connections
-- Broadcast updates to all connected clients
 
 **API Endpoints:**
 - `GET /api/ratios` - Get all cached ratios
 - `POST /api/refresh` - Trigger manual refresh
 - `GET /api/status` - Get server status and stats
-- `WebSocket /` - Real-time updates
 
 ### 2. Poller (`src/server/poller.ts`)
 
@@ -56,7 +53,6 @@ The X Ratio Finder uses a **client-server architecture** with backend polling to
 - Search for high-engagement replies (500+ likes)
 - Calculate ratios and identify brutal ratios
 - Store new ratios in the data store
-- Trigger broadcasts when new ratios are found
 
 **Features:**
 - Configurable polling interval
@@ -88,24 +84,22 @@ interface StoredRatio {
 ### 4. Frontend (`src/App.tsx`)
 
 **Responsibilities:**
-- Connect to backend via WebSocket
-- Receive real-time updates
+- Fetch data from REST API
 - Display and filter ratios client-side
 - Manual refresh trigger
 
 **Features:**
-- Real-time connection indicator
 - Client-side sorting and filtering
-- Automatic reconnection
-- Fallback to mock data if disconnected
+- Manual refresh button
+- Load data on demand
 
 ## Data Flow
 
 ### Initial Load
 ```
 1. Client loads page
-2. WebSocket connects to backend
-3. Backend sends initial_data with all cached ratios
+2. Client requests data via REST API
+3. Backend sends cached ratios
 4. Client displays ratios
 ```
 
@@ -114,18 +108,14 @@ interface StoredRatio {
 1. Every 5 minutes, poller queries X API
 2. Poller finds new ratios
 3. Poller stores in data store
-4. Poller triggers broadcast
-5. All connected clients receive ratios_updated
-6. Clients update their display
+4. Data remains available for client requests
 ```
 
 ### Manual Refresh
 ```
 1. User clicks "Refresh" button
-2. Client sends POST /api/refresh
-3. Backend triggers immediate poll
-4. New ratios are broadcast via WebSocket
-5. Client receives update
+2. Client fetches latest data via GET /api/ratios
+3. Client updates display with new data
 ```
 
 ## Scalability Benefits
@@ -140,7 +130,7 @@ interface StoredRatio {
 - ✅ Single polling source
 - ✅ Efficient API usage (1 call per 5 min)
 - ✅ All clients share same data
-- ✅ Real-time updates via WebSocket
+- ✅ Manual refresh for new data
 - ✅ Scales to unlimited clients
 
 ## Performance
@@ -150,9 +140,9 @@ interface StoredRatio {
 - After: 1 request per 5 minutes = 288 requests/day
 
 **Client Load:**
-- Minimal: Only receive WebSocket updates
+- Lightweight: Simple REST API calls
 - No API authentication needed on client
-- Instant data on page load (cached)
+- Data loaded on demand
 
 ## Future Enhancements
 
@@ -175,7 +165,6 @@ NODE_ENV=production bun start
 The server will:
 - Start polling X API every 5 minutes
 - Serve the frontend on the configured port
-- Accept WebSocket connections for real-time updates
 - Log all polling activity and client connections
 
 ## Monitoring

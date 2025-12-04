@@ -2,7 +2,6 @@ import "./index.css";
 import React, { useState, useEffect, useCallback } from "react";
 import { AuthButton } from './components/AuthButton';
 import { ShareButton } from './components/ShareButton';
-import { useWebSocket } from './hooks/useWebSocket';
 import { useRatios } from './hooks/useRatios';
 import { useLeaderboards } from './hooks/useLeaderboards';
 import { useAuth } from './hooks/useAuth';
@@ -485,7 +484,6 @@ export function App() {
   // Authentication hook
   const { user: currentUser, isAuthenticated } = useAuth();
 
-  const [wsConnected, setWsConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
   const [victimsLeaderboard, setVictimsLeaderboard] = useState<VictimLeaderboardEntry[]>([]);
   const [perpetratorsLeaderboard, setPerpetratorsLeaderboard] = useState<PerpetratorLeaderboardEntry[]>([]);
@@ -515,68 +513,6 @@ export function App() {
     };
   };
 
-  // WebSocket connection for real-time updates
-  useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${window.location.host}`);
-
-    ws.onopen = () => {
-      console.log("📡 Connected to backend");
-      setWsConnected(true);
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data);
-
-        switch (message.type) {
-          case "connected":
-            // Initial connection - load data with current filters
-            console.log(`📡 WebSocket connected, loading initial data`);
-            loadPosts(filterUsername || undefined);
-            break;
-
-          case "ratios_updated":
-            // Data updated on server - refresh with current filters
-            console.log(`📊 Server data updated, refreshing view`);
-            loadPosts(filterUsername || undefined);
-            break;
-
-          case "pong":
-            // Heartbeat response
-            break;
-        }
-      } catch (error) {
-        console.error("WebSocket message error:", error);
-      }
-    };
-
-    ws.onclose = () => {
-      console.log("📡 Disconnected from backend");
-      setWsConnected(false);
-      // Auto-reconnect after 5 seconds
-      setTimeout(() => {
-        window.location.reload();
-      }, 5000);
-    };
-
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      setError("Connection to backend failed");
-    };
-
-    // Heartbeat to keep connection alive
-    const heartbeat = setInterval(() => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: "ping" }));
-      }
-    }, 30000);
-
-    return () => {
-      clearInterval(heartbeat);
-      ws.close();
-    };
-  }, []);
 
   // Manual refresh - fetches current data from server without triggering new API poll
   const loadPosts = useCallback(async (usernameFilter?: string) => {
@@ -631,11 +567,9 @@ export function App() {
 
   // Auto-refresh when filter states change (checkboxes and min likes)
   useEffect(() => {
-    if (wsConnected) { // Only auto-refresh if WebSocket is connected
-      console.log(`🔄 Filter state changed, auto-refreshing with current filters`);
-      loadPosts(filterUsername || undefined);
-    }
-  }, [sortBy, showOnlyBrutal, showOnlyLethal, minLikes, loadPosts, wsConnected]); // Added minLikes to dependencies
+    console.log(`🔄 Filter state changed, auto-refreshing with current filters`);
+    loadPosts(filterUsername || undefined);
+  }, [sortBy, showOnlyBrutal, showOnlyLethal, minLikes, loadPosts]); // Added minLikes to dependencies
 
   // Load leaderboards from backend
   const loadLeaderboards = async () => {
@@ -692,7 +626,7 @@ export function App() {
 
       console.log(`✅ Enriched ${cleanUsername}: ${result.enrichedRatios} new ratios, ${result.totalTrackedUsers} total tracked users`);
 
-      // WebSocket will automatically update the posts when enrichment completes
+      // User will need to manually refresh to see newly enriched posts
 
     } catch (err) {
       console.error("Error enriching user:", err);
@@ -797,9 +731,9 @@ export function App() {
             <div className="h-4 w-[1px] bg-white/10 hidden sm:block"></div>
             
             <div className="flex items-center gap-2">
-              <div className={`w-1.5 h-1.5 rounded-full ${wsConnected ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-red-500'} transition-colors`}></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.4)] transition-colors"></div>
               <span className="font-mono text-[10px] tracking-wider uppercase text-white/40 hidden sm:inline-block">
-                {wsConnected ? 'System Online' : 'Disconnected'}
+                Live Data
               </span>
             </div>
           </div>

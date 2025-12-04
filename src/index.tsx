@@ -36,31 +36,9 @@ function withCORS(response: Response): Response {
   return response;
 }
 
-// WebSocket clients for broadcasting updates
-const wsClients = new Set<any>();
 
-// Broadcast to all connected WebSocket clients
-function broadcastUpdate(data: any) {
-  const message = JSON.stringify(data);
-  for (const ws of wsClients) {
-    try {
-      ws.send(message);
-    } catch (error) {
-      console.error("Failed to send to WebSocket client:", error);
-      wsClients.delete(ws);
-    }
-  }
-}
-
-// Start the poller with update callback
-poller.start(() => {
-  console.log("📡 Broadcasting update to", wsClients.size, "clients");
-  broadcastUpdate({
-    type: "ratios_updated",
-    timestamp: Date.now(),
-    stats: ratioStore.getStats(),
-  });
-});
+// Start the poller
+poller.start();
 
 // If using mock data, do an immediate poll to load the data
 if (useMockData) {
@@ -316,13 +294,6 @@ const server = serve({
 
           console.log(`✅ Enrichment complete for ${cleanUsername}: ${newCount} new, ${totalEnriched - newCount} updated`);
 
-          // Broadcast update to all clients
-          broadcastUpdate({
-            type: "ratios_updated",
-            timestamp: Date.now(),
-            stats: ratioStore.getStats(),
-          });
-
           return withCORS(Response.json({
             success: true,
             username: cleanUsername,
@@ -511,51 +482,10 @@ const server = serve({
     "/*": index,
   },
 
-  // Custom fetch to handle WebSocket upgrades
-  fetch(req, server) {
-    // Handle WebSocket upgrade
-    if (req.headers.get("upgrade") === "websocket") {
-      if (server.upgrade(req)) {
-        return new Response(null); // Connection was upgraded
-      }
-      return new Response("WebSocket upgrade failed", { status: 500 });
-    }
-    // Let routes handle everything else
-    return new Response(null, { status: 404 });
-  },
-
-  // WebSocket support
-  websocket: {
-    open(ws) {
-      wsClients.add(ws);
-      console.log(`📡 WebSocket connected (${wsClients.size} total)`);
-      
-      // Send stats immediately - client will fetch filtered data
-      ws.send(JSON.stringify({
-        type: "connected",
-        stats: ratioStore.getStats(),
-      }));
-    },
-    message(ws, message) {
-      try {
-        const data = JSON.parse(message as string);
-        
-        if (data.type === "ping") {
-          ws.send(JSON.stringify({ type: "pong", timestamp: Date.now() }));
-        }
-      } catch (error) {
-        console.error("WebSocket message error:", error);
-      }
-    },
-    close(ws) {
-      wsClients.delete(ws);
-      console.log(`📡 WebSocket disconnected (${wsClients.size} remaining)`);
-    },
-  },
 
   development: process.env.NODE_ENV !== "production",
 });
 
 console.log(`🚀 X Ratio Finder server running at ${server.url}`);
-console.log(`📊 WebSocket available for real-time updates`);
+console.log(`📊 Manual refresh required for new posts`);
 console.log(`🔄 Polling X API every 5 minutes`);
