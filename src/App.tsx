@@ -1289,12 +1289,9 @@ export function App() {
                             </span>
                           </div>
                           
-                          <div className="grid gap-4 relative">
-                            {/* Connection Line */}
-                            <div className="absolute left-4 top-8 bottom-8 w-0.5 bg-gradient-to-b from-white/10 to-red-500/20 hidden sm:block"></div>
-                            
+                          <div className="flex flex-col gap-4">
                             {/* Victim's Post */}
-                            <div className="bg-black/20 rounded-lg p-4 border border-white/5 relative z-10">
+                            <div className="bg-black/20 rounded-lg p-4 border border-white/5">
                               <p className="text-white/60 text-sm mb-3 line-clamp-2">{cleanContent(entry.worstRatio.postContent)}</p>
                               <div className="flex items-center justify-between text-xs text-white/30">
                                 <span className="flex items-center gap-1.5">
@@ -1305,18 +1302,23 @@ export function App() {
                               </div>
                             </div>
                             
-                            {/* The Ratio Reply */}
-                            <div className="bg-red-500/5 rounded-lg p-4 border border-red-500/10 relative z-10 sm:ml-8">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs text-red-400 font-medium">@{entry.worstRatio.replyAuthor} replied:</span>
-                              </div>
-                              <p className="text-white/90 text-sm mb-3 line-clamp-3">{cleanContent(entry.worstRatio.replyContent)}</p>
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="flex items-center gap-1.5 text-red-400">
-                                  <HeartIcon className="w-3 h-3" />
-                                  {entry.worstRatio.replyLikes.toLocaleString()}
-                                </span>
-                                <a href={`https://x.com/${entry.worstRatio.replyAuthor}/status/${entry.worstRatio.replyId}`} target="_blank" rel="noopener noreferrer" className="text-white/30 hover:text-white transition-colors">View →</a>
+                            {/* The Ratio Reply with connecting line */}
+                            <div className="relative sm:ml-12">
+                              {/* Connection Line - positioned to connect from above */}
+                              <div className="absolute left-[-1.5rem] top-[-0.5rem] bottom-0 w-0.5 bg-gradient-to-b from-white/10 to-red-500/20 hidden sm:block"></div>
+                              
+                              <div className="bg-red-500/5 rounded-lg p-4 border border-red-500/10 relative z-10">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs text-red-400 font-medium">@{entry.worstRatio.replyAuthor} replied:</span>
+                                </div>
+                                <p className="text-white/90 text-sm mb-3 line-clamp-3">{cleanContent(entry.worstRatio.replyContent)}</p>
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="flex items-center gap-1.5 text-red-400">
+                                    <HeartIcon className="w-3 h-3" />
+                                    {entry.worstRatio.replyLikes.toLocaleString()}
+                                  </span>
+                                  <a href={`https://x.com/${entry.worstRatio.replyAuthor}/status/${entry.worstRatio.replyId}`} target="_blank" rel="noopener noreferrer" className="text-white/30 hover:text-white transition-colors">View →</a>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -1433,12 +1435,9 @@ export function App() {
                                 </span>
                               </div>
                               
-                              <div className="grid gap-4 relative">
-                                {/* Connection Line */}
-                                <div className="absolute left-4 top-8 bottom-8 w-0.5 bg-gradient-to-b from-white/10 to-purple-500/20 hidden sm:block"></div>
-                                
+                              <div className="flex flex-col gap-4">
                                 {/* Victim's Post */}
-                                <div className="bg-black/20 rounded-lg p-4 border border-white/5 relative z-10">
+                                <div className="bg-black/20 rounded-lg p-4 border border-white/5">
                                   <div className="flex items-center justify-between mb-2">
                                     <span className="text-xs text-white/40">Original post by @{entry.bestRatio.postAuthor}:</span>
                                   </div>
@@ -1451,16 +1450,21 @@ export function App() {
                                     <a href={`https://x.com/${entry.bestRatio.postAuthor}/status/${entry.bestRatio.postId}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">View →</a>
                                   </div>
                                 </div>
-                                
-                                {/* The Killer Ratio */}
-                                <div className="bg-purple-500/5 rounded-lg p-4 border border-purple-500/10 relative z-10 sm:ml-8">
-                                  <p className="text-white/90 text-sm mb-3 line-clamp-3">{cleanContent(entry.bestRatio.replyContent)}</p>
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className="flex items-center gap-1.5 text-purple-400">
-                                      <HeartIcon className="w-3 h-3" />
-                                      {entry.bestRatio.replyLikes.toLocaleString()}
-                                    </span>
-                                    <a href={`https://x.com/${entry.username}/status/${entry.bestRatio.replyId}`} target="_blank" rel="noopener noreferrer" className="text-white/30 hover:text-white transition-colors">View →</a>
+
+                                {/* The Killer Ratio with connecting line */}
+                                <div className="relative sm:ml-12">
+                                  {/* Connection Line - positioned to connect from above */}
+                                  <div className="absolute left-[-1.5rem] top-[-0.5rem] bottom-0 w-0.5 bg-gradient-to-b from-white/10 to-purple-500/20 hidden sm:block"></div>
+                                  
+                                  <div className="bg-purple-500/5 rounded-lg p-4 border border-purple-500/10 relative z-10">
+                                    <p className="text-white/90 text-sm mb-3 line-clamp-3">{cleanContent(entry.bestRatio.replyContent)}</p>
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="flex items-center gap-1.5 text-purple-400">
+                                        <HeartIcon className="w-3 h-3" />
+                                        {entry.bestRatio.replyLikes.toLocaleString()}
+                                      </span>
+                                      <a href={`https://x.com/${entry.username}/status/${entry.bestRatio.replyId}`} target="_blank" rel="noopener noreferrer" className="text-white/30 hover:text-white transition-colors">View →</a>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
