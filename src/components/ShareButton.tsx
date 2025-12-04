@@ -20,7 +20,7 @@ export function ShareButton({
   replyTweetId,
   className = ''
 }: ShareButtonProps) {
-  const { isAuthenticated, shareToX } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [sharing, setSharing] = useState(false);
   const [shared, setShared] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,32 +38,22 @@ export function ShareButton({
     setShowPreview(true);
   };
 
-  const handleConfirmShare = async () => {
-    if (!isAuthenticated) return;
-
+  const handleConfirmShare = () => {
     setShowPreview(false);
-    setSharing(true);
-    setError(null);
 
-    try {
-      // Pass replyTweetId as the quote tweet ID to create a quote tweet
-      const result = await shareToX(shareText, replyTweetId);
+    // Create Twitter intent URL with pre-filled text and quote tweet URL
+    const tweetUrl = `https://x.com/${replyAuthor}/status/${replyTweetId}`;
+    const fullText = `${shareText} ${tweetUrl}`;
+    const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(fullText)}`;
 
-      setShared(true);
+    // Open Twitter composer in new tab
+    window.open(intentUrl, '_blank');
 
-      // Open the tweet in a new tab
-      window.open(result.url, '_blank');
-
-      // Reset after 3 seconds
-      setTimeout(() => {
-        setShared(false);
-      }, 3000);
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to share');
-    } finally {
-      setSharing(false);
-    }
+    // Show success state briefly
+    setShared(true);
+    setTimeout(() => {
+      setShared(false);
+    }, 3000);
   };
 
   const handleCancel = () => {
@@ -149,7 +139,7 @@ export function ShareButton({
 
             <div className="mb-8">
               <p className="text-sm mb-3 text-white/60">
-                This will be posted to your X timeline as a <span className="text-blue-400 font-medium">quote tweet</span> of the ratio:
+                This will open in X's tweet composer as a <span className="text-blue-400 font-medium">quote tweet</span> of the ratio:
               </p>
 
               <div className="p-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white/90 mb-3">
@@ -180,7 +170,7 @@ export function ShareButton({
                 onClick={handleConfirmShare}
                 className="flex-1 px-4 py-2.5 rounded-full text-sm font-mono uppercase tracking-wide bg-white text-black hover:bg-white/90 transition-colors font-medium"
               >
-                Post to X
+                Open in X
               </button>
             </div>
           </div>
