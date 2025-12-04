@@ -26,17 +26,15 @@ export function ShareButton({
   const [error, setError] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
 
+  const [shareText, setShareText] = useState('');
+
   const generateShareText = () => {
-    const ratioText = ratio >= 100 ? '💀 LETHAL' : ratio >= 10 ? '🔥 BRUTAL' : '';
-    return `${ratioText} RATIO! @${replyAuthor} destroyed @${parentAuthor} with a ${ratio.toFixed(1)}x ratio!
-
-🔗 Parent: https://x.com/${parentAuthor}/status/${parentTweetId}
-💥 Ratio: https://x.com/${replyAuthor}/status/${replyTweetId}
-
-#RatioFinder #XRatio`;
+    const ratioText = ratio >= 100 ? '💀 LETHAL' : ratio >= 10 ? '🔥 BRUTAL' : '⚡';
+    return `${ratioText} RATIO! @${replyAuthor} destroyed @${parentAuthor} with a ${ratio.toFixed(1)}x ratio! 🔥`;
   };
 
   const handleShareClick = () => {
+    setShareText(generateShareText());
     setShowPreview(true);
   };
 
@@ -48,8 +46,8 @@ export function ShareButton({
     setError(null);
 
     try {
-      const text = generateShareText();
-      const result = await shareToX(text);
+      // Pass replyTweetId as the quote tweet ID to create a quote tweet
+      const result = await shareToX(shareText, replyTweetId);
 
       setShared(true);
 
@@ -151,11 +149,23 @@ export function ShareButton({
 
             <div className="mb-8">
               <p className="text-sm mb-3 text-white/60">
-                This will be posted to your X timeline:
+                This will be posted to your X timeline as a <span className="text-blue-400 font-medium">quote tweet</span> of the ratio:
               </p>
 
-              <div className="p-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white/90">
-                <pre className="whitespace-pre-wrap font-sans leading-relaxed">{generateShareText()}</pre>
+              <div className="p-4 rounded-xl border border-white/10 bg-white/5 text-sm text-white/90 mb-3">
+                <textarea
+                  value={shareText}
+                  onChange={(e) => setShareText(e.target.value)}
+                  className="w-full bg-transparent border-none resize-none focus:ring-0 focus:outline-none font-sans leading-relaxed h-24 text-white"
+                  placeholder="Write your tweet..."
+                />
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-white/40">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+                <span>Quoting: https://x.com/{replyAuthor}/status/{replyTweetId}</span>
               </div>
             </div>
 

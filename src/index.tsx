@@ -479,7 +479,7 @@ const server = serve({
           }
 
           const body = await req.json();
-          const { text } = body;
+          const { text, quoteTweetId } = body;
 
           if (!text || typeof text !== 'string') {
             return withCORS(Response.json({
@@ -488,8 +488,8 @@ const server = serve({
             }, { status: 400 }));
           }
 
-          // Post the tweet
-          const result = await postTweet(session.accessToken, text);
+          // Post the tweet (with optional quote)
+          const result = await postTweet(session.accessToken, text, quoteTweetId);
 
           return withCORS(Response.json({
             success: true,

@@ -173,16 +173,23 @@ export async function refreshAccessToken(refreshToken: string): Promise<AuthSess
 }
 
 /**
- * Post a tweet
+ * Post a tweet (optionally as a quote tweet)
  */
-export async function postTweet(accessToken: string, text: string): Promise<{ id: string }> {
+export async function postTweet(accessToken: string, text: string, quoteTweetId?: string): Promise<{ id: string }> {
+  const body: { text: string; quote_tweet_id?: string } = { text };
+  
+  // Add quote_tweet_id if provided
+  if (quoteTweetId) {
+    body.quote_tweet_id = quoteTweetId;
+  }
+
   const response = await fetch('https://api.x.com/2/tweets', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ text })
+    body: JSON.stringify(body)
   });
 
   if (!response.ok) {

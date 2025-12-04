@@ -103,7 +103,7 @@ export function useAuth() {
   }, []);
 
   // Share to X
-  const shareToX = useCallback(async (text: string) => {
+  const shareToX = useCallback(async (text: string, quoteTweetId?: string) => {
     if (!authState.user) {
       throw new Error('Not authenticated');
     }
@@ -114,7 +114,7 @@ export function useAuth() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ text, quoteTweetId })
       });
 
       const data = await response.json();
