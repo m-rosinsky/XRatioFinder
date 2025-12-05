@@ -155,8 +155,7 @@ const server = serve({
         return withCORS(Response.json({
           success: true,
           poller: poller.getStatus(),
-          store: ratioStore.getStats(),
-          clients: wsClients.size,
+          stats: ratioStore.getStats(),
           timestamp: Date.now(),
         }));
       },
