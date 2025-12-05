@@ -429,16 +429,29 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
               {/* Reply Images */}
               {reply.images && reply.images.length > 0 && (
                 <div className="mb-3">
-                  <div className={`grid gap-1 ${
-                    reply.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
+                  <div className={`grid gap-1.5 ${
+                    reply.images.length === 1 ? 'grid-cols-1' :
+                    reply.images.length === 2 ? 'grid-cols-2' :
+                    'grid-cols-2'
                   }`}>
-                    {reply.images.slice(0, 2).map((imageUrl, index) => (
-                      <div key={index} className="relative overflow-hidden rounded border border-white/10 h-24">
+                    {reply.images.slice(0, 4).map((imageUrl, index) => (
+                      <div
+                        key={index}
+                        className={`relative overflow-hidden rounded-lg border border-white/10 ${
+                          reply.images!.length === 3 && index === 0 ? 'row-span-2' : ''
+                        }`}
+                      >
                         <img
                           src={imageUrl}
                           alt={`Reply image ${index + 1}`}
-                          className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                          className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
                           onClick={() => window.open(imageUrl, '_blank')}
+                          style={{
+                            aspectRatio: reply.images!.length === 1 ? '16/9' :
+                                         reply.images!.length === 2 ? '4/3' :
+                                         reply.images!.length === 3 && index === 0 ? '3/4' :
+                                         '1/1'
+                          }}
                         />
                       </div>
                     ))}
@@ -765,108 +778,136 @@ export function App() {
       <div className="h-16"></div>
 
       {/* Mobile Filters - Show only on mobile */}
-      <div className="md:hidden border-b border-white/10 bg-[#0A0A0A] px-4 py-4 relative z-10">
-        <div className="flex flex-col gap-4">
+      <div className="md:hidden border-b border-white/10 bg-[#0A0A0A] px-4 py-5 relative z-10">
+        <div className="flex flex-col gap-5">
           {/* Mobile Refresh Button */}
           <button
             onClick={() => loadPosts(filterUsername || undefined)}
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed px-4 py-3 sm:py-3 rounded-lg text-sm font-semibold transition-colors min-h-[44px]"
+            className="w-full bg-white hover:bg-white/90 disabled:bg-white/50 disabled:cursor-not-allowed px-4 py-3 rounded-lg text-sm font-mono uppercase tracking-wider text-black transition-colors min-h-[44px]"
           >
-            {loading ? '⏳ Loading...' : '🔄 Refresh View'}
+            {loading ? 'Loading...' : 'Refresh View'}
           </button>
 
-          {/* Mobile Sort and Filters */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Sort */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Sort By
-              </label>
+          {/* Sort */}
+          <div>
+            <h3 className="text-xs font-mono tracking-widest text-white/50 uppercase mb-3 flex items-center gap-2">
+              [<span>Sort</span>]
+            </h3>
+            <div className="relative">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'recency' | 'brutality')}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full appearance-none px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-white/30 cursor-pointer"
               >
-                <option value="recency">🕒 Recent</option>
-                <option value="brutality">💀 Brutal</option>
+                <option value="recency">Most Recent</option>
+                <option value="brutality">Most Brutal</option>
               </select>
-            </div>
-
-            {/* Min Likes Slider */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Min Likes: {minLikes.toLocaleString()}
-              </label>
-              <input
-                type="range"
-                min="1000"
-                max="10000"
-                step="100"
-                value={minLikes}
-                onChange={(e) => setMinLikes(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-              />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>1k</span>
-                <span>10k</span>
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-white/50">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </div>
             </div>
           </div>
 
-          {/* Mobile Checkboxes */}
-          <div className="space-y-3">
-            <label className="flex items-center cursor-pointer min-h-[44px]">
-              <input
-                type="checkbox"
-                checked={showOnlyBrutal}
-                onChange={(e) => setShowOnlyBrutal(e.target.checked)}
-                className="mr-3 w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
-              />
-              <span className="text-sm">Show only brutal ratios (10x+)</span>
-            </label>
+          {/* Filters */}
+          <div>
+            <h3 className="text-xs font-mono tracking-widest text-white/50 uppercase mb-3 flex items-center gap-2">
+              [<span>Filters</span>]
+            </h3>
+            
+            {/* Min Likes Slider */}
+            <div className="mb-5">
+              <div className="flex justify-between items-center mb-3">
+                <label className="text-sm text-white/80">Min. Reply Likes</label>
+                <span className="font-mono text-xs text-[#00BA7C]">{minLikes.toLocaleString()}</span>
+              </div>
+              <div className="relative py-2">
+                <input
+                  type="range"
+                  min="1000"
+                  max="10000"
+                  step="100"
+                  value={minLikes}
+                  onChange={(e) => setMinLikes(Number(e.target.value))}
+                  className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer slider accent-white"
+                />
+                <div className="flex justify-between text-[10px] font-mono text-white/30 mt-2">
+                  <span>1K</span>
+                  <span>10K</span>
+                </div>
+              </div>
+            </div>
 
-            <label className="flex items-center cursor-pointer min-h-[44px]">
-              <input
-                type="checkbox"
-                checked={showOnlyLethal}
-                onChange={(e) => setShowOnlyLethal(e.target.checked)}
-                className="mr-3 w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
-              />
-              <span className="text-sm">Show only lethal ratios (100x+)</span>
-            </label>
+            {/* Checkboxes */}
+            <div className="space-y-3">
+              <label className="flex items-center cursor-pointer group min-h-[44px]">
+                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${showOnlyLethal ? 'bg-white border-white' : 'bg-transparent border-white/30 group-hover:border-white/50'}`}>
+                  {showOnlyLethal && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                </div>
+                <input
+                  type="checkbox"
+                  className="hidden"
+                  checked={showOnlyLethal}
+                  onChange={(e) => {
+                    setShowOnlyLethal(e.target.checked);
+                    if (e.target.checked) setShowOnlyBrutal(false);
+                  }}
+                />
+                <span className="ml-3 text-sm text-white/70 group-hover:text-white transition-colors">Lethal ratios only (100x+)</span>
+              </label>
+              
+              <label className="flex items-center cursor-pointer group min-h-[44px]">
+                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${showOnlyBrutal ? 'bg-white border-white' : 'bg-transparent border-white/30 group-hover:border-white/50'}`}>
+                  {showOnlyBrutal && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                </div>
+                <input
+                  type="checkbox"
+                  className="hidden"
+                  checked={showOnlyBrutal}
+                  onChange={(e) => {
+                    setShowOnlyBrutal(e.target.checked);
+                    if (e.target.checked) setShowOnlyLethal(false);
+                  }}
+                />
+                <span className="ml-3 text-sm text-white/70 group-hover:text-white transition-colors">Brutal ratios only (10x+)</span>
+              </label>
+            </div>
           </div>
 
-          {/* Mobile User Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Filter by User
+          {/* User Filter */}
+          <div className="pt-2 border-t border-white/5">
+            <label className="block text-sm text-white/80 mb-3">
+              Track Specific User
             </label>
-            <input
-              type="text"
-              value={filterUsername}
-              onChange={(e) => setFilterUsername(e.target.value)}
-              onKeyDown={async (e) => {
-                if (e.key === 'Enter' && filterUsername.trim()) {
-                  // First enrich the user to ensure we have their data
-                  await enrichUser(filterUsername);
-                  // Then load posts filtered by that user
-                  loadPosts(filterUsername);
-                }
-              }}
-              placeholder="@username (press Enter)"
-              className="w-full px-3 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm min-h-[44px]"
-              disabled={loading}
-            />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span className="text-white/30">@</span>
+              </div>
+              <input
+                type="text"
+                value={filterUsername}
+                onChange={(e) => setFilterUsername(e.target.value)}
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter' && filterUsername.trim()) {
+                    await enrichUser(filterUsername);
+                    loadPosts(filterUsername);
+                  }
+                }}
+                placeholder="username"
+                className="w-full pl-8 pr-3 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/20 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all text-sm min-h-[44px]"
+                disabled={loading}
+              />
+            </div>
             {filterUsername && (
               <button
                 onClick={() => {
                   setFilterUsername('');
-                  loadPosts(); // Reload without filter
+                  loadPosts();
                 }}
-                className="mt-2 text-sm text-blue-400 hover:text-blue-300 transition-colors min-h-[44px] py-2"
+                className="mt-2 text-xs text-white/50 hover:text-white transition-colors flex items-center gap-1"
                 disabled={loading}
               >
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 Clear filter
               </button>
             )}
@@ -1246,6 +1287,36 @@ export function App() {
                             {/* Victim's Post */}
                             <div className="bg-black/20 rounded-lg p-4 border border-white/5">
                               <p className="text-white/60 text-sm mb-3 line-clamp-2">{cleanContent(entry.worstRatio.postContent)}</p>
+                              {/* Post Images */}
+                              {entry.worstRatio.postImages && entry.worstRatio.postImages.length > 0 && (
+                                <div className="mb-3">
+                                  <div className={`grid gap-1.5 ${
+                                    entry.worstRatio.postImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
+                                  }`}>
+                                    {entry.worstRatio.postImages.slice(0, 4).map((imageUrl, imgIndex) => (
+                                      <div
+                                        key={imgIndex}
+                                        className={`relative overflow-hidden rounded-lg border border-white/10 ${
+                                          entry.worstRatio.postImages!.length === 3 && imgIndex === 0 ? 'row-span-2' : ''
+                                        }`}
+                                      >
+                                        <img
+                                          src={imageUrl}
+                                          alt={`Post image ${imgIndex + 1}`}
+                                          className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                                          onClick={() => window.open(imageUrl, '_blank')}
+                                          style={{
+                                            aspectRatio: entry.worstRatio.postImages!.length === 1 ? '16/9' :
+                                                         entry.worstRatio.postImages!.length === 2 ? '4/3' :
+                                                         entry.worstRatio.postImages!.length === 3 && imgIndex === 0 ? '3/4' :
+                                                         '1/1'
+                                          }}
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                               <div className="flex items-center justify-between text-xs text-white/30">
                                 <span className="flex items-center gap-1.5">
                                   <HeartIcon className="w-3 h-3" />
@@ -1265,6 +1336,36 @@ export function App() {
                                   <span className="text-xs text-red-400 font-medium">{entry.worstRatio.replyAuthorDisplayName || entry.worstRatio.replyAuthor} <span className="text-white/40">@{entry.worstRatio.replyAuthor}</span> replied:</span>
                                 </div>
                                 <p className="text-white/90 text-sm mb-3 line-clamp-3">{cleanContent(entry.worstRatio.replyContent)}</p>
+                                {/* Reply Images */}
+                                {entry.worstRatio.replyImages && entry.worstRatio.replyImages.length > 0 && (
+                                  <div className="mb-3">
+                                    <div className={`grid gap-1.5 ${
+                                      entry.worstRatio.replyImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
+                                    }`}>
+                                      {entry.worstRatio.replyImages.slice(0, 4).map((imageUrl, imgIndex) => (
+                                        <div
+                                          key={imgIndex}
+                                          className={`relative overflow-hidden rounded-lg border border-white/10 ${
+                                            entry.worstRatio.replyImages!.length === 3 && imgIndex === 0 ? 'row-span-2' : ''
+                                          }`}
+                                        >
+                                          <img
+                                            src={imageUrl}
+                                            alt={`Reply image ${imgIndex + 1}`}
+                                            className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                                            onClick={() => window.open(imageUrl, '_blank')}
+                                            style={{
+                                              aspectRatio: entry.worstRatio.replyImages!.length === 1 ? '16/9' :
+                                                           entry.worstRatio.replyImages!.length === 2 ? '4/3' :
+                                                           entry.worstRatio.replyImages!.length === 3 && imgIndex === 0 ? '3/4' :
+                                                           '1/1'
+                                            }}
+                                          />
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                                 <div className="flex items-center justify-between text-xs">
                                   <span className="flex items-center gap-1.5 text-red-400">
                                     <HeartIcon className="w-3 h-3" />
@@ -1397,6 +1498,36 @@ export function App() {
                                     <span className="text-xs text-white/40">Original post by {entry.bestRatio.postAuthorDisplayName || entry.bestRatio.postAuthor} <span className="text-white/30">@{entry.bestRatio.postAuthor}</span>:</span>
                                   </div>
                                   <p className="text-white/60 text-sm mb-3 line-clamp-2">{cleanContent(entry.bestRatio.postContent)}</p>
+                                  {/* Post Images */}
+                                  {entry.bestRatio.postImages && entry.bestRatio.postImages.length > 0 && (
+                                    <div className="mb-3">
+                                      <div className={`grid gap-1.5 ${
+                                        entry.bestRatio.postImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
+                                      }`}>
+                                        {entry.bestRatio.postImages.slice(0, 4).map((imageUrl, imgIndex) => (
+                                          <div
+                                            key={imgIndex}
+                                            className={`relative overflow-hidden rounded-lg border border-white/10 ${
+                                              entry.bestRatio.postImages!.length === 3 && imgIndex === 0 ? 'row-span-2' : ''
+                                            }`}
+                                          >
+                                            <img
+                                              src={imageUrl}
+                                              alt={`Post image ${imgIndex + 1}`}
+                                              className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                                              onClick={() => window.open(imageUrl, '_blank')}
+                                              style={{
+                                                aspectRatio: entry.bestRatio.postImages!.length === 1 ? '16/9' :
+                                                             entry.bestRatio.postImages!.length === 2 ? '4/3' :
+                                                             entry.bestRatio.postImages!.length === 3 && imgIndex === 0 ? '3/4' :
+                                                             '1/1'
+                                              }}
+                                            />
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                   <div className="flex items-center justify-between text-xs text-white/30">
                                     <span className="flex items-center gap-1.5">
                                       <HeartIcon className="w-3 h-3" />
@@ -1413,6 +1544,36 @@ export function App() {
                                   
                                   <div className="bg-purple-500/5 rounded-lg p-4 border border-purple-500/10 relative z-10">
                                     <p className="text-white/90 text-sm mb-3 line-clamp-3">{cleanContent(entry.bestRatio.replyContent)}</p>
+                                    {/* Reply Images */}
+                                    {entry.bestRatio.replyImages && entry.bestRatio.replyImages.length > 0 && (
+                                      <div className="mb-3">
+                                        <div className={`grid gap-1.5 ${
+                                          entry.bestRatio.replyImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
+                                        }`}>
+                                          {entry.bestRatio.replyImages.slice(0, 4).map((imageUrl, imgIndex) => (
+                                            <div
+                                              key={imgIndex}
+                                              className={`relative overflow-hidden rounded-lg border border-white/10 ${
+                                                entry.bestRatio.replyImages!.length === 3 && imgIndex === 0 ? 'row-span-2' : ''
+                                              }`}
+                                            >
+                                              <img
+                                                src={imageUrl}
+                                                alt={`Reply image ${imgIndex + 1}`}
+                                                className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                                                onClick={() => window.open(imageUrl, '_blank')}
+                                                style={{
+                                                  aspectRatio: entry.bestRatio.replyImages!.length === 1 ? '16/9' :
+                                                               entry.bestRatio.replyImages!.length === 2 ? '4/3' :
+                                                               entry.bestRatio.replyImages!.length === 3 && imgIndex === 0 ? '3/4' :
+                                                               '1/1'
+                                                }}
+                                              />
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
                                     <div className="flex items-center justify-between text-xs">
                                       <span className="flex items-center gap-1.5 text-purple-400">
                                         <HeartIcon className="w-3 h-3" />
