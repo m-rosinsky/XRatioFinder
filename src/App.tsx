@@ -279,257 +279,246 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
   const hasRatio = post.replies.some(reply => reply.likes > post.likes);
   const hasBrutalRatio = post.replies.some(reply => reply.likes >= post.likes * 10);
   const hasLethalRatio = post.replies.some(reply => reply.likes >= post.likes * 100);
+  const reply = post.replies[0]; // Get the first (ratio) reply
 
   return (
-    <div className={`group relative rounded-xl border transition-all duration-300 ${
-      hasLethalRatio
-        ? 'border-purple-500/50 bg-purple-900/10 shadow-[0_0_30px_rgba(168,85,247,0.15)] hover:shadow-[0_0_40px_rgba(168,85,247,0.25)]'
-        : hasBrutalRatio
-        ? 'border-orange-500/50 bg-orange-900/10 shadow-[0_0_30px_rgba(249,115,22,0.15)] hover:shadow-[0_0_40px_rgba(249,115,22,0.25)]'
-        : hasRatio
-        ? 'border-slate-500/30 bg-slate-900/10'
-        : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.07]'
-    } p-5`}>
-      
+    <div className="relative">
       {/* Original Post */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <a
-              href={`https://x.com/${post.author}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-10 h-10 rounded-full overflow-hidden border border-white/10 transition-transform hover:scale-105"
-              title={`@${post.author}'s profile`}
-            >
-              {post.authorProfileImage ? (
-                <img 
-                  src={post.authorProfileImage} 
-                  alt={`@${post.author}`}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900 text-white font-medium">
-                  {post.author[0].toUpperCase()}
-                </div>
-              )}
-            </a>
-            <div className="flex flex-col leading-tight">
+      <div className="flex gap-3 px-4 pt-4 pb-3 hover:bg-white/[0.02] transition-colors">
+        {/* Avatar column with thread line */}
+        <div className="flex flex-col items-center">
+          <a
+            href={`https://x.com/${post.author}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 transition-opacity hover:opacity-80"
+            title={`@${post.author}'s profile`}
+          >
+            {post.authorProfileImage ? (
+              <img 
+                src={post.authorProfileImage} 
+                alt={`@${post.author}`}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-600 to-gray-800 text-white font-medium text-sm">
+                {post.author[0].toUpperCase()}
+              </div>
+            )}
+          </a>
+          {/* Thread line connecting to reply */}
+          {reply && (
+            <div className="w-0.5 flex-1 mt-1 bg-white/20 min-h-[20px]"></div>
+          )}
+        </div>
+        
+        {/* Content column */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-1 flex-wrap min-w-0">
               <button
                 onClick={() => onUsernameClick?.(post.author)}
-                className="font-medium text-white hover:underline text-left"
+                className="font-bold text-[15px] text-white hover:underline truncate"
               >
                 {post.authorDisplayName || post.author}
               </button>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-white/40">@{post.author}</span>
-                <span className="text-xs text-white/20">·</span>
-                <span className="text-xs text-white/40">{formatRelativeTime(post.timestamp)}</span>
+              <span className="text-[15px] text-white/50 truncate">@{post.author}</span>
+              <span className="text-white/30">·</span>
+              <span className="text-[15px] text-white/50">{formatRelativeTime(post.timestamp)}</span>
+            </div>
+            <a
+              href={`https://x.com/${post.author}/status/${post.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1.5 -mr-1.5 rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-colors flex-shrink-0"
+              title="View on X"
+            >
+              <PopoutIcon className="w-4 h-4" />
+            </a>
+          </div>
+
+          <p className="text-[17px] text-white leading-normal mt-1 whitespace-pre-wrap break-words">{cleanContent(post.content)}</p>
+
+          {/* Images */}
+          {post.images && post.images.length > 0 && (
+            <div className="mt-3">
+              <div className={`grid gap-0.5 rounded-2xl overflow-hidden border border-white/10 ${
+                post.images.length === 1 ? 'grid-cols-1' :
+                post.images.length === 2 ? 'grid-cols-2' :
+                'grid-cols-2'
+              }`}>
+                {post.images.slice(0, 4).map((imageUrl, index) => (
+                  <div
+                    key={index}
+                    className={`relative overflow-hidden ${
+                      post.images!.length === 3 && index === 0 ? 'row-span-2' : ''
+                    }`}
+                  >
+                    <img
+                      src={imageUrl}
+                      alt={`Post image ${index + 1}`}
+                      className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => window.open(imageUrl, '_blank')}
+                      style={{
+                        aspectRatio: post.images!.length === 1 ? '16/9' :
+                                     post.images!.length === 2 ? '1/1' :
+                                     post.images!.length === 3 && index === 0 ? '1/2' :
+                                     '1/1'
+                      }}
+                    />
+                  </div>
+                ))}
               </div>
-            </div>
-          </div>
-          
-          <a
-            href={`https://x.com/${post.author}/status/${post.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2 rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-colors"
-            title="View post on X"
-          >
-            <PopoutIcon className="w-4 h-4" />
-          </a>
-        </div>
-
-        <p className="text-white/90 text-[17px] leading-relaxed mb-4 whitespace-pre-wrap">{cleanContent(post.content)}</p>
-
-        {/* Display images if available */}
-        {post.images && post.images.length > 0 && (
-          <div className="mb-4">
-            <div className={`grid gap-2 ${
-              post.images.length === 1 ? 'grid-cols-1' :
-              post.images.length === 2 ? 'grid-cols-2' :
-              'grid-cols-2'
-            }`}>
-              {post.images.slice(0, 4).map((imageUrl, index) => (
-                <div
-                  key={index}
-                  className={`relative overflow-hidden rounded-lg border border-white/10 ${
-                    post.images!.length === 3 && index === 0 ? 'row-span-2' : ''
-                  }`}
-                >
-                  <img
-                    src={imageUrl}
-                    alt={`Post image ${index + 1}`}
-                    className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-500"
-                    onClick={() => window.open(imageUrl, '_blank')}
-                    style={{
-                      aspectRatio: post.images!.length === 1 ? '16/9' :
-                                   post.images!.length === 2 ? '1/1' :
-                                   post.images!.length === 3 && index === 0 ? '1/2' :
-                                   '1/1'
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="flex items-center gap-4 text-sm text-white/40 font-mono">
-          <div className="flex items-center gap-1.5">
-            <HeartIcon className="w-3.5 h-3.5" />
-            <span>{post.likes.toLocaleString()} likes</span>
-          </div>
-          {hasRatio && (
-            <div className={`flex items-center gap-1.5 ${
-              hasLethalRatio ? 'text-purple-400/80' :
-              hasBrutalRatio ? 'text-orange-400/80' :
-              'text-slate-400/80'
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${
-                hasLethalRatio ? 'bg-purple-500 animate-pulse' :
-                hasBrutalRatio ? 'bg-orange-500 animate-pulse' :
-                'bg-slate-500'
-              }`}></span>
-              <span>Ratio detected</span>
             </div>
           )}
+
+          {/* Engagement stats */}
+          <div className="flex items-center gap-4 mt-3 text-[13px] text-white/50">
+            <div className="flex items-center gap-1.5">
+              <HeartIcon className="w-4 h-4" />
+              <span>{post.likes.toLocaleString()}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Replies */}
-      {post.replies.length > 0 && (
-        <div className="space-y-3 pl-4 sm:pl-8 border-l border-white/10 relative before:absolute before:left-0 before:top-0 before:w-px before:h-full before:bg-gradient-to-b before:from-white/20 before:to-transparent">
-          {post.replies.map(reply => (
-            <div key={reply.id} className={`relative rounded-lg p-4 border backdrop-blur-sm transition-all ${
-              reply.isLethalRatio
-                ? 'border-purple-500/40 bg-purple-500/10'
-                : reply.isBrutalRatio
-                ? 'border-orange-500/40 bg-orange-500/10'
-                : reply.isRatio
-                ? 'border-slate-500/30 bg-slate-500/5'
-                : 'border-white/10 bg-white/5'
-            }`}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <a
-                    href={`https://x.com/${reply.author}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-6 h-6 rounded-full overflow-hidden border border-white/10"
-                  >
-                    {reply.authorProfileImage ? (
-                      <img 
-                        src={reply.authorProfileImage} 
-                        alt={`@${reply.author}`}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white text-[10px]">
-                        {reply.author[0].toUpperCase()}
-                      </div>
-                    )}
-                  </a>
-                  <div className="flex flex-col leading-tight">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => onUsernameClick?.(reply.author)}
-                        className="font-medium text-white/90 text-sm hover:text-white"
-                      >
-                        {reply.authorDisplayName || reply.author}
-                      </button>
-                      
-                      {reply.isLethalRatio && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                          Lethal
-                        </span>
-                      )}
-                      {reply.isBrutalRatio && !reply.isLethalRatio && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-orange-500/20 text-orange-300 border border-orange-500/30">
-                          Brutal
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-xs text-white/40">@{reply.author}</span>
-                  </div>
-                </div>
-                
-                <a
-                  href={`https://x.com/${reply.author}/status/${reply.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-white/30 hover:text-white transition-colors"
-                >
-                  <PopoutIcon className="w-3 h-3" />
-                </a>
-              </div>
-
-              <p className="text-white/80 text-[17px] leading-relaxed mb-3 whitespace-pre-wrap">{cleanContent(reply.content)}</p>
-
-              {/* Reply Images */}
-              {reply.images && reply.images.length > 0 && (
-                <div className="mb-3">
-                  <div className={`grid gap-1.5 ${
-                    reply.images.length === 1 ? 'grid-cols-1' :
-                    reply.images.length === 2 ? 'grid-cols-2' :
-                    'grid-cols-2'
-                  }`}>
-                    {reply.images.slice(0, 4).map((imageUrl, index) => (
-                      <div
-                        key={index}
-                        className={`relative overflow-hidden rounded-lg border border-white/10 ${
-                          reply.images!.length === 3 && index === 0 ? 'row-span-2' : ''
-                        }`}
-                      >
-                        <img
-                          src={imageUrl}
-                          alt={`Reply image ${index + 1}`}
-                          className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
-                          onClick={() => window.open(imageUrl, '_blank')}
-                          style={{
-                            aspectRatio: reply.images!.length === 1 ? '16/9' :
-                                         reply.images!.length === 2 ? '4/3' :
-                                         reply.images!.length === 3 && index === 0 ? '3/4' :
-                                         '1/1'
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
+      {/* Reply Post */}
+      {reply && (
+        <div className={`flex gap-3 px-4 pt-1 pb-4 hover:bg-white/[0.02] transition-colors ${
+          hasLethalRatio ? 'bg-purple-500/[0.03]' :
+          hasBrutalRatio ? 'bg-orange-500/[0.03]' :
+          ''
+        }`}>
+          {/* Avatar column */}
+          <div className="flex flex-col items-center">
+            <a
+              href={`https://x.com/${reply.author}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 transition-opacity hover:opacity-80"
+              title={`@${reply.author}'s profile`}
+            >
+              {reply.authorProfileImage ? (
+                <img 
+                  src={reply.authorProfileImage} 
+                  alt={`@${reply.author}`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-600 to-gray-800 text-white font-medium text-sm">
+                  {reply.author[0].toUpperCase()}
                 </div>
               )}
-
-              <div className="flex items-center justify-between text-xs font-mono">
-                <div className="flex items-center gap-1.5 text-white/40">
-                  <HeartIcon className="w-3 h-3" />
-                  <span className="text-white/60">{reply.likes.toLocaleString()} likes</span>
-                </div>
-                
-                {reply.likes > post.likes && (
-                  <div className={`font-bold ${
-                    reply.isLethalRatio ? 'text-purple-400' :
-                    reply.isBrutalRatio ? 'text-orange-400' :
-                    'text-slate-400'
-                  }`}>
-                    {(reply.likes / Math.max(1, post.likes)).toFixed(1)}x ratio
-                  </div>
+            </a>
+          </div>
+          
+          {/* Content column */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-1 flex-wrap min-w-0">
+                <button
+                  onClick={() => onUsernameClick?.(reply.author)}
+                  className="font-bold text-[15px] text-white hover:underline truncate"
+                >
+                  {reply.authorDisplayName || reply.author}
+                </button>
+                <span className="text-[15px] text-white/50 truncate">@{reply.author}</span>
+                {/* Ratio badge */}
+                {reply.isLethalRatio && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                    Lethal
+                  </span>
+                )}
+                {reply.isBrutalRatio && !reply.isLethalRatio && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                    Brutal
+                  </span>
                 )}
               </div>
+              <a
+                href={`https://x.com/${reply.author}/status/${reply.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1.5 -mr-1.5 rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-colors flex-shrink-0"
+                title="View on X"
+              >
+                <PopoutIcon className="w-4 h-4" />
+              </a>
             </div>
-          ))}
+
+            {/* Replying to indicator */}
+            <div className="text-[13px] text-white/40 mb-1">
+              Replying to <span className="text-blue-400">@{post.author}</span>
+            </div>
+
+            <p className="text-[17px] text-white leading-normal whitespace-pre-wrap break-words">{cleanContent(reply.content)}</p>
+
+            {/* Reply Images */}
+            {reply.images && reply.images.length > 0 && (
+              <div className="mt-3">
+                <div className={`grid gap-0.5 rounded-2xl overflow-hidden border border-white/10 ${
+                  reply.images.length === 1 ? 'grid-cols-1' :
+                  reply.images.length === 2 ? 'grid-cols-2' :
+                  'grid-cols-2'
+                }`}>
+                  {reply.images.slice(0, 4).map((imageUrl, index) => (
+                    <div
+                      key={index}
+                      className={`relative overflow-hidden ${
+                        reply.images!.length === 3 && index === 0 ? 'row-span-2' : ''
+                      }`}
+                    >
+                      <img
+                        src={imageUrl}
+                        alt={`Reply image ${index + 1}`}
+                        className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => window.open(imageUrl, '_blank')}
+                        style={{
+                          aspectRatio: reply.images!.length === 1 ? '16/9' :
+                                       reply.images!.length === 2 ? '4/3' :
+                                       reply.images!.length === 3 && index === 0 ? '3/4' :
+                                       '1/1'
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Engagement stats with ratio indicator */}
+            <div className="flex items-center justify-between mt-3">
+              <div className="flex items-center gap-4 text-[13px] text-white/50">
+                <div className="flex items-center gap-1.5">
+                  <HeartIcon className="w-4 h-4" />
+                  <span>{reply.likes.toLocaleString()}</span>
+                </div>
+              </div>
+              
+              {reply.likes > post.likes && (
+                <div className={`text-sm font-bold ${
+                  reply.isLethalRatio ? 'text-purple-400' :
+                  reply.isBrutalRatio ? 'text-orange-400' :
+                  'text-slate-400'
+                }`}>
+                  {(reply.likes / Math.max(1, post.likes)).toFixed(1)}x ratio
+                </div>
+              )}
+            </div>
+
+            {/* Share button */}
+            <div className="mt-3 flex justify-end">
+              <ShareButton
+                ratio={reply.isRatio ? (reply.likes / post.likes) : 0}
+                parentAuthor={post.author}
+                replyAuthor={reply.author}
+                parentTweetId={post.id}
+                replyTweetId={reply.id}
+              />
+            </div>
+          </div>
         </div>
       )}
-
-      {/* Share Action */}
-      <div className="mt-4 pt-4 border-t border-white/5 flex justify-end">
-        <ShareButton
-          ratio={post.replies[0]?.isRatio ? (post.replies[0].likes / post.likes) : 0}
-          parentAuthor={post.author}
-          replyAuthor={post.replies[0]?.author || ''}
-          parentTweetId={post.id}
-          replyTweetId={post.replies[0]?.id || ''}
-        />
-      </div>
     </div>
   );
 };
@@ -1212,13 +1201,13 @@ export function App() {
                   <p className="text-white/60 font-mono text-sm animate-pulse">Scanning network for ratios...</p>
                 </div>
               ) : (
-                <div className="space-y-8">
+                <div className="divide-y divide-white/20 border-y border-white/20">
                   {filteredPosts.length > 0 ? (
                     filteredPosts.map(post => (
                       <PostCard key={post.id} post={post} onUsernameClick={handleUsernameClick} />
                     ))
                   ) : (
-                    <div className="text-center py-20 border border-dashed border-white/10 rounded-xl bg-white/[0.02]">
+                    <div className="text-center py-20">
                       <p className="text-white/40 font-mono text-sm">No ratios detected with current filters.</p>
                     </div>
                   )}
