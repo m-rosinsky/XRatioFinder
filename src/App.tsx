@@ -814,14 +814,6 @@ export function App() {
               <span className="font-mono text-sm tracking-widest uppercase text-white/90 hidden sm:block group-hover:text-white transition-colors">Ratio Finder</span>
             </div>
             
-            <div className="h-4 w-[1px] bg-white/10 hidden sm:block"></div>
-            
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.4)] transition-colors"></div>
-              <span className="font-mono text-[10px] tracking-wider uppercase text-white/40 hidden sm:inline-block">
-                Live Data
-              </span>
-            </div>
           </div>
 
           <div className="flex items-center gap-3 sm:gap-6">

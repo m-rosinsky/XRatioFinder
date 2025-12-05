@@ -294,6 +294,12 @@ const server = serve({
 
           console.log(`✅ Enrichment complete for ${cleanUsername}: ${newCount} new, ${totalEnriched - newCount} updated`);
 
+          // If no ratios were found, remove the user from the tracked list
+          if (totalEnriched === 0) {
+            ratioStore.removeTrackedUser(cleanUsername);
+            console.log(`🗑️ No ratios found for ${cleanUsername}, removed from tracked users`);
+          }
+
           return withCORS(Response.json({
             success: true,
             username: cleanUsername,

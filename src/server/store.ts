@@ -276,6 +276,18 @@ class RatioStore {
     this.saveTrackedUsers();
   }
 
+  // Remove a user from the tracked users list
+  removeTrackedUser(username: string) {
+    const lowercaseUsername = username.toLowerCase();
+    if (this.trackedUsers.has(lowercaseUsername)) {
+      this.trackedUsers.delete(lowercaseUsername);
+      console.log(`🗑️ Removed user from tracking: ${lowercaseUsername} (${this.trackedUsers.size} remaining)`);
+      this.saveTrackedUsers();
+      return true;
+    }
+    return false;
+  }
+
   // Clear all data
   clear() {
     this.ratios.clear();
