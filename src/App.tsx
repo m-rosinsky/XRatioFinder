@@ -89,10 +89,18 @@ const formatRelativeTime = (timestamp: string): string => {
   }
 };
 
-// Helper function to clean content by removing t.co links
+// Helper function to clean content by removing t.co links and leading @mentions
 const cleanContent = (content: string): string => {
+  let cleaned = content;
+  
+  // Remove leading @mentions (like X does for replies)
+  // This matches one or more @username patterns at the start of the text
+  cleaned = cleaned.replace(/^(@[\w]+\s*)+/, '');
+  
   // Remove https://t.co links (Twitter's URL shortener)
-  return content.replace(/https:\/\/t\.co\/\w+/g, '').trim();
+  cleaned = cleaned.replace(/https:\/\/t\.co\/\w+/g, '');
+  
+  return cleaned.trim();
 };
 
 // Mock data for demonstration - used as fallback
@@ -332,7 +340,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
           </a>
         </div>
 
-        <p className="text-white/90 text-[15px] leading-relaxed mb-4 whitespace-pre-wrap">{cleanContent(post.content)}</p>
+        <p className="text-white/90 text-[17px] leading-relaxed mb-4 whitespace-pre-wrap">{cleanContent(post.content)}</p>
 
         {/* Display images if available */}
         {post.images && post.images.length > 0 && (
@@ -456,7 +464,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
                 </a>
               </div>
 
-              <p className="text-white/80 text-sm leading-relaxed mb-3 whitespace-pre-wrap">{cleanContent(reply.content)}</p>
+              <p className="text-white/80 text-[17px] leading-relaxed mb-3 whitespace-pre-wrap">{cleanContent(reply.content)}</p>
 
               {/* Reply Images */}
               {reply.images && reply.images.length > 0 && (
