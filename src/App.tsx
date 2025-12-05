@@ -97,71 +97,62 @@ const cleanContent = (content: string): string => {
 
 // Mock data for demonstration - used as fallback
 const mockPosts: Post[] = [
+  // LETHAL RATIO (100x+) - Purple glow
   {
     id: "1",
-    author: "techguru",
-    content: "Just launched my new AI startup! 🚀 Can't wait to see what the future holds.",
-    likes: 750,
-    timestamp: "2024-11-07T14:30:00Z",
+    author: "tech_ceo",
+    authorDisplayName: "Tech CEO",
+    content: "We're pivoting to AI. Our new chatbot will revolutionize how people interact with technology. This is the future!",
+    likes: 1200,
+    timestamp: "2024-12-05T14:30:00Z",
     replies: [
       {
         id: "101",
-        author: "skeptic_dev",
-        content: "AI startups are so 2023. What's your unique value prop?",
-        likes: 156,
-        isRatio: false,
-        isBrutalRatio: false,
-        isLethalRatio: false
+        author: "senior_engineer",
+        authorDisplayName: "Senior Engineer",
+        content: "I worked there for 3 years. They couldn't even get the coffee machine to work properly. Good luck with AI.",
+        likes: 185000,
+        isRatio: true,
+        isBrutalRatio: true,
+        isLethalRatio: true
       }
     ]
   },
+  // BRUTAL RATIO (10x-100x) - Orange glow
   {
     id: "2",
-    author: "design_master",
-    content: "Flat design is dead. Time for brutalism in UI! 💀",
-    likes: 1200,
-    timestamp: "2024-11-07T13:15:00Z",
+    author: "fitness_guru",
+    authorDisplayName: "Fitness Guru",
+    content: "Lost 50lbs in 3 months with this ONE weird trick! No exercise needed!",
+    likes: 5200,
+    timestamp: "2024-12-05T13:15:00Z",
     replies: [
       {
         id: "201",
-        author: "ux_lover",
-        content: "Actually, brutalism has been around forever. It's not new.",
-        likes: 2800,
+        author: "actual_doctor",
+        authorDisplayName: "Dr. Sarah Chen, MD",
+        content: "I'm a licensed physician. This is dangerous misinformation. Weight loss requires sustainable diet changes and exercise. Please stop.",
+        likes: 78000,
         isRatio: true,
         isBrutalRatio: true,
         isLethalRatio: false
       }
     ]
   },
+  // BRUTAL RATIO (10x-100x) - Orange glow
   {
     id: "3",
-    author: "ceo_startup",
-    content: "Our team just hit unicorn status! 🦄 Time to celebrate!",
-    likes: 2500,
-    timestamp: "2024-11-07T12:45:00Z",
+    author: "influencer_pro",
+    authorDisplayName: "Lifestyle Influencer",
+    content: "Just dropped my new single! Stream it now. I put my heart and soul into this one.",
+    likes: 3800,
+    timestamp: "2024-12-05T12:45:00Z",
     replies: [
       {
         id: "301",
-        author: "finance_guru",
-        content: "Unicorn? More like a donkey. Your valuation is inflated garbage.",
-        likes: 150,
-        isRatio: false,
-        isBrutalRatio: false,
-        isLethalRatio: false
-      }
-    ]
-  },
-  {
-    id: "4",
-    author: "influencer_pro",
-    content: "Just dropped my new single! Stream it now 🎵 #NewMusic",
-    likes: 3800,
-    timestamp: "2024-11-07T11:20:00Z",
-    replies: [
-      {
-        id: "401",
-        author: "music_critic",
-        content: "This is absolutely terrible. How do you even call yourself a musician?",
+        author: "music_producer",
+        authorDisplayName: "Grammy-Winning Producer",
+        content: "I've been producing for 20 years. This is auto-tune over a stock beat. At least try to write your own lyrics.",
         likes: 42000,
         isRatio: true,
         isBrutalRatio: true,
@@ -169,72 +160,105 @@ const mockPosts: Post[] = [
       }
     ]
   },
+  // NORMAL RATIO (2x-10x) - Muted slate
   {
-    id: "5",
-    author: "fitness_guru",
-    content: "Lost 50lbs in 3 months with this ONE weird trick! 💪",
-    likes: 5200,
-    timestamp: "2024-11-07T10:10:00Z",
+    id: "4",
+    author: "design_master",
+    authorDisplayName: "Design Master",
+    content: "Flat design is officially dead. Brutalism is the future of UI design.",
+    likes: 4500,
+    timestamp: "2024-12-05T11:20:00Z",
     replies: [
       {
-        id: "501",
-        author: "science_fan",
-        content: "Please stop spreading misinformation. Weight loss requires diet + exercise.",
-        likes: 58000,
+        id: "401",
+        author: "ux_researcher",
+        authorDisplayName: "UX Researcher",
+        content: "Brutalism has been around since the 90s. Also, flat design isn't dead - Apple just updated their icons last month.",
+        likes: 12500,
         isRatio: true,
-        isBrutalRatio: true,
+        isBrutalRatio: false,
         isLethalRatio: false
       }
     ]
   },
+  // NORMAL RATIO (2x-10x) - Muted slate
+  {
+    id: "5",
+    author: "startup_founder",
+    authorDisplayName: "Startup Founder",
+    content: "We just raised $50M Series B! Excited to scale our revolutionary platform to new heights!",
+    likes: 8200,
+    timestamp: "2024-12-05T10:10:00Z",
+    replies: [
+      {
+        id: "501",
+        author: "vc_analyst",
+        authorDisplayName: "VC Analyst",
+        content: "Your company has -$2M annual revenue and 12 employees. That's a $4M valuation per head. Care to explain the math?",
+        likes: 24000,
+        isRatio: true,
+        isBrutalRatio: false,
+        isLethalRatio: false
+      }
+    ]
+  },
+  // NO RATIO - Normal post
   {
     id: "6",
     author: "crypto_trader",
-    content: "This coin is going to 1000x! Buy now before it's too late! 📈",
+    authorDisplayName: "Crypto Day Trader",
+    content: "This coin is going to 1000x! Buy now before it's too late! Not financial advice.",
     likes: 6800,
-    timestamp: "2024-11-07T09:30:00Z",
+    timestamp: "2024-12-05T09:30:00Z",
     replies: [
       {
         id: "601",
         author: "bear_market",
-        content: "This is a rug pull waiting to happen. DYOR people.",
-        likes: 1200,
+        authorDisplayName: "Market Skeptic",
+        content: "This looks like a classic pump and dump. DYOR people.",
+        likes: 2100,
         isRatio: false,
         isBrutalRatio: false,
         isLethalRatio: false
       }
     ]
   },
+  // LETHAL RATIO (100x+) - Purple glow
   {
     id: "7",
-    author: "celebrity_news",
-    content: "BREAKING: Major celebrity scandal drops! 🍿",
-    likes: 8500,
-    timestamp: "2024-11-07T08:45:00Z",
+    author: "politician_pro",
+    authorDisplayName: "Senator Williams",
+    content: "My new tax policy will save the average family $5000 per year! Vote for real change!",
+    likes: 890,
+    timestamp: "2024-12-05T08:45:00Z",
     replies: [
       {
         id: "701",
-        author: "gossip_expert",
-        content: "Old news. This was leaked weeks ago.",
-        likes: 3400,
-        isRatio: false,
-        isBrutalRatio: false,
-        isLethalRatio: false
+        author: "economist_phd",
+        authorDisplayName: "Dr. James Parker, Economics PhD",
+        content: "I analyzed this policy. It would actually cost the average family $2400/year and primarily benefits the top 1%. Here's my 47-page breakdown.",
+        likes: 156000,
+        isRatio: true,
+        isBrutalRatio: true,
+        isLethalRatio: true
       }
     ]
   },
+  // NO RATIO - Normal post
   {
     id: "8",
-    author: "politician_pro",
-    content: "My new policy will change everything! Vote for change! 🗳️",
-    likes: 9200,
-    timestamp: "2024-11-07T07:15:00Z",
+    author: "celebrity_news",
+    authorDisplayName: "Celebrity News Daily",
+    content: "BREAKING: Major celebrity announces surprise album drop!",
+    likes: 12500,
+    timestamp: "2024-12-05T07:15:00Z",
     replies: [
       {
         id: "801",
-        author: "fact_checker",
-        content: "Your facts are wrong. Here's the actual data...",
-        likes: 5600,
+        author: "music_blogger",
+        authorDisplayName: "Music Blogger",
+        content: "Actually this was announced two weeks ago. Not really breaking news.",
+        likes: 4200,
         isRatio: false,
         isLethalRatio: false,
         isBrutalRatio: false
@@ -255,7 +279,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
         : hasBrutalRatio
         ? 'border-orange-500/50 bg-orange-900/10 shadow-[0_0_30px_rgba(249,115,22,0.15)] hover:shadow-[0_0_40px_rgba(249,115,22,0.25)]'
         : hasRatio
-        ? 'border-red-500/40 bg-red-900/10 shadow-[0_0_20px_rgba(239,68,68,0.1)]'
+        ? 'border-slate-500/30 bg-slate-900/10'
         : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.07]'
     } p-5`}>
       
@@ -349,8 +373,16 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
             <span>{post.likes.toLocaleString()} likes</span>
           </div>
           {hasRatio && (
-            <div className="flex items-center gap-1.5 text-red-400/80">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+            <div className={`flex items-center gap-1.5 ${
+              hasLethalRatio ? 'text-purple-400/80' :
+              hasBrutalRatio ? 'text-orange-400/80' :
+              'text-slate-400/80'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${
+                hasLethalRatio ? 'bg-purple-500 animate-pulse' :
+                hasBrutalRatio ? 'bg-orange-500 animate-pulse' :
+                'bg-slate-500'
+              }`}></span>
               <span>Ratio detected</span>
             </div>
           )}
@@ -367,7 +399,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
                 : reply.isBrutalRatio
                 ? 'border-orange-500/40 bg-orange-500/10'
                 : reply.isRatio
-                ? 'border-red-500/30 bg-red-500/5'
+                ? 'border-slate-500/30 bg-slate-500/5'
                 : 'border-white/10 bg-white/5'
             }`}>
               <div className="flex items-center justify-between mb-3">
@@ -469,7 +501,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
                   <div className={`font-bold ${
                     reply.isLethalRatio ? 'text-purple-400' :
                     reply.isBrutalRatio ? 'text-orange-400' :
-                    'text-red-400'
+                    'text-slate-400'
                   }`}>
                     {(reply.likes / Math.max(1, post.likes)).toFixed(1)}x ratio
                   </div>
