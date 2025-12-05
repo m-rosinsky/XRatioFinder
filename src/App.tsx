@@ -1215,6 +1215,7 @@ export function App() {
                           </div>
                         </div>
                         
+                        {entry.worstRatio?.ratio && (
                         <div className="border-t border-white/10 pt-4">
                           <div className="flex items-center gap-2 mb-3">
                             <span className="text-xs font-mono text-white/40 uppercase tracking-wider">Worst Defeat</span>
@@ -1230,7 +1231,7 @@ export function App() {
                               <div className="flex items-center justify-between text-xs text-white/30">
                                 <span className="flex items-center gap-1.5">
                                   <HeartIcon className="w-3 h-3" />
-                                  {entry.worstRatio.postLikes.toLocaleString()}
+                                  {entry.worstRatio.postLikes?.toLocaleString()}
                                 </span>
                                 <a href={`https://x.com/${entry.username}/status/${entry.worstRatio.postId}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">View →</a>
                               </div>
@@ -1249,7 +1250,7 @@ export function App() {
                                 <div className="flex items-center justify-between text-xs">
                                   <span className="flex items-center gap-1.5 text-red-400">
                                     <HeartIcon className="w-3 h-3" />
-                                    {entry.worstRatio.replyLikes.toLocaleString()}
+                                    {entry.worstRatio.replyLikes?.toLocaleString()}
                                   </span>
                                   <a href={`https://x.com/${entry.worstRatio.replyAuthor}/status/${entry.worstRatio.replyId}`} target="_blank" rel="noopener noreferrer" className="text-white/30 hover:text-white transition-colors">View →</a>
                                 </div>
@@ -1257,6 +1258,7 @@ export function App() {
                             </div>
                           </div>
                         </div>
+                        )}
                       </div>
                     ))}
                   </>
