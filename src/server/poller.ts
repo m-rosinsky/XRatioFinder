@@ -260,6 +260,7 @@ export class RatioPoller {
           parent: {
             id: ratio.parent.id,
             author: ratio.parent.author.username,
+            authorDisplayName: ratio.parent.author.name,
             authorProfileImage: ratio.parent.author.profile_image_url,
             content: ratio.parent.text,
             likes: ratio.parent.public_metrics.like_count,
@@ -269,6 +270,7 @@ export class RatioPoller {
           reply: {
             id: ratio.reply.id,
             author: ratio.reply.author.username,
+            authorDisplayName: ratio.reply.author.name,
             authorProfileImage: ratio.reply.author.profile_image_url,
             content: ratio.reply.text,
             likes: ratio.reply.public_metrics.like_count,
@@ -351,6 +353,7 @@ export class RatioPoller {
             parent: {
               id: ratio.parent.id,
               author: ratio.parent.author.username,
+              authorDisplayName: ratio.parent.author.name,
               authorProfileImage: ratio.parent.author.profile_image_url,
               content: ratio.parent.text,
               likes: ratio.parent.public_metrics.like_count,
@@ -360,6 +363,7 @@ export class RatioPoller {
             reply: {
               id: ratio.reply.id,
               author: ratio.reply.author.username,
+              authorDisplayName: ratio.reply.author.name,
               authorProfileImage: ratio.reply.author.profile_image_url,
               content: ratio.reply.text,
               likes: ratio.reply.public_metrics.like_count,
@@ -393,6 +397,7 @@ export class RatioPoller {
             parent: {
               id: ratio.parent.id,
               author: ratio.parent.author.username,
+              authorDisplayName: ratio.parent.author.name,
               authorProfileImage: ratio.parent.author.profile_image_url,
               content: ratio.parent.text,
               likes: ratio.parent.public_metrics.like_count,
@@ -402,6 +407,7 @@ export class RatioPoller {
             reply: {
               id: ratio.reply.id,
               author: ratio.reply.author.username,
+              authorDisplayName: ratio.reply.author.name,
               authorProfileImage: ratio.reply.author.profile_image_url,
               content: ratio.reply.text,
               likes: ratio.reply.public_metrics.like_count,

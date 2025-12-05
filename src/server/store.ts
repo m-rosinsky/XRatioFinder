@@ -9,6 +9,7 @@ export interface StoredRatio {
   parent: {
     id: string;
     author: string;
+    authorDisplayName?: string;
     authorProfileImage?: string;
     content: string;
     likes: number;
@@ -18,6 +19,7 @@ export interface StoredRatio {
   reply: {
     id: string;
     author: string;
+    authorDisplayName?: string;
     authorProfileImage?: string;
     content: string;
     likes: number;
@@ -151,18 +153,21 @@ class RatioStore {
     const ratios = this.getAllRatios();
     
     // Calculate victim counts (who got ratio'd the most)
-    const victimCounts = new Map<string, { count: number; totalLikes: number; profileImage?: string; worstRatio: { ratio: number; postId: string; postContent: string; postLikes: number; replyId: string; replyContent: string; replyLikes: number; replyAuthor: string } }>();
+    const victimCounts = new Map<string, { count: number; totalLikes: number; displayName?: string; profileImage?: string; worstRatio: { ratio: number; postId: string; postContent: string; postLikes: number; replyId: string; replyContent: string; replyLikes: number; replyAuthor: string; replyAuthorDisplayName?: string } }>();
     
     // Calculate perpetrator counts (who did the most ratioing)
-    const perpetratorCounts = new Map<string, { count: number; totalLikes: number; profileImage?: string; bestRatio: { ratio: number; postId: string; postContent: string; postLikes: number; postAuthor: string; replyId: string; replyContent: string; replyLikes: number } }>();
+    const perpetratorCounts = new Map<string, { count: number; totalLikes: number; displayName?: string; profileImage?: string; bestRatio: { ratio: number; postId: string; postContent: string; postLikes: number; postAuthor: string; postAuthorDisplayName?: string; replyId: string; replyContent: string; replyLikes: number } }>();
     
     for (const ratio of ratios) {
       // Track victims
-      const victim = victimCounts.get(ratio.parent.author) || { count: 0, totalLikes: 0, profileImage: undefined, worstRatio: { ratio: 0, postId: '', postContent: '', postLikes: 0, replyId: '', replyContent: '', replyLikes: 0, replyAuthor: '' } };
+      const victim = victimCounts.get(ratio.parent.author) || { count: 0, totalLikes: 0, displayName: undefined, profileImage: undefined, worstRatio: { ratio: 0, postId: '', postContent: '', postLikes: 0, replyId: '', replyContent: '', replyLikes: 0, replyAuthor: '', replyAuthorDisplayName: undefined } };
       victim.count++;
       victim.totalLikes += ratio.reply.likes;
       
-      // Update profile image if available
+      // Update display name and profile image if available
+      if (ratio.parent.authorDisplayName) {
+        victim.displayName = ratio.parent.authorDisplayName;
+      }
       if (ratio.parent.authorProfileImage) {
         victim.profileImage = ratio.parent.authorProfileImage;
       }
@@ -178,17 +183,21 @@ class RatioStore {
           replyContent: ratio.reply.content,
           replyLikes: ratio.reply.likes,
           replyAuthor: ratio.reply.author,
+          replyAuthorDisplayName: ratio.reply.authorDisplayName,
           replyImages: ratio.reply.images,
         };
       }
       victimCounts.set(ratio.parent.author, victim);
       
       // Track perpetrators
-      const perpetrator = perpetratorCounts.get(ratio.reply.author) || { count: 0, totalLikes: 0, profileImage: undefined, bestRatio: { ratio: 0, postId: '', postContent: '', postLikes: 0, postAuthor: '', replyId: '', replyContent: '', replyLikes: 0 } };
+      const perpetrator = perpetratorCounts.get(ratio.reply.author) || { count: 0, totalLikes: 0, displayName: undefined, profileImage: undefined, bestRatio: { ratio: 0, postId: '', postContent: '', postLikes: 0, postAuthor: '', postAuthorDisplayName: undefined, replyId: '', replyContent: '', replyLikes: 0 } };
       perpetrator.count++;
       perpetrator.totalLikes += ratio.reply.likes;
       
-      // Update profile image if available
+      // Update display name and profile image if available
+      if (ratio.reply.authorDisplayName) {
+        perpetrator.displayName = ratio.reply.authorDisplayName;
+      }
       if (ratio.reply.authorProfileImage) {
         perpetrator.profileImage = ratio.reply.authorProfileImage;
       }
@@ -200,6 +209,7 @@ class RatioStore {
           postContent: ratio.parent.content,
           postLikes: ratio.parent.likes,
           postAuthor: ratio.parent.author,
+          postAuthorDisplayName: ratio.parent.authorDisplayName,
           postImages: ratio.parent.images,
           replyId: ratio.reply.id,
           replyContent: ratio.reply.content,
@@ -216,6 +226,7 @@ class RatioStore {
       .slice(0, 20)
       .map(([username, data]) => ({
         username,
+        displayName: data.displayName,
         profileImage: data.profileImage,
         ratioCount: data.count,
         totalLikes: data.totalLikes,
@@ -228,6 +239,7 @@ class RatioStore {
       .slice(0, 20)
       .map(([username, data]) => ({
         username,
+        displayName: data.displayName,
         profileImage: data.profileImage,
         ratioCount: data.count,
         totalLikes: data.totalLikes,

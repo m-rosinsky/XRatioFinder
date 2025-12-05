@@ -44,6 +44,7 @@ const PoweredByXIcon = ({ className }: { className?: string }) => (
 interface Post {
   id: string;
   author: string;
+  authorDisplayName?: string;
   authorProfileImage?: string;
   content: string;
   likes: number;
@@ -55,6 +56,7 @@ interface Post {
 interface Reply {
   id: string;
   author: string;
+  authorDisplayName?: string;
   authorProfileImage?: string;
   content: string;
   likes: number;
@@ -285,9 +287,13 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
                 onClick={() => onUsernameClick?.(post.author)}
                 className="font-medium text-white hover:underline text-left"
               >
-                @{post.author}
+                {post.authorDisplayName || post.author}
               </button>
-              <span className="text-xs text-white/40">{formatRelativeTime(post.timestamp)}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-white/40">@{post.author}</span>
+                <span className="text-xs text-white/20">·</span>
+                <span className="text-xs text-white/40">{formatRelativeTime(post.timestamp)}</span>
+              </div>
             </div>
           </div>
           
@@ -384,23 +390,28 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
                       </div>
                     )}
                   </a>
-                  <button
-                    onClick={() => onUsernameClick?.(reply.author)}
-                    className="font-medium text-white/90 text-sm hover:text-white"
-                  >
-                    @{reply.author}
-                  </button>
-                  
-                  {reply.isLethalRatio && (
-                    <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                      Lethal
-                    </span>
-                  )}
-                  {reply.isBrutalRatio && !reply.isLethalRatio && (
-                    <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-orange-500/20 text-orange-300 border border-orange-500/30">
-                      Brutal
-                    </span>
-                  )}
+                  <div className="flex flex-col leading-tight">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => onUsernameClick?.(reply.author)}
+                        className="font-medium text-white/90 text-sm hover:text-white"
+                      >
+                        {reply.authorDisplayName || reply.author}
+                      </button>
+                      
+                      {reply.isLethalRatio && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                          Lethal
+                        </span>
+                      )}
+                      {reply.isBrutalRatio && !reply.isLethalRatio && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                          Brutal
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-white/40">@{reply.author}</span>
+                  </div>
                 </div>
                 
                 <a
@@ -494,6 +505,7 @@ export function App() {
     return {
       id: ratio.parent.id,
       author: ratio.parent.author,
+      authorDisplayName: ratio.parent.authorDisplayName,
       authorProfileImage: ratio.parent.authorProfileImage,
       content: ratio.parent.content,
       likes: ratio.parent.likes,
@@ -502,6 +514,7 @@ export function App() {
       replies: [{
         id: ratio.reply.id,
         author: ratio.reply.author,
+        authorDisplayName: ratio.reply.authorDisplayName,
         authorProfileImage: ratio.reply.authorProfileImage,
         content: ratio.reply.content,
         likes: ratio.reply.likes,
@@ -666,6 +679,7 @@ export function App() {
   // Calculate leaderboards
   interface VictimLeaderboardEntry {
     username: string;
+    displayName?: string;
     profileImage?: string;
     ratioCount: number;
     totalLikes: number;
@@ -679,12 +693,14 @@ export function App() {
       replyContent: string;
       replyLikes: number;
       replyAuthor: string;
+      replyAuthorDisplayName?: string;
       replyImages?: string[];
     };
   }
 
   interface PerpetratorLeaderboardEntry {
     username: string;
+    displayName?: string;
     profileImage?: string;
     ratioCount: number;
     totalLikes: number;
@@ -694,6 +710,7 @@ export function App() {
       postContent: string;
       postLikes: number;
       postAuthor: string;
+      postAuthorDisplayName?: string;
       postImages?: string[];
       replyId: string;
       replyContent: string;
@@ -1199,8 +1216,9 @@ export function App() {
                                 rel="noopener noreferrer"
                                 className="font-medium text-white text-lg hover:underline"
                               >
-                                @{entry.username}
+                                {entry.displayName || entry.username}
                               </a>
+                              <div className="text-xs text-white/40">@{entry.username}</div>
                               <div className="text-sm text-white/40 mt-0.5">
                                 Ratio'd <span className="text-red-400 font-bold">{entry.ratioCount}x</span> this week
                               </div>
@@ -1244,7 +1262,7 @@ export function App() {
                               
                               <div className="bg-red-500/5 rounded-lg p-4 border border-red-500/10 relative z-10">
                                 <div className="flex items-center justify-between mb-2">
-                                  <span className="text-xs text-red-400 font-medium">@{entry.worstRatio.replyAuthor} replied:</span>
+                                  <span className="text-xs text-red-400 font-medium">{entry.worstRatio.replyAuthorDisplayName || entry.worstRatio.replyAuthor} <span className="text-white/40">@{entry.worstRatio.replyAuthor}</span> replied:</span>
                                 </div>
                                 <p className="text-white/90 text-sm mb-3 line-clamp-3">{cleanContent(entry.worstRatio.replyContent)}</p>
                                 <div className="flex items-center justify-between text-xs">
@@ -1345,8 +1363,9 @@ export function App() {
                                 rel="noopener noreferrer"
                                 className="font-medium text-white text-lg hover:underline"
                               >
-                                @{entry.username}
+                                {entry.displayName || entry.username}
                               </a>
+                              <div className="text-xs text-white/40">@{entry.username}</div>
                               <div className="text-sm text-white/40 mt-0.5">
                                 Ratio'd <span className="text-purple-400 font-bold">{entry.ratioCount}</span> user{entry.ratioCount !== 1 ? 's' : ''} this week
                               </div>
@@ -1375,7 +1394,7 @@ export function App() {
                                 {/* Victim's Post */}
                                 <div className="bg-black/20 rounded-lg p-4 border border-white/5">
                                   <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs text-white/40">Original post by @{entry.bestRatio.postAuthor}:</span>
+                                    <span className="text-xs text-white/40">Original post by {entry.bestRatio.postAuthorDisplayName || entry.bestRatio.postAuthor} <span className="text-white/30">@{entry.bestRatio.postAuthor}</span>:</span>
                                   </div>
                                   <p className="text-white/60 text-sm mb-3 line-clamp-2">{cleanContent(entry.bestRatio.postContent)}</p>
                                   <div className="flex items-center justify-between text-xs text-white/30">
