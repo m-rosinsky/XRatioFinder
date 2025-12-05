@@ -541,6 +541,8 @@ export function App() {
   const [victimsLeaderboard, setVictimsLeaderboard] = useState<VictimLeaderboardEntry[]>([]);
   const [perpetratorsLeaderboard, setPerpetratorsLeaderboard] = useState<PerpetratorLeaderboardEntry[]>([]);
   const [totalRatios, setTotalRatios] = useState<number>(0);
+  const [newPostsAvailable, setNewPostsAvailable] = useState(false);
+  const [lastKnownCount, setLastKnownCount] = useState<number>(0);
 
   // Convert stored ratio to Post format
   const convertRatioToPost = (ratio: any): Post => {
@@ -605,10 +607,12 @@ export function App() {
       const convertedPosts = result.data.map(convertRatioToPost);
       setPosts(convertedPosts);
       setLastUpdate(Date.now());
+      setNewPostsAvailable(false);
       
       // Update total ratios count from stats
       if (result.stats && result.stats.total) {
         setTotalRatios(result.stats.total);
+        setLastKnownCount(result.stats.total);
       }
 
       console.log(`✅ Refreshed view: ${result.data.length} ratios loaded (${result.stats?.total || 0} total)`);
@@ -625,6 +629,29 @@ export function App() {
     console.log(`🔄 Filter state changed, auto-refreshing with current filters`);
     loadPosts(filterUsername || undefined);
   }, [sortBy, showOnlyBrutal, showOnlyLethal, minLikes, loadPosts]); // Added minLikes to dependencies
+
+  // Background check for new posts (every 60 seconds)
+  useEffect(() => {
+    const checkForNewPosts = async () => {
+      if (activeFeed !== 'recents' || loading) return;
+      
+      try {
+        const response = await fetch('/api/status', { method: 'GET' });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.stats && data.stats.total > lastKnownCount && lastKnownCount > 0) {
+            setNewPostsAvailable(true);
+            console.log(`📬 New posts available: ${data.stats.total - lastKnownCount} new`);
+          }
+        }
+      } catch (err) {
+        // Silently fail - this is just a background check
+      }
+    };
+
+    const interval = setInterval(checkForNewPosts, 60000); // Check every 60 seconds
+    return () => clearInterval(interval);
+  }, [activeFeed, loading, lastKnownCount]);
 
   // Load leaderboards from backend
   const loadLeaderboards = async () => {
@@ -1167,7 +1194,7 @@ export function App() {
                 </h2>
                 <p className="text-white/50 text-sm max-w-xl">
                   {activeFeed === 'recents'
-                    ? 'Real-time detection of ratio events across X. Auto-updating as new ratios are discovered.'
+                    ? 'Ratio events detected across X. Pull to refresh for the latest.'
                     : activeFeed === 'victims'
                     ? 'Users who have suffered the most devastating ratios in the past 7 days.'
                     : 'The most ruthless ratio-ers on the platform in the past 7 days.'}
@@ -1187,6 +1214,24 @@ export function App() {
                     </p>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* New Posts Available Pill */}
+            {newPostsAvailable && activeFeed === 'recents' && (
+              <div className="flex justify-center mb-4">
+                <button
+                  onClick={() => {
+                    loadPosts(filterUsername || undefined);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-full shadow-lg shadow-blue-500/25 transition-all hover:shadow-blue-500/40 flex items-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 19V5M5 12l7-7 7 7"/>
+                  </svg>
+                  New ratios available
+                </button>
               </div>
             )}
 
