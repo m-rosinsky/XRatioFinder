@@ -1,9 +1,6 @@
 // In-memory data store for ratios
 // Could be replaced with a database for persistence
 
-import { existsSync, readFileSync, writeFileSync } from "fs";
-import { join } from "path";
-
 export interface StoredRatio {
   id: string; // parent post id
   parent: {
@@ -35,57 +32,7 @@ export interface StoredRatio {
 class RatioStore {
   private ratios: Map<string, StoredRatio> = new Map();
   private trackedUsers: Set<string> = new Set(); // Master list of users to track
-  private maxAge = 48 * 60 * 60 * 1000; // 48 hours
-  private trackedUsersFile = join(process.cwd(), "tracked_users.csv");
-
-  constructor() {
-    this.loadTrackedUsers();
-  }
-
-  // Load tracked users from CSV file
-  private loadTrackedUsers() {
-    try {
-      if (existsSync(this.trackedUsersFile)) {
-        const content = readFileSync(this.trackedUsersFile, "utf-8");
-        const lines = content.split("\n").filter(line => line.trim());
-
-        // Skip header if it exists (first line with "username")
-        const usernames = lines.filter(line => !line.startsWith("username"));
-
-        // Convert to lowercase and deduplicate
-        const uniqueUsernames = new Set(
-          usernames
-            .filter(username => username.trim())
-            .map(username => username.trim().toLowerCase())
-        );
-
-        uniqueUsernames.forEach(username => {
-          this.trackedUsers.add(username);
-        });
-
-        console.log(`📁 Loaded ${this.trackedUsers.size} tracked users from ${this.trackedUsersFile}`);
-
-        // Save cleaned version back to file
-        this.saveTrackedUsers();
-      } else {
-        console.log(`📁 No tracked users file found at ${this.trackedUsersFile}, starting with empty list`);
-      }
-    } catch (error) {
-      console.error(`❌ Failed to load tracked users from ${this.trackedUsersFile}:`, error);
-    }
-  }
-
-  // Save tracked users to CSV file
-  private saveTrackedUsers() {
-    try {
-      const usernames = Array.from(this.trackedUsers).sort();
-      const csvContent = "username\n" + usernames.join("\n");
-      writeFileSync(this.trackedUsersFile, csvContent, "utf-8");
-      console.log(`💾 Saved ${this.trackedUsers.size} tracked users to ${this.trackedUsersFile}`);
-    } catch (error) {
-      console.error(`❌ Failed to save tracked users to ${this.trackedUsersFile}:`, error);
-    }
-  }
+  private maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
 
   // Add or update a ratio
   addRatio(ratio: StoredRatio) {
@@ -263,17 +210,12 @@ class RatioStore {
     victims.forEach(username => this.trackedUsers.add(username.toLowerCase()));
     // Add top perpetrators (convert to lowercase)
     perpetrators.forEach(username => this.trackedUsers.add(username.toLowerCase()));
-
-    console.log(`📋 Tracked users updated: ${this.trackedUsers.size} total users`);
-    this.saveTrackedUsers();
   }
 
   // Add a single user to the tracked users list
   addTrackedUser(username: string) {
     const lowercaseUsername = username.toLowerCase();
     this.trackedUsers.add(lowercaseUsername);
-    console.log(`👤 Added user to tracking: ${lowercaseUsername} (${this.trackedUsers.size} total)`);
-    this.saveTrackedUsers();
   }
 
   // Remove a user from the tracked users list
@@ -281,8 +223,6 @@ class RatioStore {
     const lowercaseUsername = username.toLowerCase();
     if (this.trackedUsers.has(lowercaseUsername)) {
       this.trackedUsers.delete(lowercaseUsername);
-      console.log(`🗑️ Removed user from tracking: ${lowercaseUsername} (${this.trackedUsers.size} remaining)`);
-      this.saveTrackedUsers();
       return true;
     }
     return false;
@@ -292,7 +232,6 @@ class RatioStore {
   clear() {
     this.ratios.clear();
     this.trackedUsers.clear();
-    this.saveTrackedUsers();
   }
 }
 

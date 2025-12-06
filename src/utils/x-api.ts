@@ -206,70 +206,16 @@ export async function getUserByUsername(username: string): Promise<{ id: string;
 }
 
 /**
- * Get a user's recent tweets from the last 7 days
- * According to https://docs.x.com/x-api/users/get-posts
+ * Get a single tweet by ID using the bulk lookup endpoint
  */
-async function getUserRecentTweets(
-  userId: string,
-  startTime: Date,
-  endTime: Date,
-  maxResults: number = 100,
-  paginationToken?: string
-): Promise<XApiResponse | null> {
-  const tweetFields = "author_id,created_at,public_metrics,conversation_id,in_reply_to_user_id,referenced_tweets,attachments";
-  const userFields = "name,username,profile_image_url";
-  const mediaFields = "url,preview_image_url,type";
-  const expansions = "author_id,referenced_tweets.id,referenced_tweets.id.author_id,attachments.media_keys";
-
-  const url = new URL(`https://api.x.com/2/users/${userId}/tweets`);
-  url.searchParams.append("max_results", maxResults.toString());
-  url.searchParams.append("tweet.fields", tweetFields);
-  url.searchParams.append("user.fields", userFields);
-  url.searchParams.append("media.fields", mediaFields);
-  url.searchParams.append("expansions", expansions);
-  url.searchParams.append("exclude", "retweets"); // Exclude retweets as requested
-  url.searchParams.append("start_time", startTime.toISOString());
-  url.searchParams.append("end_time", endTime.toISOString());
-
-  if (paginationToken) {
-    url.searchParams.append("pagination_token", paginationToken);
-  }
-
-  try {
-    const result = await withRetry(async () => {
-      const response = await fetch(url.toString(), {
-        headers: {
-          Authorization: `Bearer ${BEARER_TOKEN}`,
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.text();
-        const errorObj = new Error(`X API Error (${response.status}): ${error}`);
-        (errorObj as any).status = response.status;
-        throw errorObj;
-      }
-
-      return response.json();
-    }, `X API get user tweets ${userId}`);
-
-    return result;
-  } catch (error) {
-    console.error(`Failed to fetch tweets for user ${userId} after retries:`, error);
-    return null;
-  }
-}
-
-/**
- * Get a single tweet by ID
- */
-async function getTweetById(tweetId: string): Promise<{ data: XApiPost; includes?: { users?: XApiUser[]; media?: XApiMedia[] } } | null> {
+export async function getTweetById(tweetId: string): Promise<{ data: XApiPost; includes?: { users?: XApiUser[]; media?: XApiMedia[] } } | null> {
   const tweetFields = "author_id,created_at,public_metrics,conversation_id,in_reply_to_user_id,attachments";
   const userFields = "name,username,profile_image_url";
   const mediaFields = "url,preview_image_url,type";
   const expansions = "author_id,attachments.media_keys";
 
-  const url = new URL(`https://api.x.com/2/tweets/${tweetId}`);
+  const url = new URL("https://api.x.com/2/tweets");
+  url.searchParams.append("ids", tweetId);
   url.searchParams.append("tweet.fields", tweetFields);
   url.searchParams.append("user.fields", userFields);
   url.searchParams.append("media.fields", mediaFields);
@@ -285,6 +231,22 @@ async function getTweetById(tweetId: string): Promise<{ data: XApiPost; includes
 
       if (!response.ok) {
         const error = await response.text();
+        
+        // Log rate limit headers on 429 errors
+        if (response.status === 429) {
+          console.error(`\n🚫 Rate limit hit on GET /2/tweets?ids=${tweetId}`);
+          console.error(`   Response headers:`);
+          console.error(`   x-rate-limit-limit: ${response.headers.get('x-rate-limit-limit')}`);
+          console.error(`   x-rate-limit-remaining: ${response.headers.get('x-rate-limit-remaining')}`);
+          console.error(`   x-rate-limit-reset: ${response.headers.get('x-rate-limit-reset')}`);
+          const resetTime = response.headers.get('x-rate-limit-reset');
+          if (resetTime) {
+            const resetDate = new Date(parseInt(resetTime) * 1000);
+            console.error(`   Reset time: ${resetDate.toISOString()} (in ${Math.round((resetDate.getTime() - Date.now()) / 1000)}s)`);
+          }
+          console.error(`   Response body: ${error}\n`);
+        }
+        
         const errorObj = new Error(`X API Error (${response.status}): ${error}`);
         (errorObj as any).status = response.status;
         throw errorObj;
@@ -293,7 +255,15 @@ async function getTweetById(tweetId: string): Promise<{ data: XApiPost; includes
       return response.json();
     }, `X API get tweet ${tweetId}`);
 
-    return result;
+    // Bulk endpoint returns data as an array, extract the first element
+    if (result && result.data && Array.isArray(result.data) && result.data.length > 0) {
+      return {
+        data: result.data[0],
+        includes: result.includes,
+      };
+    }
+    
+    return null;
   } catch (error) {
     console.error(`Failed to fetch tweet ${tweetId} after retries:`, error);
     return null;
@@ -577,345 +547,6 @@ export async function searchRecentRatios(
   console.log(`✅ Found ${ratios.length} ratios across ${pageCount} pages`);
   
   return ratios;
-}
-
-/**
- * Enrich ratios by fetching all tweets from users in the leaderboard
- * This catches ratios that the search API might have missed
- * @param usernames Array of usernames to check
- * @returns Array of newly discovered ratios
- */
-export async function enrichUserRatios(usernames: string[]): Promise<RatioData[]> {
-  const endTime = new Date();
-  const startTime = new Date(endTime.getTime() - (7 * 24 * 60 * 60 * 1000)); // 7 days ago
-  
-  console.log(`🔍 Enriching ${usernames.length} users' timelines in parallel...`);
-  
-  // Process all users in parallel
-  const enrichmentPromises = usernames.map(async (username) => {
-    const userRatios: RatioData[] = [];
-    
-    try {
-      // Get user ID
-      const user = await getUserByUsername(username);
-      if (!user) {
-        console.log(`⚠️  Couldn't find user ${username}`);
-        return userRatios;
-      }
-      
-      console.log(`📊 Fetching tweets for @${username} (${user.id})...`);
-      
-      // Fetch all their tweets from the last 7 days
-      let paginationToken: string | undefined = undefined;
-      let pageCount = 0;
-      const maxPages = 3; // Limit to avoid excessive API calls
-      
-      do {
-        pageCount++;
-        const response = await getUserRecentTweets(user.id, startTime, endTime, 100, paginationToken);
-        
-        if (!response || !response.data || response.data.length === 0) {
-          break;
-        }
-        
-        console.log(`   Found ${response.data.length} tweets on page ${pageCount} for @${username}`);
-        
-        const users = response.includes?.users || [];
-        const referencedTweets = response.includes?.tweets || [];
-        const media = response.includes?.media || [];
-
-        // Check each tweet to see if it got ratio'd
-        for (const tweet of response.data) {
-          // Find replies to this tweet from the referenced tweets
-          const replies = referencedTweets.filter(rt =>
-            rt.referenced_tweets?.some(ref => ref.type === 'replied_to' && ref.id === tweet.id)
-          );
-          
-          for (const reply of replies) {
-            const replyUser = users.find(u => u.id === reply.author_id);
-            if (!replyUser) continue;
-            
-            // Skip self-ratios (can't ratio yourself)
-            if (reply.author_id === tweet.author_id) {
-              continue;
-            }
-            
-            // Calculate ratio
-            const ratio = reply.public_metrics.like_count / tweet.public_metrics.like_count;
-            const isLethalRatio = ratio >= 100;
-            const isBrutalRatio = ratio >= 10;
-            const isRatio = ratio > 1;
-            
-            // Only include if it's greater than the original likes and has significant engagement
-            if (isRatio && reply.public_metrics.like_count >= 1000) {
-              userRatios.push({
-                parent: {
-                  id: tweet.id,
-                  text: tweet.text,
-                  created_at: tweet.created_at,
-                  author: {
-                    username: user.username,
-                    name: user.name,
-                    profile_image_url: user.profile_image_url,
-                  },
-                  public_metrics: tweet.public_metrics,
-                  images: extractImagesFromTweet(tweet, media),
-                },
-                reply: {
-                  id: reply.id,
-                  text: reply.text,
-                  author: {
-                    username: replyUser.username,
-                    name: replyUser.name,
-                    profile_image_url: replyUser.profile_image_url,
-                  },
-                  public_metrics: reply.public_metrics,
-                  images: extractImagesFromTweet(reply, media),
-                },
-                ratio,
-                isBrutalRatio,
-                isLethalRatio,
-              });
-            }
-          }
-        }
-        
-        paginationToken = response.meta?.next_token;
-        
-        if (pageCount >= maxPages) {
-          console.log(`   Stopping at page ${maxPages} for @${username}`);
-          break;
-        }
-        
-        // Small delay to avoid rate limiting within user pagination
-        if (paginationToken) {
-          await new Promise(resolve => setTimeout(resolve, 50));
-        }
-        
-      } while (paginationToken);
-      
-    } catch (error) {
-      console.error(`Error enriching user ${username}:`, error);
-    }
-    
-    return userRatios;
-  });
-  
-  // Wait for all enrichment to complete
-  const results = await Promise.all(enrichmentPromises);
-  
-  // Flatten the array of arrays
-  const newRatios = results.flat();
-  
-  console.log(`✅ Victim enrichment complete: Found ${newRatios.length} additional ratios`);
-  return newRatios;
-}
-
-/**
- * Enrich ratios by checking ratio-ers' (perpetrators') recent tweets
- * Looks for their replies that might be ratios
- * @param usernames Array of ratio-er usernames to check
- * @returns Array of newly discovered ratios
- */
-export async function enrichPerpetratorRatios(usernames: string[]): Promise<RatioData[]> {
-  const endTime = new Date();
-  const startTime = new Date(endTime.getTime() - (7 * 24 * 60 * 60 * 1000)); // 7 days ago
-  
-  console.log(`🔍 Enriching ${usernames.length} ratio-ers' timelines in parallel...`);
-  
-  // Process all users in parallel
-  const enrichmentPromises = usernames.map(async (username) => {
-    const userRatios: RatioData[] = [];
-    
-    try {
-      // Get user ID
-      const user = await getUserByUsername(username);
-      if (!user) {
-        console.log(`⚠️  Couldn't find user ${username}`);
-        return userRatios;
-      }
-      
-      console.log(`💀 Fetching replies for @${username} (${user.id})...`);
-      
-      // Fetch all their tweets from the last 7 days
-      let paginationToken: string | undefined = undefined;
-      let pageCount = 0;
-      const maxPages = 3; // Limit to avoid excessive API calls
-      
-      do {
-        pageCount++;
-        const response = await getUserRecentTweets(user.id, startTime, endTime, 100, paginationToken);
-        
-        if (!response || !response.data || response.data.length === 0) {
-          break;
-        }
-        
-        console.log(`   Found ${response.data.length} tweets on page ${pageCount} for @${username}`);
-
-        const users = response.includes?.users || [];
-        const referencedTweets = response.includes?.tweets || [];
-        const media = response.includes?.media || [];
-
-        // Check each tweet to see if it's a reply that is a ratio
-        for (const tweet of response.data) {
-          // Check if this is a reply
-          const isReply = tweet.referenced_tweets?.some(ref => ref.type === 'replied_to');
-          if (!isReply) continue;
-          
-          // Get the parent tweet
-          const parentRef = tweet.referenced_tweets?.find(ref => ref.type === 'replied_to');
-          if (!parentRef) continue;
-          
-          console.log(`   🔍 Checking reply ${tweet.id} (${tweet.public_metrics.like_count} likes) to parent ${parentRef.id}`);
-          
-          const parentTweet = referencedTweets.find(t => t.id === parentRef.id);
-          if (!parentTweet) {
-            console.log(`   ⚠️  Parent tweet ${parentRef.id} not in includes, fetching directly...`);
-            // Try to fetch it directly
-            const parentData = await getTweetById(parentRef.id);
-            if (!parentData) {
-              console.log(`   ❌ Failed to fetch parent tweet ${parentRef.id}`);
-              continue;
-            }
-            
-            const parentUser = parentData.includes?.users?.[0];
-            if (!parentUser) {
-              console.log(`   ❌ Parent user not found for tweet ${parentRef.id}`);
-              continue;
-            }
-            
-            // Skip self-ratios (can't ratio yourself)
-            if (tweet.author_id === parentData.data.author_id) {
-              console.log(`   ⏭️  Skipping self-ratio: ${tweet.id}`);
-              continue;
-            }
-            
-            // Calculate ratio
-            const ratio = tweet.public_metrics.like_count / parentData.data.public_metrics.like_count;
-            const isLethalRatio = ratio >= 100;
-            const isBrutalRatio = ratio >= 10;
-            const isRatio = ratio > 1;
-            
-            console.log(`   📊 Ratio calculated: ${ratio.toFixed(2)}x (reply: ${tweet.public_metrics.like_count}, parent: ${parentData.data.public_metrics.like_count})`);
-            
-            // Only include if it's greater than the original likes and has significant engagement
-            if (isRatio && tweet.public_metrics.like_count >= 1000) {
-              console.log(`   ✅ Adding ratio: ${ratio.toFixed(2)}x for @${username}`);
-              userRatios.push({
-                parent: {
-                  id: parentData.data.id,
-                  text: parentData.data.text,
-                  created_at: parentData.data.created_at,
-                  author: {
-                    username: parentUser.username,
-                    name: parentUser.name,
-                    profile_image_url: parentUser.profile_image_url,
-                  },
-                  public_metrics: parentData.data.public_metrics,
-                  images: extractImagesFromTweet(parentData.data, parentData.includes?.media || []),
-                },
-                reply: {
-                  id: tweet.id,
-                  text: tweet.text,
-                  author: {
-                    username: user.username,
-                    name: user.name,
-                    profile_image_url: user.profile_image_url,
-                  },
-                  public_metrics: tweet.public_metrics,
-                  images: extractImagesFromTweet(tweet, media),
-                },
-                ratio,
-                isBrutalRatio,
-                isLethalRatio,
-              });
-            }
-            continue;
-          }
-          
-          const parentUser = users.find(u => u.id === parentTweet.author_id);
-          if (!parentUser) {
-            console.log(`   ❌ Parent user not found in includes for tweet ${parentTweet.id} (author_id: ${parentTweet.author_id})`);
-            continue;
-          }
-          
-          // Skip self-ratios (can't ratio yourself)
-          if (tweet.author_id === parentTweet.author_id) {
-            console.log(`   ⏭️  Skipping self-ratio: ${tweet.id}`);
-            continue;
-          }
-          
-          // Calculate ratio
-          const ratio = tweet.public_metrics.like_count / parentTweet.public_metrics.like_count;
-          const isLethalRatio = ratio >= 100;
-          const isBrutalRatio = ratio >= 10;
-          const isRatio = ratio > 1;
-          
-          console.log(`   📊 Ratio calculated: ${ratio.toFixed(2)}x (reply: ${tweet.public_metrics.like_count}, parent: ${parentTweet.public_metrics.like_count})`);
-          
-          // Only include if it's greater than the original likes and has significant engagement
-          if (isRatio && tweet.public_metrics.like_count >= 1000) {
-            console.log(`   ✅ Adding ratio: ${ratio.toFixed(2)}x for @${username} (from includes)`);
-            userRatios.push({
-              parent: {
-                id: parentTweet.id,
-                text: parentTweet.text,
-                created_at: parentTweet.created_at,
-                author: {
-                  username: parentUser.username,
-                  name: parentUser.name,
-                  profile_image_url: parentUser.profile_image_url,
-                },
-                public_metrics: parentTweet.public_metrics,
-                images: extractImagesFromTweet(parentTweet, media),
-              },
-              reply: {
-                id: tweet.id,
-                text: tweet.text,
-                author: {
-                  username: user.username,
-                  name: user.name,
-                  profile_image_url: user.profile_image_url,
-                },
-                public_metrics: tweet.public_metrics,
-                images: extractImagesFromTweet(tweet, media),
-              },
-              ratio,
-              isBrutalRatio,
-              isLethalRatio,
-            });
-          }
-        }
-        
-        paginationToken = response.meta?.next_token;
-        
-        if (pageCount >= maxPages) {
-          console.log(`   Stopping at page ${maxPages} for @${username}`);
-          break;
-        }
-        
-        // Small delay to avoid rate limiting within user pagination
-        if (paginationToken) {
-          await new Promise(resolve => setTimeout(resolve, 50));
-        }
-        
-      } while (paginationToken);
-      
-    } catch (error) {
-      console.error(`Error enriching ratio-er ${username}:`, error);
-    }
-    
-    return userRatios;
-  });
-  
-  // Wait for all enrichment to complete
-  const results = await Promise.all(enrichmentPromises);
-  
-  // Flatten the array of arrays
-  const newRatios = results.flat();
-  
-  console.log(`✅ Perpetrator enrichment complete: Found ${newRatios.length} additional ratios`);
-  return newRatios;
 }
 
 /**

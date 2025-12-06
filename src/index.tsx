@@ -1,6 +1,7 @@
 import { serve } from "bun";
 import index from "./index.html";
 import { createPoller } from "./server/poller";
+import { createFirehose } from "./server/firehose";
 import { ratioStore } from "./server/store";
 import { authStore } from "./server/auth-store";
 import {
@@ -21,6 +22,9 @@ console.log(`🚀 Starting X Ratio Finder server${useMockData ? ' (MOCK MODE)' :
 // Create poller with mock data flag
 const poller = createPoller(useMockData);
 
+// Create firehose for real-time ratio detection
+const firehose = createFirehose();
+
 // CORS headers helper
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,6 +43,11 @@ function withCORS(response: Response): Response {
 
 // Start the poller
 poller.start();
+
+// Start the firehose for real-time ratio detection (only in non-mock mode)
+if (!useMockData) {
+  firehose.start();
+}
 
 // If using mock data, do an immediate poll to load the data
 if (useMockData) {
@@ -155,6 +164,7 @@ const server = serve({
         return withCORS(Response.json({
           success: true,
           poller: poller.getStatus(),
+          firehose: firehose.getStats(),
           stats: ratioStore.getStats(),
           timestamp: Date.now(),
         }));
@@ -183,118 +193,27 @@ const server = serve({
           const userExists = await getUserByUsername(cleanUsername);
 
           if (!userExists) {
-            console.log(`⚠️  User ${cleanUsername} not found, skipping enrichment`);
+            console.log(`⚠️  User ${cleanUsername} not found`);
             return withCORS(Response.json({
               success: false,
               error: `User @${cleanUsername} not found`
             }, { status: 404 }));
           }
 
-          console.log(`✅ User ${cleanUsername} found, proceeding with enrichment`);
+          // Add to tracked users
           ratioStore.addTrackedUser(cleanUsername);
 
-          // Import enrichment functions
-          const { enrichUserRatios, enrichPerpetratorRatios } = await import("./utils/x-api");
+          // Filter existing ratios for this user (as victim or perpetrator)
+          const allRatios = ratioStore.getAllRatios();
+          const userRatios = allRatios.filter(r => 
+            r.parent.author.toLowerCase() === cleanUsername || 
+            r.reply.author.toLowerCase() === cleanUsername
+          );
 
-          // Get existing ratio IDs to determine which are new
-          const existingIds = new Set(ratioStore.getAllRatios().map(r => r.id));
-          let totalEnriched = 0;
-          let newCount = 0;
+          console.log(`✅ User ${cleanUsername} tracked, found ${userRatios.length} existing ratios`);
 
-          try {
-            // Enrich as potential victim (check if their posts got ratio'd)
-            const victimRatios = await enrichUserRatios([cleanUsername]);
-            totalEnriched += victimRatios.length;
-
-            // Store the ratios
-            for (const ratio of victimRatios) {
-              const isNew = !existingIds.has(ratio.parent.id);
-
-              const storedRatio = {
-                id: ratio.parent.id,
-                parent: {
-                  id: ratio.parent.id,
-                  author: ratio.parent.author.username,
-                  authorProfileImage: ratio.parent.author.profile_image_url,
-                  content: ratio.parent.text,
-                  likes: ratio.parent.public_metrics.like_count,
-                  timestamp: ratio.parent.created_at,
-                  images: ratio.parent.images,
-                },
-                reply: {
-                  id: ratio.reply.id,
-                  author: ratio.reply.author.username,
-                  authorProfileImage: ratio.reply.author.profile_image_url,
-                  content: ratio.reply.text,
-                  likes: ratio.reply.public_metrics.like_count,
-                  images: ratio.reply.images,
-                },
-                ratio: ratio.ratio,
-                isBrutalRatio: ratio.isBrutalRatio,
-                isLethalRatio: ratio.isLethalRatio,
-                isRatio: ratio.ratio > 1,
-                discoveredAt: isNew ? Date.now() : (ratioStore.getAllRatios().find(r => r.id === ratio.parent.id)?.discoveredAt || Date.now()),
-              };
-              
-              ratioStore.addRatio(storedRatio);
-              
-              if (isNew) {
-                newCount++;
-              }
-            }
-          } catch (error) {
-            console.error(`Error enriching ${cleanUsername} as victim:`, error);
-          }
-
-          try {
-            // Enrich as potential perpetrator (check their replies for ratios)
-            const perpetratorRatios = await enrichPerpetratorRatios([cleanUsername]);
-            totalEnriched += perpetratorRatios.length;
-
-            // Store the ratios
-            for (const ratio of perpetratorRatios) {
-              const isNew = !existingIds.has(ratio.parent.id);
-
-              const storedRatio = {
-                id: ratio.parent.id,
-                parent: {
-                  id: ratio.parent.id,
-                  author: ratio.parent.author.username,
-                  authorProfileImage: ratio.parent.author.profile_image_url,
-                  content: ratio.parent.text,
-                  likes: ratio.parent.public_metrics.like_count,
-                  timestamp: ratio.parent.created_at,
-                  images: ratio.parent.images,
-                },
-                reply: {
-                  id: ratio.reply.id,
-                  author: ratio.reply.author.username,
-                  authorProfileImage: ratio.reply.author.profile_image_url,
-                  content: ratio.reply.text,
-                  likes: ratio.reply.public_metrics.like_count,
-                  images: ratio.reply.images,
-                },
-                ratio: ratio.ratio,
-                isBrutalRatio: ratio.isBrutalRatio,
-                isLethalRatio: ratio.isLethalRatio,
-                isRatio: ratio.ratio > 1,
-                discoveredAt: isNew ? Date.now() : (ratioStore.getAllRatios().find(r => r.id === ratio.parent.id)?.discoveredAt || Date.now()),
-              };
-              
-              ratioStore.addRatio(storedRatio);
-              
-              if (isNew) {
-                newCount++;
-              }
-            }
-          } catch (error) {
-            console.error(`Error enriching ${cleanUsername} as perpetrator:`, error);
-          }
-
-          console.log(`✅ Enrichment complete for ${cleanUsername}: ${newCount} new, ${totalEnriched - newCount} updated`);
-
-          // If no ratios were found, remove the user from the tracked list
-          if (totalEnriched === 0) {
+          // If no ratios were found in existing data, remove from tracked list
+          if (userRatios.length === 0) {
             ratioStore.removeTrackedUser(cleanUsername);
             console.log(`🗑️ No ratios found for ${cleanUsername}, removed from tracked users`);
           }
@@ -302,7 +221,7 @@ const server = serve({
           return withCORS(Response.json({
             success: true,
             username: cleanUsername,
-            enrichedRatios: totalEnriched,
+            existingRatios: userRatios.length,
             totalTrackedUsers: ratioStore.getStats().trackedUsers,
           }));
 
@@ -310,7 +229,7 @@ const server = serve({
           console.error('Enrich user error:', error);
           return withCORS(Response.json({
             success: false,
-            error: error instanceof Error ? error.message : 'Failed to enrich user'
+            error: error instanceof Error ? error.message : 'Failed to track user'
           }, { status: 500 }));
         }
       },
@@ -492,5 +411,5 @@ const server = serve({
 });
 
 console.log(`🚀 X Ratio Finder server running at ${server.url}`);
-console.log(`📊 Manual refresh required for new posts`);
-console.log(`🔄 Polling X API every 5 minutes`);
+console.log(`🔄 Polling X API every 5 minutes for initial data`);
+console.log(`🔥 Likes firehose ${useMockData ? 'disabled (mock mode)' : 'enabled'} for real-time ratio detection`);

@@ -1143,7 +1143,7 @@ export function App() {
                       : 'text-white/40 hover:text-white/70'
                   }`}
                 >
-                  Recent Discoveries
+                  Feed
                   {activeFeed === 'recents' && (
                     <div className="absolute bottom-0 left-0 right-0 h-px bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]"></div>
                   )}
