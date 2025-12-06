@@ -384,11 +384,13 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
 
       {/* Reply Post */}
       {reply && (
-        <div className={`flex gap-3 px-4 pt-1 pb-4 hover:bg-white/[0.02] transition-colors ${
-          hasLethalRatio ? 'bg-purple-500/[0.03]' :
-          hasBrutalRatio ? 'bg-orange-500/[0.03]' :
-          ''
-        }`}>
+        <div 
+          className={`flex gap-3 px-4 pt-1 pb-4 hover:bg-white/[0.02] transition-colors ${
+            hasLethalRatio ? 'bg-purple-500/[0.03]' :
+            hasBrutalRatio ? 'bg-orange-500/[0.03]' :
+            ''
+          }`}
+        >
           {/* Avatar column */}
           <div className="flex flex-col items-center">
             <a
@@ -423,15 +425,15 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
                   {reply.authorDisplayName || reply.author}
                 </button>
                 <span className="text-[15px] text-white/50 truncate">@{reply.author}</span>
-                {/* Ratio badge */}
+                {/* Ratio tier badge */}
                 {reply.isLethalRatio && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                    Lethal
+                  <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-purple-500/25 text-purple-300 border border-purple-500/40">
+                    💀 Lethal
                   </span>
                 )}
                 {reply.isBrutalRatio && !reply.isLethalRatio && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-orange-500/20 text-orange-400 border border-orange-500/30">
-                    Brutal
+                  <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-orange-500/25 text-orange-300 border border-orange-500/40">
+                    🔥 Brutal
                   </span>
                 )}
               </div>
@@ -496,12 +498,25 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
               </div>
               
               {reply.likes > post.likes && (
-                <div className={`text-sm font-bold ${
-                  reply.isLethalRatio ? 'text-purple-400' :
-                  reply.isBrutalRatio ? 'text-orange-400' :
-                  'text-slate-400'
-                }`}>
-                  {(reply.likes / Math.max(1, post.likes)).toFixed(1)}x ratio
+                <div 
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold ${
+                    reply.isLethalRatio 
+                      ? 'bg-purple-500/15 text-purple-300' 
+                      : reply.isBrutalRatio 
+                        ? 'bg-orange-500/15 text-orange-300' 
+                        : 'bg-white/10 text-white/50'
+                  }`}
+                  style={{
+                    boxShadow: reply.isLethalRatio 
+                      ? '0 0 20px 4px rgba(168, 85, 247, 0.6), 0 0 40px 8px rgba(168, 85, 247, 0.3)' 
+                      : reply.isBrutalRatio 
+                        ? '0 0 18px 4px rgba(249, 115, 22, 0.55), 0 0 35px 8px rgba(249, 115, 22, 0.25)' 
+                        : 'none'
+                  }}
+                >
+                  {reply.isLethalRatio && <span>💀</span>}
+                  {reply.isBrutalRatio && !reply.isLethalRatio && <span>🔥</span>}
+                  <span>{(reply.likes / Math.max(1, post.likes)).toFixed(1)}x ratio</span>
                 </div>
               )}
             </div>

@@ -14,7 +14,7 @@ if (!BEARER_TOKEN) {
 // Configuration for the firehose connection
 const FIREHOSE_CONFIG = {
   // Endpoint URL - using the likes sample10 stream endpoint
-  endpoint: "https://api.x.com/2/likes/sample10/stream",
+  endpoint: "https://api.x.com/2/likes/firehose/stream",
   minLikesThreshold: 1000,  // Only process tweets with 1000+ likes
   maxTweetAge: 7 * 24 * 60 * 60 * 1000, // Only process tweets from last 7 days
   partition: 2,             // Use partition 2 for likes sample10
