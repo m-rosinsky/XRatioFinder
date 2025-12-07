@@ -271,6 +271,156 @@ export async function getTweetById(tweetId: string): Promise<{ data: XApiPost; i
 }
 
 /**
+ * Batch fetch multiple tweets by ID in a single API call
+ * X API supports up to 100 IDs per request
+ */
+export async function getTweetsByIds(tweetIds: string[]): Promise<Map<string, { tweet: XApiPost; users: XApiUser[] }>> {
+  if (tweetIds.length === 0) {
+    return new Map();
+  }
+
+  const tweetFields = "author_id,created_at,public_metrics,conversation_id,in_reply_to_user_id,attachments";
+  const userFields = "name,username,profile_image_url";
+  const mediaFields = "url,preview_image_url,type";
+  const expansions = "author_id,attachments.media_keys";
+
+  const results = new Map<string, { tweet: XApiPost; users: XApiUser[] }>();
+  
+  // Process in chunks of 100 (X API limit)
+  const BATCH_SIZE = 100;
+  const chunks: string[][] = [];
+  for (let i = 0; i < tweetIds.length; i += BATCH_SIZE) {
+    chunks.push(tweetIds.slice(i, i + BATCH_SIZE));
+  }
+
+  for (const chunk of chunks) {
+    const url = new URL("https://api.x.com/2/tweets");
+    url.searchParams.append("ids", chunk.join(","));
+    url.searchParams.append("tweet.fields", tweetFields);
+    url.searchParams.append("user.fields", userFields);
+    url.searchParams.append("media.fields", mediaFields);
+    url.searchParams.append("expansions", expansions);
+
+    try {
+      const result = await withRetry(async () => {
+        const response = await fetch(url.toString(), {
+          headers: {
+            Authorization: `Bearer ${BEARER_TOKEN}`,
+          },
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          
+          if (response.status === 429) {
+            console.error(`\n🚫 Rate limit hit on GET /2/tweets (batch of ${chunk.length})`);
+            console.error(`   x-rate-limit-limit: ${response.headers.get('x-rate-limit-limit')}`);
+            console.error(`   x-rate-limit-remaining: ${response.headers.get('x-rate-limit-remaining')}`);
+            console.error(`   x-rate-limit-reset: ${response.headers.get('x-rate-limit-reset')}`);
+            const resetTime = response.headers.get('x-rate-limit-reset');
+            if (resetTime) {
+              const resetDate = new Date(parseInt(resetTime) * 1000);
+              console.error(`   Reset time: ${resetDate.toISOString()} (in ${Math.round((resetDate.getTime() - Date.now()) / 1000)}s)`);
+            }
+            console.error(`   Response body: ${error}\n`);
+          }
+          
+          const errorObj = new Error(`X API Error (${response.status}): ${error}`);
+          (errorObj as any).status = response.status;
+          throw errorObj;
+        }
+
+        return response.json();
+      }, `X API batch tweets (${chunk.length} ids)`);
+
+      if (result && result.data && Array.isArray(result.data)) {
+        const users: XApiUser[] = result.includes?.users || [];
+        
+        for (const tweet of result.data) {
+          results.set(tweet.id, { tweet, users });
+        }
+      }
+    } catch (error) {
+      console.error(`Failed to fetch batch of ${chunk.length} tweets after retries:`, error);
+      // Continue with other chunks even if one fails
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Get a user's recent tweets from the last 7 days
+ * Used to find ratios for tracked leaderboard users
+ */
+export async function getUserRecentTweets(
+  userId: string,
+  maxResults: number = 100,
+  paginationToken?: string
+): Promise<XApiResponse | null> {
+  const tweetFields = "author_id,created_at,public_metrics,conversation_id,in_reply_to_user_id,referenced_tweets,attachments";
+  const userFields = "name,username,profile_image_url";
+  const mediaFields = "url,preview_image_url,type";
+  const expansions = "author_id,referenced_tweets.id,referenced_tweets.id.author_id,attachments.media_keys";
+
+  // Only get tweets from last 7 days
+  const startTime = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const endTime = new Date();
+
+  const url = new URL(`https://api.x.com/2/users/${userId}/tweets`);
+  url.searchParams.append("max_results", maxResults.toString());
+  url.searchParams.append("tweet.fields", tweetFields);
+  url.searchParams.append("user.fields", userFields);
+  url.searchParams.append("media.fields", mediaFields);
+  url.searchParams.append("expansions", expansions);
+  url.searchParams.append("exclude", "retweets");
+  url.searchParams.append("start_time", startTime.toISOString());
+  url.searchParams.append("end_time", endTime.toISOString());
+
+  if (paginationToken) {
+    url.searchParams.append("pagination_token", paginationToken);
+  }
+
+  try {
+    const result = await withRetry(async () => {
+      const response = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${BEARER_TOKEN}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        
+        // Log rate limit headers on 429 errors
+        if (response.status === 429) {
+          console.error(`\n🚫 Rate limit hit on GET /2/users/${userId}/tweets`);
+          console.error(`   x-rate-limit-limit: ${response.headers.get('x-rate-limit-limit')}`);
+          console.error(`   x-rate-limit-remaining: ${response.headers.get('x-rate-limit-remaining')}`);
+          console.error(`   x-rate-limit-reset: ${response.headers.get('x-rate-limit-reset')}`);
+          const resetTime = response.headers.get('x-rate-limit-reset');
+          if (resetTime) {
+            const resetDate = new Date(parseInt(resetTime) * 1000);
+            console.error(`   Reset time: ${resetDate.toISOString()} (in ${Math.round((resetDate.getTime() - Date.now()) / 1000)}s)\n`);
+          }
+        }
+        
+        const errorObj = new Error(`X API Error (${response.status}): ${error}`);
+        (errorObj as any).status = response.status;
+        throw errorObj;
+      }
+
+      return response.json();
+    }, `X API get user tweets ${userId}`);
+
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch tweets for user ${userId} after retries:`, error);
+    return null;
+  }
+}
+
+/**
  * Search for recent REPLIES with minimum likes (single page)
  * @param minLikes Minimum number of likes for replies
  * @param maxResults Maximum results per API call (10-100)
