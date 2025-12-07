@@ -89,9 +89,21 @@ const formatRelativeTime = (timestamp: string): string => {
   }
 };
 
-// Helper function to clean content by removing t.co links and leading @mentions
+// Helper function to clean content by removing t.co links, leading @mentions, and decoding HTML entities
 const cleanContent = (content: string): string => {
   let cleaned = content;
+  
+  // Decode HTML entities
+  cleaned = cleaned
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, '/')
+    .replace(/&nbsp;/g, ' ');
   
   // Remove leading @mentions (like X does for replies)
   // This matches one or more @username patterns at the start of the text
