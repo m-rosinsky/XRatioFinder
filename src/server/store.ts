@@ -1,6 +1,13 @@
 // In-memory data store for ratios
 // Could be replaced with a database for persistence
 
+export interface ImageData {
+  url: string;
+  width?: number;
+  height?: number;
+  aspectRatio?: number;
+}
+
 export interface StoredRatio {
   id: string; // parent post id
   parent: {
@@ -11,7 +18,7 @@ export interface StoredRatio {
     content: string;
     likes: number;
     timestamp: string;
-    images?: string[];
+    images?: ImageData[];
   };
   reply: {
     id: string;
@@ -20,7 +27,7 @@ export interface StoredRatio {
     authorProfileImage?: string;
     content: string;
     likes: number;
-    images?: string[];
+    images?: ImageData[];
   };
   ratio: number;
   isBrutalRatio: boolean;

@@ -119,6 +119,15 @@ interface XApiMedia {
   type: string;
   url?: string;
   preview_image_url?: string;
+  width?: number;
+  height?: number;
+}
+
+export interface ImageData {
+  url: string;
+  width?: number;
+  height?: number;
+  aspectRatio?: number;
 }
 
 interface XApiResponse {
@@ -151,7 +160,7 @@ export interface RatioData {
       reply_count: number;
       repost_count: number;
     };
-    images?: string[];
+    images?: ImageData[];
   };
   reply: {
     id: string;
@@ -166,7 +175,7 @@ export interface RatioData {
       reply_count: number;
       repost_count: number;
     };
-    images?: string[];
+    images?: ImageData[];
   };
   ratio: number;
   isBrutalRatio: boolean;
@@ -211,7 +220,7 @@ export async function getUserByUsername(username: string): Promise<{ id: string;
 export async function getTweetById(tweetId: string): Promise<{ data: XApiPost; includes?: { users?: XApiUser[]; media?: XApiMedia[] } } | null> {
   const tweetFields = "author_id,created_at,public_metrics,conversation_id,in_reply_to_user_id,attachments";
   const userFields = "name,username,profile_image_url";
-  const mediaFields = "url,preview_image_url,type";
+  const mediaFields = "url,preview_image_url,type,width,height";
   const expansions = "author_id,attachments.media_keys";
 
   const url = new URL("https://api.x.com/2/tweets");
@@ -281,7 +290,7 @@ export async function getTweetsByIds(tweetIds: string[]): Promise<Map<string, { 
 
   const tweetFields = "author_id,created_at,public_metrics,conversation_id,in_reply_to_user_id,attachments";
   const userFields = "name,username,profile_image_url";
-  const mediaFields = "url,preview_image_url,type";
+  const mediaFields = "url,preview_image_url,type,width,height";
   const expansions = "author_id,attachments.media_keys";
 
   const results = new Map<string, { tweet: XApiPost; users: XApiUser[]; media: XApiMedia[] }>();
@@ -361,7 +370,7 @@ export async function getUserRecentTweets(
 ): Promise<XApiResponse | null> {
   const tweetFields = "author_id,created_at,public_metrics,conversation_id,in_reply_to_user_id,referenced_tweets,attachments";
   const userFields = "name,username,profile_image_url";
-  const mediaFields = "url,preview_image_url,type";
+  const mediaFields = "url,preview_image_url,type,width,height";
   const expansions = "author_id,referenced_tweets.id,referenced_tweets.id.author_id,attachments.media_keys";
 
   // Only get tweets from last 7 days
@@ -436,7 +445,7 @@ async function searchRecentPostsPage(
   const query = `min_likes:${minLikes} is:reply -is:retweet lang:en`;
   const tweetFields = "author_id,created_at,public_metrics,conversation_id,in_reply_to_user_id,attachments";
   const userFields = "name,username,profile_image_url";
-  const mediaFields = "url,preview_image_url,type";
+  const mediaFields = "url,preview_image_url,type,width,height";
   const expansions = "author_id,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id,attachments.media_keys";
 
   const url = new URL("https://api.x.com/2/tweets/search/recent");
@@ -714,9 +723,9 @@ function getUserById(userId: string, users?: XApiUser[]): XApiUser | undefined {
 }
 
 /**
- * Helper to extract image URLs from a tweet
+ * Helper to extract image data from a tweet
  */
-function extractImagesFromTweet(tweet: XApiPost, media?: XApiMedia[]): string[] {
+function extractImagesFromTweet(tweet: XApiPost, media?: XApiMedia[]): ImageData[] {
   if (!tweet.attachments?.media_keys || !media) {
     return [];
   }
@@ -726,10 +735,15 @@ function extractImagesFromTweet(tweet: XApiPost, media?: XApiMedia[]): string[] 
       const mediaItem = media.find(m => m.media_key === mediaKey);
       // Only include photos for now (videos/gifs would need different handling)
       if (mediaItem?.type === 'photo' && mediaItem.url) {
-        return mediaItem.url;
+        return {
+          url: mediaItem.url,
+          width: mediaItem.width,
+          height: mediaItem.height,
+          aspectRatio: mediaItem.width && mediaItem.height ? mediaItem.width / mediaItem.height : undefined,
+        };
       }
       return null;
     })
-    .filter(Boolean) as string[];
+    .filter(Boolean) as ImageData[];
 }
 

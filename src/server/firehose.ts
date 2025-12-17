@@ -117,13 +117,18 @@ export class LikesFirehose {
 
   constructor() {}
   
-  // Helper to extract image URLs from a tweet
-  private extractImages(tweet: any, media?: any[]): string[] {
+  // Helper to extract image data from a tweet
+  private extractImages(tweet: any, media?: any[]): { url: string; width?: number; height?: number; aspectRatio?: number }[] {
     if (!tweet?.attachments?.media_keys || !media) return [];
     return tweet.attachments.media_keys
       .map((key: string) => media.find((m: any) => m.media_key === key))
       .filter((m: any) => m && (m.url || m.preview_image_url))
-      .map((m: any) => m.url || m.preview_image_url);
+      .map((m: any) => ({
+        url: m.url || m.preview_image_url,
+        width: m.width,
+        height: m.height,
+        aspectRatio: m.width && m.height ? m.width / m.height : undefined,
+      }));
   }
   
   // Load saved ratios from file and validate them

@@ -13,6 +13,14 @@ const HeartIcon = ({ className }: { className?: string }) => (
 );
 
 
+// Image data with dimensions for correct aspect ratio
+interface ImageData {
+  url: string;
+  width?: number;
+  height?: number;
+  aspectRatio?: number;
+}
+
 // Type for our post data structure
 interface Post {
   id: string;
@@ -23,7 +31,7 @@ interface Post {
   likes: number;
   timestamp: string;
   replies: Reply[];
-  images?: string[];
+  images?: ImageData[];
 }
 
 interface Reply {
@@ -36,7 +44,7 @@ interface Reply {
   isRatio: boolean;
   isBrutalRatio: boolean;
   isLethalRatio: boolean;
-  images?: string[];
+  images?: ImageData[];
 }
 
 // Helper function to format relative time
@@ -330,7 +338,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
                 post.images.length === 2 ? 'grid-cols-2' :
                 'grid-cols-2'
               }`}>
-                {post.images.slice(0, 4).map((imageUrl, index) => (
+                {post.images.slice(0, 4).map((image, index) => (
                   <div
                     key={index}
                     className={`relative overflow-hidden ${
@@ -338,14 +346,16 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
                     }`}
                   >
                     <img
-                      src={imageUrl}
+                      src={image.url}
                       alt={`Post image ${index + 1}`}
                       className="w-full h-full object-cover hover:opacity-90 transition-opacity"
                       style={{
-                        aspectRatio: post.images!.length === 1 ? '16/9' :
-                                     post.images!.length === 2 ? '1/1' :
-                                     post.images!.length === 3 && index === 0 ? '1/2' :
-                                     '1/1'
+                        aspectRatio: image.aspectRatio || (
+                          post.images!.length === 1 ? 16/9 :
+                          post.images!.length === 2 ? 1 :
+                          post.images!.length === 3 && index === 0 ? 0.5 :
+                          1
+                        )
                       }}
                     />
                   </div>
@@ -451,7 +461,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
                   reply.images.length === 2 ? 'grid-cols-2' :
                   'grid-cols-2'
                 }`}>
-                  {reply.images.slice(0, 4).map((imageUrl, index) => (
+                  {reply.images.slice(0, 4).map((image, index) => (
                     <div
                       key={index}
                       className={`relative overflow-hidden ${
@@ -459,14 +469,16 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
                       }`}
                     >
                       <img
-                        src={imageUrl}
+                        src={image.url}
                         alt={`Reply image ${index + 1}`}
                         className="w-full h-full object-cover hover:opacity-90 transition-opacity"
                         style={{
-                          aspectRatio: reply.images!.length === 1 ? '16/9' :
-                                       reply.images!.length === 2 ? '4/3' :
-                                       reply.images!.length === 3 && index === 0 ? '3/4' :
-                                       '1/1'
+                          aspectRatio: image.aspectRatio || (
+                            reply.images!.length === 1 ? 16/9 :
+                            reply.images!.length === 2 ? 4/3 :
+                            reply.images!.length === 3 && index === 0 ? 0.75 :
+                            1
+                          )
                         }}
                       />
                     </div>
@@ -768,13 +780,13 @@ export function App() {
       postId: string;
       postContent: string;
       postLikes: number;
-      postImages?: string[];
+      postImages?: ImageData[];
       replyId: string;
       replyContent: string;
       replyLikes: number;
       replyAuthor: string;
       replyAuthorDisplayName?: string;
-      replyImages?: string[];
+      replyImages?: ImageData[];
     };
   }
 
@@ -791,11 +803,11 @@ export function App() {
       postLikes: number;
       postAuthor: string;
       postAuthorDisplayName?: string;
-      postImages?: string[];
+      postImages?: ImageData[];
       replyId: string;
       replyContent: string;
       replyLikes: number;
-      replyImages?: string[];
+      replyImages?: ImageData[];
     };
   }
 
@@ -1384,7 +1396,7 @@ export function App() {
                                   <div className={`grid gap-1.5 ${
                                     entry.worstRatio.postImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
                                   }`}>
-                                    {entry.worstRatio.postImages.slice(0, 4).map((imageUrl, imgIndex) => (
+                                    {entry.worstRatio.postImages.slice(0, 4).map((image, imgIndex) => (
                                       <div
                                         key={imgIndex}
                                         className={`relative overflow-hidden rounded-lg border border-white/10 ${
@@ -1392,15 +1404,17 @@ export function App() {
                                         }`}
                                       >
                                         <img
-                                          src={imageUrl}
+                                          src={image.url}
                                           alt={`Post image ${imgIndex + 1}`}
                                           className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
-                                          onClick={() => window.open(imageUrl, '_blank')}
+                                          onClick={() => window.open(image.url, '_blank')}
                                           style={{
-                                            aspectRatio: entry.worstRatio.postImages!.length === 1 ? '16/9' :
-                                                         entry.worstRatio.postImages!.length === 2 ? '4/3' :
-                                                         entry.worstRatio.postImages!.length === 3 && imgIndex === 0 ? '3/4' :
-                                                         '1/1'
+                                            aspectRatio: image.aspectRatio || (
+                                              entry.worstRatio.postImages!.length === 1 ? 16/9 :
+                                              entry.worstRatio.postImages!.length === 2 ? 4/3 :
+                                              entry.worstRatio.postImages!.length === 3 && imgIndex === 0 ? 0.75 :
+                                              1
+                                            )
                                           }}
                                         />
                                       </div>
@@ -1433,7 +1447,7 @@ export function App() {
                                     <div className={`grid gap-1.5 ${
                                       entry.worstRatio.replyImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
                                     }`}>
-                                      {entry.worstRatio.replyImages.slice(0, 4).map((imageUrl, imgIndex) => (
+                                      {entry.worstRatio.replyImages.slice(0, 4).map((image, imgIndex) => (
                                         <div
                                           key={imgIndex}
                                           className={`relative overflow-hidden rounded-lg border border-white/10 ${
@@ -1441,15 +1455,17 @@ export function App() {
                                           }`}
                                         >
                                           <img
-                                            src={imageUrl}
+                                            src={image.url}
                                             alt={`Reply image ${imgIndex + 1}`}
                                             className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
-                                            onClick={() => window.open(imageUrl, '_blank')}
+                                            onClick={() => window.open(image.url, '_blank')}
                                             style={{
-                                              aspectRatio: entry.worstRatio.replyImages!.length === 1 ? '16/9' :
-                                                           entry.worstRatio.replyImages!.length === 2 ? '4/3' :
-                                                           entry.worstRatio.replyImages!.length === 3 && imgIndex === 0 ? '3/4' :
-                                                           '1/1'
+                                              aspectRatio: image.aspectRatio || (
+                                                entry.worstRatio.replyImages!.length === 1 ? 16/9 :
+                                                entry.worstRatio.replyImages!.length === 2 ? 4/3 :
+                                                entry.worstRatio.replyImages!.length === 3 && imgIndex === 0 ? 0.75 :
+                                                1
+                                              )
                                             }}
                                           />
                                         </div>
@@ -1595,7 +1611,7 @@ export function App() {
                                       <div className={`grid gap-1.5 ${
                                         entry.bestRatio.postImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
                                       }`}>
-                                        {entry.bestRatio.postImages.slice(0, 4).map((imageUrl, imgIndex) => (
+                                        {entry.bestRatio.postImages.slice(0, 4).map((image, imgIndex) => (
                                           <div
                                             key={imgIndex}
                                             className={`relative overflow-hidden rounded-lg border border-white/10 ${
@@ -1603,15 +1619,17 @@ export function App() {
                                             }`}
                                           >
                                             <img
-                                              src={imageUrl}
+                                              src={image.url}
                                               alt={`Post image ${imgIndex + 1}`}
                                               className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
-                                              onClick={() => window.open(imageUrl, '_blank')}
+                                              onClick={() => window.open(image.url, '_blank')}
                                               style={{
-                                                aspectRatio: entry.bestRatio.postImages!.length === 1 ? '16/9' :
-                                                             entry.bestRatio.postImages!.length === 2 ? '4/3' :
-                                                             entry.bestRatio.postImages!.length === 3 && imgIndex === 0 ? '3/4' :
-                                                             '1/1'
+                                                aspectRatio: image.aspectRatio || (
+                                                  entry.bestRatio.postImages!.length === 1 ? 16/9 :
+                                                  entry.bestRatio.postImages!.length === 2 ? 4/3 :
+                                                  entry.bestRatio.postImages!.length === 3 && imgIndex === 0 ? 0.75 :
+                                                  1
+                                                )
                                               }}
                                             />
                                           </div>
@@ -1641,7 +1659,7 @@ export function App() {
                                         <div className={`grid gap-1.5 ${
                                           entry.bestRatio.replyImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
                                         }`}>
-                                          {entry.bestRatio.replyImages.slice(0, 4).map((imageUrl, imgIndex) => (
+                                          {entry.bestRatio.replyImages.slice(0, 4).map((image, imgIndex) => (
                                             <div
                                               key={imgIndex}
                                               className={`relative overflow-hidden rounded-lg border border-white/10 ${
@@ -1649,15 +1667,17 @@ export function App() {
                                               }`}
                                             >
                                               <img
-                                                src={imageUrl}
+                                                src={image.url}
                                                 alt={`Reply image ${imgIndex + 1}`}
                                                 className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
-                                                onClick={() => window.open(imageUrl, '_blank')}
+                                                onClick={() => window.open(image.url, '_blank')}
                                                 style={{
-                                                  aspectRatio: entry.bestRatio.replyImages!.length === 1 ? '16/9' :
-                                                               entry.bestRatio.replyImages!.length === 2 ? '4/3' :
-                                                               entry.bestRatio.replyImages!.length === 3 && imgIndex === 0 ? '3/4' :
-                                                               '1/1'
+                                                  aspectRatio: image.aspectRatio || (
+                                                    entry.bestRatio.replyImages!.length === 1 ? 16/9 :
+                                                    entry.bestRatio.replyImages!.length === 2 ? 4/3 :
+                                                    entry.bestRatio.replyImages!.length === 3 && imgIndex === 0 ? 0.75 :
+                                                    1
+                                                  )
                                                 }}
                                               />
                                             </div>
