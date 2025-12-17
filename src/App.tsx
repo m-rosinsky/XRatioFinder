@@ -1,6 +1,5 @@
 import "./index.css";
 import React, { useState, useEffect, useCallback } from "react";
-import { ShareButton } from './components/ShareButton';
 
 // Inline SVG components
 const HeartIcon = ({ className }: { className?: string }) => (
@@ -13,16 +12,6 @@ const HeartIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const PopoutIcon = ({ className }: { className?: string }) => (
-  <svg fill="currentColor" width="16" height="16" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" className={className}>
-    <g id="SVGRepo_bgCarrier" strokeWidth="0"/>
-    <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"/>
-    <g id="SVGRepo_iconCarrier">
-      <title>popout</title>
-      <path d="M15.694 13.541l2.666 2.665 5.016-5.017 2.59 2.59 0.004-7.734-7.785-0.046 2.526 2.525-5.017 5.017zM25.926 16.945l-1.92-1.947 0.035 9.007-16.015 0.009 0.016-15.973 8.958-0.040-2-2h-7c-1.104 0-2 0.896-2 2v16c0 1.104 0.896 2 2 2h16c1.104 0 2-0.896 2-2l-0.074-7.056z"/>
-    </g>
-  </svg>
-);
 
 // Type for our post data structure
 interface Post {
@@ -278,10 +267,17 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
   // Sort replies by likes descending (highest ratio first)
   const sortedReplies = [...post.replies].sort((a, b) => b.likes - a.likes);
 
+  const handlePostClick = (author: string, tweetId: string) => {
+    window.open(`https://x.com/${author}/status/${tweetId}`, '_blank');
+  };
+
   return (
     <div className="relative">
       {/* Original Post */}
-      <div className="flex gap-3 px-4 pt-4 pb-3 hover:bg-white/[0.02] transition-colors">
+      <div 
+        className="flex gap-3 px-4 pt-4 pb-3 hover:bg-white/[0.02] transition-colors cursor-pointer"
+        onClick={() => handlePostClick(post.author, post.id)}
+      >
         {/* Avatar column with thread line */}
         <div className="flex flex-col items-center">
           <a
@@ -290,6 +286,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
             rel="noopener noreferrer"
             className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 transition-opacity hover:opacity-80"
             title={`@${post.author}'s profile`}
+            onClick={(e) => e.stopPropagation()}
           >
             {post.authorProfileImage ? (
               <img 
@@ -311,27 +308,16 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
         
         {/* Content column */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-1 flex-wrap min-w-0">
-              <button
-                onClick={() => onUsernameClick?.(post.author)}
-                className="font-bold text-[15px] text-white hover:underline truncate"
-              >
-                {post.authorDisplayName || post.author}
-              </button>
-              <span className="text-[15px] text-white/50 truncate">@{post.author}</span>
-              <span className="text-white/30">·</span>
-              <span className="text-[15px] text-white/50">{formatRelativeTime(post.timestamp)}</span>
-            </div>
-            <a
-              href={`https://x.com/${post.author}/status/${post.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-1.5 -mr-1.5 rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-colors flex-shrink-0"
-              title="View on X"
+          <div className="flex items-center gap-1 flex-wrap min-w-0">
+            <button
+              onClick={(e) => { e.stopPropagation(); onUsernameClick?.(post.author); }}
+              className="font-bold text-[15px] text-white hover:underline truncate"
             >
-              <PopoutIcon className="w-4 h-4" />
-            </a>
+              {post.authorDisplayName || post.author}
+            </button>
+            <span className="text-[15px] text-white/50 truncate">@{post.author}</span>
+            <span className="text-white/30">·</span>
+            <span className="text-[15px] text-white/50">{formatRelativeTime(post.timestamp)}</span>
           </div>
 
           <p className="text-[17px] text-white leading-normal mt-1 whitespace-pre-wrap break-words">{cleanContent(post.content)}</p>
@@ -354,8 +340,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
                     <img
                       src={imageUrl}
                       alt={`Post image ${index + 1}`}
-                      className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={() => window.open(imageUrl, '_blank')}
+                      className="w-full h-full object-cover hover:opacity-90 transition-opacity"
                       style={{
                         aspectRatio: post.images!.length === 1 ? '16/9' :
                                      post.images!.length === 2 ? '1/1' :
@@ -383,11 +368,12 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
       {sortedReplies.map((reply, replyIndex) => (
         <div 
           key={reply.id}
-          className={`flex gap-3 px-4 pt-1 pb-4 hover:bg-white/[0.02] transition-colors ${
+          className={`flex gap-3 px-4 pt-1 pb-4 hover:bg-white/[0.02] transition-colors cursor-pointer ${
             reply.isLethalRatio ? 'bg-purple-500/[0.03]' :
             reply.isBrutalRatio ? 'bg-orange-500/[0.03]' :
             ''
           }`}
+          onClick={() => handlePostClick(reply.author, reply.id)}
         >
           {/* Avatar column with connecting line for multiple replies */}
           <div className="flex flex-col items-center">
@@ -401,6 +387,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
               rel="noopener noreferrer"
               className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 transition-opacity hover:opacity-80"
               title={`@${reply.author}'s profile`}
+              onClick={(e) => e.stopPropagation()}
             >
               {reply.authorProfileImage ? (
                 <img 
@@ -422,42 +409,31 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
           
           {/* Content column */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-1 flex-wrap min-w-0">
-                <button
-                  onClick={() => onUsernameClick?.(reply.author)}
-                  className="font-bold text-[15px] text-white hover:underline truncate"
-                >
-                  {reply.authorDisplayName || reply.author}
-                </button>
-                <span className="text-[15px] text-white/50 truncate">@{reply.author}</span>
-                {/* Ratio tier badge */}
-                {reply.isLethalRatio && (
-                  <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-purple-500/25 text-purple-300 border border-purple-500/40">
-                    💀 Lethal
-                  </span>
-                )}
-                {reply.isBrutalRatio && !reply.isLethalRatio && (
-                  <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-orange-500/25 text-orange-300 border border-orange-500/40">
-                    🔥 Brutal
-                  </span>
-                )}
-                {/* Multiple ratio indicator */}
-                {sortedReplies.length > 1 && (
-                  <span className="ml-1 text-[10px] text-white/40">
-                    ({replyIndex + 1}/{sortedReplies.length})
-                  </span>
-                )}
-              </div>
-              <a
-                href={`https://x.com/${reply.author}/status/${reply.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1.5 -mr-1.5 rounded-full hover:bg-white/10 text-white/40 hover:text-white transition-colors flex-shrink-0"
-                title="View on X"
+            <div className="flex items-center gap-1 flex-wrap min-w-0">
+              <button
+                onClick={(e) => { e.stopPropagation(); onUsernameClick?.(reply.author); }}
+                className="font-bold text-[15px] text-white hover:underline truncate"
               >
-                <PopoutIcon className="w-4 h-4" />
-              </a>
+                {reply.authorDisplayName || reply.author}
+              </button>
+              <span className="text-[15px] text-white/50 truncate">@{reply.author}</span>
+              {/* Ratio tier badge */}
+              {reply.isLethalRatio && (
+                <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-purple-500/25 text-purple-300 border border-purple-500/40">
+                  💀 Lethal
+                </span>
+              )}
+              {reply.isBrutalRatio && !reply.isLethalRatio && (
+                <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-orange-500/25 text-orange-300 border border-orange-500/40">
+                  🔥 Brutal
+                </span>
+              )}
+              {/* Multiple ratio indicator */}
+              {sortedReplies.length > 1 && (
+                <span className="ml-1 text-[10px] text-white/40">
+                  ({replyIndex + 1}/{sortedReplies.length})
+                </span>
+              )}
             </div>
 
             {/* Replying to indicator */}
@@ -485,8 +461,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
                       <img
                         src={imageUrl}
                         alt={`Reply image ${index + 1}`}
-                        className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => window.open(imageUrl, '_blank')}
+                        className="w-full h-full object-cover hover:opacity-90 transition-opacity"
                         style={{
                           aspectRatio: reply.images!.length === 1 ? '16/9' :
                                        reply.images!.length === 2 ? '4/3' :
@@ -533,16 +508,6 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
               )}
             </div>
 
-            {/* Share button */}
-            <div className="mt-3 flex justify-end">
-              <ShareButton
-                ratio={reply.isRatio ? (reply.likes / post.likes) : 0}
-                parentAuthor={post.author}
-                replyAuthor={reply.author}
-                parentTweetId={post.id}
-                replyTweetId={reply.id}
-              />
-            </div>
           </div>
         </div>
       ))}
