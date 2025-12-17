@@ -329,6 +329,15 @@ const server = serve({
       },
     },
 
+    // Serve OG image for social sharing
+    "/assets/og-image.jpg": {
+      GET() {
+        return new Response(Bun.file(import.meta.dir + "/assets/og-image.jpg"), {
+          headers: { "Content-Type": "image/jpeg" },
+        });
+      },
+    },
+
     // Catch-all for frontend
     "/*": index,
   },
