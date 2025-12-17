@@ -1491,7 +1491,8 @@ export function App() {
                     {victimsLeaderboard.map((entry, index) => (
                       <div key={entry.username} className="border-b border-white/5 last:border-b-0">
                         <div
-                          className={`grid grid-cols-[2rem_1fr_4.5rem_2.5rem] sm:grid-cols-[3rem_1fr_6rem_5rem_6rem_2.5rem] items-center gap-2 sm:gap-4 px-2 sm:px-4 py-3 transition-colors hover:bg-white/[0.03] ${
+                          onClick={() => setExpandedLeaderboardEntry(expandedLeaderboardEntry === `victim-${entry.username}` ? null : `victim-${entry.username}`)}
+                          className={`grid grid-cols-[2rem_1fr_4.5rem_2.5rem] sm:grid-cols-[3rem_1fr_6rem_5rem_6rem_2.5rem] items-center gap-2 sm:gap-4 px-2 sm:px-4 py-3 transition-colors hover:bg-white/[0.03] cursor-pointer ${
                             index === 0 ? 'bg-yellow-500/5' :
                             index === 1 ? 'bg-slate-400/5' :
                             index === 2 ? 'bg-orange-700/5' : ''
@@ -1507,40 +1508,43 @@ export function App() {
                           {index + 1}
                         </div>
                         
-                        {/* Account */}
-                        <a
-                          href={`https://x.com/${entry.username}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 sm:gap-3 min-w-0 group/user overflow-hidden"
-                        >
-                          <div className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 flex-shrink-0 ${
-                            index === 0 ? 'border-yellow-500' :
-                            index === 1 ? 'border-slate-400' :
-                            index === 2 ? 'border-orange-700' :
-                            'border-white/10'
-                          }`}>
-                            {entry.profileImage ? (
-                              <img 
-                                src={entry.profileImage} 
-                                alt={`@${entry.username}`}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white font-bold text-xs sm:text-sm">
-                                {entry.username[0].toUpperCase()}
-                              </div>
-                            )}
-                          </div>
+                        {/* Account - Profile image links to X */}
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 group/user overflow-hidden">
+                          <a
+                            href={`https://x.com/${entry.username}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-shrink-0"
+                          >
+                            <div className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 ${
+                              index === 0 ? 'border-yellow-500' :
+                              index === 1 ? 'border-slate-400' :
+                              index === 2 ? 'border-orange-700' :
+                              'border-white/10'
+                            }`}>
+                              {entry.profileImage ? (
+                                <img 
+                                  src={entry.profileImage} 
+                                  alt={`@${entry.username}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white font-bold text-xs sm:text-sm">
+                                  {entry.username[0].toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                          </a>
                           <div className="min-w-0 overflow-hidden">
-                            <div className="font-medium text-white text-sm sm:text-base truncate group-hover/user:underline hidden sm:block">
+                            <div className="font-medium text-white text-sm sm:text-base truncate hidden sm:block">
                               {entry.displayName || entry.username}
                             </div>
                             <div className="text-xs sm:text-sm text-white sm:text-white/40">
                               @{entry.username}
                             </div>
                           </div>
-                        </a>
+                        </div>
                         
                         {/* Ratio Count */}
                         <div className="text-right pr-1 flex-shrink-0">
@@ -1561,7 +1565,8 @@ export function App() {
                         
                         {/* View Ratios Button */}
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setActiveFeed('recents');
                             handleUsernameClick(entry.username);
                           }}
@@ -1574,9 +1579,12 @@ export function App() {
                           <span className="hidden sm:inline">View ratios</span>
                         </button>
                         
-                        {/* Expand Button - Desktop only */}
+                        {/* Expand Button - Desktop only, row click works on mobile */}
                         <button
-                          onClick={() => setExpandedLeaderboardEntry(expandedLeaderboardEntry === `victim-${entry.username}` ? null : `victim-${entry.username}`)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpandedLeaderboardEntry(expandedLeaderboardEntry === `victim-${entry.username}` ? null : `victim-${entry.username}`);
+                          }}
                           className="hidden sm:flex items-center justify-center w-8 h-8 rounded-md bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-all cursor-pointer"
                           title="Expand for screenshot"
                         >
@@ -1586,9 +1594,9 @@ export function App() {
                         </button>
                       </div>
                       
-                      {/* Expanded Screenshot View - Desktop only */}
+                      {/* Expanded Screenshot View */}
                         {expandedLeaderboardEntry === `victim-${entry.username}` && (
-                          <div className="hidden sm:block px-4 pb-4 pt-2">
+                          <div className="px-4 pb-4 pt-2">
                             {/* Action buttons */}
                             <div className="flex justify-end gap-2 mb-2">
                               <button
@@ -1711,7 +1719,8 @@ export function App() {
                     {perpetratorsLeaderboard.map((entry, index) => (
                       <div key={entry.username} className="border-b border-white/5 last:border-b-0">
                         <div
-                          className={`grid grid-cols-[2rem_1fr_4.5rem_2.5rem] sm:grid-cols-[3rem_1fr_6rem_5rem_6rem_2.5rem] items-center gap-2 sm:gap-4 px-2 sm:px-4 py-3 transition-colors hover:bg-white/[0.03] ${
+                          onClick={() => setExpandedLeaderboardEntry(expandedLeaderboardEntry === `perpetrator-${entry.username}` ? null : `perpetrator-${entry.username}`)}
+                          className={`grid grid-cols-[2rem_1fr_4.5rem_2.5rem] sm:grid-cols-[3rem_1fr_6rem_5rem_6rem_2.5rem] items-center gap-2 sm:gap-4 px-2 sm:px-4 py-3 transition-colors hover:bg-white/[0.03] cursor-pointer ${
                             index === 0 ? 'bg-yellow-500/5' :
                             index === 1 ? 'bg-slate-400/5' :
                             index === 2 ? 'bg-orange-700/5' : ''
@@ -1727,40 +1736,43 @@ export function App() {
                             {index + 1}
                           </div>
                           
-                          {/* Account */}
-                          <a
-                            href={`https://x.com/${entry.username}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 sm:gap-3 min-w-0 group/user overflow-hidden"
-                          >
-                            <div className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 flex-shrink-0 ${
-                              index === 0 ? 'border-yellow-500' :
-                              index === 1 ? 'border-slate-400' :
-                              index === 2 ? 'border-orange-700' :
-                              'border-white/10'
-                            }`}>
-                              {entry.profileImage ? (
-                                <img 
-                                  src={entry.profileImage} 
-                                  alt={`@${entry.username}`}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white font-bold text-xs sm:text-sm">
-                                  {entry.username[0].toUpperCase()}
-                                </div>
-                              )}
-                            </div>
+                          {/* Account - Profile image links to X */}
+                          <div className="flex items-center gap-2 sm:gap-3 min-w-0 group/user overflow-hidden">
+                            <a
+                              href={`https://x.com/${entry.username}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex-shrink-0"
+                            >
+                              <div className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 ${
+                                index === 0 ? 'border-yellow-500' :
+                                index === 1 ? 'border-slate-400' :
+                                index === 2 ? 'border-orange-700' :
+                                'border-white/10'
+                              }`}>
+                                {entry.profileImage ? (
+                                  <img 
+                                    src={entry.profileImage} 
+                                    alt={`@${entry.username}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white font-bold text-xs sm:text-sm">
+                                    {entry.username[0].toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
+                            </a>
                             <div className="min-w-0 overflow-hidden">
-                              <div className="font-medium text-white text-sm sm:text-base truncate group-hover/user:underline hidden sm:block">
+                              <div className="font-medium text-white text-sm sm:text-base truncate hidden sm:block">
                                 {entry.displayName || entry.username}
                               </div>
                               <div className="text-xs sm:text-sm text-white sm:text-white/40">
                                 @{entry.username}
                               </div>
                             </div>
-                          </a>
+                          </div>
                           
                           {/* Ratio Count */}
                           <div className="text-right pr-1 flex-shrink-0">
@@ -1781,7 +1793,8 @@ export function App() {
                           
                           {/* View Ratios Button */}
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setActiveFeed('recents');
                               handleUsernameClick(entry.username);
                             }}
@@ -1794,9 +1807,12 @@ export function App() {
                             <span className="hidden sm:inline">View ratios</span>
                           </button>
                           
-                          {/* Expand Button - Desktop only */}
+                          {/* Expand Button - Desktop only, row click works on mobile */}
                           <button
-                            onClick={() => setExpandedLeaderboardEntry(expandedLeaderboardEntry === `perpetrator-${entry.username}` ? null : `perpetrator-${entry.username}`)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExpandedLeaderboardEntry(expandedLeaderboardEntry === `perpetrator-${entry.username}` ? null : `perpetrator-${entry.username}`);
+                            }}
                             className="hidden sm:flex items-center justify-center w-8 h-8 rounded-md bg-white/5 hover:bg-purple-500/20 text-white/40 hover:text-purple-400 transition-all cursor-pointer"
                             title="Expand for screenshot"
                           >
@@ -1806,9 +1822,9 @@ export function App() {
                           </button>
                         </div>
                         
-                        {/* Expanded Screenshot View - Desktop only */}
+                        {/* Expanded Screenshot View */}
                         {expandedLeaderboardEntry === `perpetrator-${entry.username}` && (
-                          <div className="hidden sm:block px-4 pb-4 pt-2">
+                          <div className="px-4 pb-4 pt-2">
                             {/* Action buttons */}
                             <div className="flex justify-end gap-2 mb-2">
                               <button
