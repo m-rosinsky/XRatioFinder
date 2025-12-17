@@ -654,6 +654,33 @@ export function App() {
     }
     
     if (action === 'copy') {
+      // Check if we're on mobile (touch device or narrow screen)
+      const isMobile = 'ontouchstart' in window || window.innerWidth < 768;
+      
+      if (isMobile && navigator.share && navigator.canShare) {
+        // On mobile, use Web Share API (much better supported than clipboard for images)
+        try {
+          const file = new File([blob], `ratio-${username}.png`, { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: 'X Ratio Card',
+              text: `Check out @${username}'s ratio stats!`,
+            });
+            showToast('Shared successfully!');
+            return;
+          }
+        } catch (err) {
+          // User cancelled or share failed - that's ok, fall through
+          if ((err as Error).name !== 'AbortError') {
+            console.log('Share failed, trying clipboard...');
+          } else {
+            return; // User cancelled, don't show any message
+          }
+        }
+      }
+      
+      // Desktop or share not available - try clipboard
       try {
         await navigator.clipboard.write([
           new ClipboardItem({ 'image/png': blob })
@@ -1574,13 +1601,19 @@ export function App() {
                                   'copy'
                                 )}
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-xs font-medium transition-all"
-                                title="Copy image to clipboard"
+                                title="Share or copy image"
                               >
-                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                {/* Share icon on mobile, copy icon on desktop */}
+                                <svg className="w-4 h-4 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                                </svg>
+                                <svg className="w-4 h-4 hidden sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
                                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                                 </svg>
-                                Copy
+                                <span className="sm:hidden">Share</span>
+                                <span className="hidden sm:inline">Copy</span>
                               </button>
                               <button
                                 onClick={() => generateShareImage(
@@ -1802,13 +1835,19 @@ export function App() {
                                   'copy'
                                 )}
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-xs font-medium transition-all"
-                                title="Copy image to clipboard"
+                                title="Share or copy image"
                               >
-                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                {/* Share icon on mobile, copy icon on desktop */}
+                                <svg className="w-4 h-4 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                                </svg>
+                                <svg className="w-4 h-4 hidden sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
                                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                                 </svg>
-                                Copy
+                                <span className="sm:hidden">Share</span>
+                                <span className="hidden sm:inline">Copy</span>
                               </button>
                               <button
                                 onClick={() => generateShareImage(

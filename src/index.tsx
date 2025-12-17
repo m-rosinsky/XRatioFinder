@@ -156,7 +156,7 @@ function getCorsHeaders(req: Request): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": allowedOrigin,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, X-XRatio-Client",
     "Access-Control-Allow-Credentials": "true",
   };
 }
@@ -166,7 +166,7 @@ function withCORS(response: Response, req?: Request): Response {
   const headers = req ? getCorsHeaders(req) : {
     "Access-Control-Allow-Origin": ALLOWED_ORIGINS[0],
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, X-XRatio-Client",
   };
   
   Object.entries(headers).forEach(([key, value]) => {
