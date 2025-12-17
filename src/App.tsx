@@ -1293,12 +1293,11 @@ export function App() {
                 {victimsLeaderboard.length > 0 ? (
                   <div className="bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden">
                     {/* Table Header */}
-                    <div className="grid grid-cols-[auto_1fr_auto_auto_auto] sm:grid-cols-[3rem_1fr_5rem_5rem_7rem_3rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 bg-white/5 border-b border-white/10 text-xs font-mono text-white/40 uppercase tracking-wider">
+                    <div className="grid grid-cols-[auto_1fr_auto_auto] sm:grid-cols-[3rem_1fr_5rem_5rem_6rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 bg-white/5 border-b border-white/10 text-xs font-mono text-white/40 uppercase tracking-wider">
                       <div className="text-center">#</div>
                       <div>Account</div>
                       <div className="text-center hidden sm:block">Ratio'd</div>
                       <div className="text-center hidden sm:block">Worst</div>
-                      <div className="text-right hidden sm:block">Likes Against</div>
                       <div></div>
                     </div>
                     
@@ -1306,7 +1305,7 @@ export function App() {
                     {victimsLeaderboard.map((entry, index) => (
                       <div
                         key={entry.username}
-                        className={`grid grid-cols-[auto_1fr_auto_auto_auto] sm:grid-cols-[3rem_1fr_5rem_5rem_7rem_3rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 border-b border-white/5 last:border-b-0 transition-colors hover:bg-white/[0.03] ${
+                        className={`grid grid-cols-[auto_1fr_auto_auto] sm:grid-cols-[3rem_1fr_5rem_5rem_6rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 border-b border-white/5 last:border-b-0 transition-colors hover:bg-white/[0.03] ${
                           index === 0 ? 'bg-yellow-500/5' :
                           index === 1 ? 'bg-slate-400/5' :
                           index === 2 ? 'bg-orange-700/5' : ''
@@ -1372,21 +1371,17 @@ export function App() {
                           )}
                         </div>
                         
-                        {/* Total Likes */}
-                        <div className="text-right font-mono text-red-400 text-sm sm:text-base hidden sm:block">
-                          {entry.totalLikes.toLocaleString()}
-                        </div>
-                        
                         {/* Filter Button */}
                         <button
                           onClick={() => {
                             setActiveFeed('recents');
                             handleUsernameClick(entry.username);
                           }}
-                          className="p-1.5 sm:p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all cursor-pointer"
-                          title={`View ${entry.displayName || entry.username}'s ratios`}
+                          className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-all cursor-pointer text-xs font-mono"
+                          title={`View ${entry.displayName || entry.username}'s ratios in feed`}
                         >
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <span className="hidden sm:inline">View ratios</span>
+                          <svg className="w-3 h-3 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M5 12h14M12 5l7 7-7 7"/>
                           </svg>
                         </button>
@@ -1409,12 +1404,11 @@ export function App() {
                 {perpetratorsLeaderboard.length > 0 ? (
                   <div className="bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden">
                     {/* Table Header */}
-                    <div className="grid grid-cols-[auto_1fr_auto_auto_auto] sm:grid-cols-[3rem_1fr_5rem_5rem_7rem_3rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 bg-white/5 border-b border-white/10 text-xs font-mono text-white/40 uppercase tracking-wider">
+                    <div className="grid grid-cols-[auto_1fr_auto_auto] sm:grid-cols-[3rem_1fr_5rem_5rem_6rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 bg-white/5 border-b border-white/10 text-xs font-mono text-white/40 uppercase tracking-wider">
                       <div className="text-center">#</div>
                       <div>Account</div>
                       <div className="text-center hidden sm:block">Ratios</div>
                       <div className="text-center hidden sm:block">Best</div>
-                      <div className="text-right hidden sm:block">Likes Earned</div>
                       <div></div>
                     </div>
                     
@@ -1422,7 +1416,7 @@ export function App() {
                     {perpetratorsLeaderboard.map((entry, index) => (
                       <div
                         key={entry.username}
-                        className={`grid grid-cols-[auto_1fr_auto_auto_auto] sm:grid-cols-[3rem_1fr_5rem_5rem_7rem_3rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 border-b border-white/5 last:border-b-0 transition-colors hover:bg-white/[0.03] ${
+                        className={`grid grid-cols-[auto_1fr_auto_auto] sm:grid-cols-[3rem_1fr_5rem_5rem_6rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 border-b border-white/5 last:border-b-0 transition-colors hover:bg-white/[0.03] ${
                           index === 0 ? 'bg-yellow-500/5' :
                           index === 1 ? 'bg-slate-400/5' :
                           index === 2 ? 'bg-orange-700/5' : ''
@@ -1488,21 +1482,17 @@ export function App() {
                           )}
                         </div>
                         
-                        {/* Total Likes */}
-                        <div className="text-right font-mono text-purple-400 text-sm sm:text-base hidden sm:block">
-                          {entry.totalLikes.toLocaleString()}
-                        </div>
-                        
                         {/* Filter Button */}
                         <button
                           onClick={() => {
                             setActiveFeed('recents');
                             handleUsernameClick(entry.username);
                           }}
-                          className="p-1.5 sm:p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all cursor-pointer"
-                          title={`View ${entry.displayName || entry.username}'s ratios`}
+                          className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 hover:bg-purple-500/20 text-white/40 hover:text-purple-400 transition-all cursor-pointer text-xs font-mono"
+                          title={`View ${entry.displayName || entry.username}'s ratios in feed`}
                         >
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <span className="hidden sm:inline">View ratios</span>
+                          <svg className="w-3 h-3 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M5 12h14M12 5l7 7-7 7"/>
                           </svg>
                         </button>
