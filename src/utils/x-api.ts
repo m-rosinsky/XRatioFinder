@@ -274,7 +274,7 @@ export async function getTweetById(tweetId: string): Promise<{ data: XApiPost; i
  * Batch fetch multiple tweets by ID in a single API call
  * X API supports up to 100 IDs per request
  */
-export async function getTweetsByIds(tweetIds: string[]): Promise<Map<string, { tweet: XApiPost; users: XApiUser[] }>> {
+export async function getTweetsByIds(tweetIds: string[]): Promise<Map<string, { tweet: XApiPost; users: XApiUser[]; media: XApiMedia[] }>> {
   if (tweetIds.length === 0) {
     return new Map();
   }
@@ -284,7 +284,7 @@ export async function getTweetsByIds(tweetIds: string[]): Promise<Map<string, { 
   const mediaFields = "url,preview_image_url,type";
   const expansions = "author_id,attachments.media_keys";
 
-  const results = new Map<string, { tweet: XApiPost; users: XApiUser[] }>();
+  const results = new Map<string, { tweet: XApiPost; users: XApiUser[]; media: XApiMedia[] }>();
   
   // Process in chunks of 100 (X API limit)
   const BATCH_SIZE = 100;
@@ -335,9 +335,10 @@ export async function getTweetsByIds(tweetIds: string[]): Promise<Map<string, { 
 
       if (result && result.data && Array.isArray(result.data)) {
         const users: XApiUser[] = result.includes?.users || [];
+        const media: XApiMedia[] = result.includes?.media || [];
         
         for (const tweet of result.data) {
-          results.set(tweet.id, { tweet, users });
+          results.set(tweet.id, { tweet, users, media });
         }
       }
     } catch (error) {
@@ -626,6 +627,12 @@ export async function searchRecentRatios(
         parentTweet = parentData.data;
         parentUser = parentData.includes?.users?.[0];
         if (parentUser) allUsers.set(parentUser.id, parentUser);
+        // Add media from the parent tweet response to allMedia
+        if (parentData.includes?.media) {
+          for (const mediaItem of parentData.includes.media) {
+            allMedia.set(mediaItem.media_key, mediaItem);
+          }
+        }
       } else {
         parentUser = allUsers.get(parentTweet.author_id);
       }

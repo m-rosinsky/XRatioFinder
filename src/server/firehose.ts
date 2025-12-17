@@ -117,6 +117,15 @@ export class LikesFirehose {
 
   constructor() {}
   
+  // Helper to extract image URLs from a tweet
+  private extractImages(tweet: any, media?: any[]): string[] {
+    if (!tweet?.attachments?.media_keys || !media) return [];
+    return tweet.attachments.media_keys
+      .map((key: string) => media.find((m: any) => m.media_key === key))
+      .filter((m: any) => m && (m.url || m.preview_image_url))
+      .map((m: any) => m.url || m.preview_image_url);
+  }
+  
   // Load saved ratios from file and validate them
   async loadSavedRatios(): Promise<void> {
     if (!existsSync(RATIOS_FILE)) {
@@ -210,7 +219,7 @@ export class LikesFirehose {
             content: parentTweet.text,
             likes: parentLikes,
             timestamp: parentTweet.created_at,
-            images: [],
+            images: this.extractImages(parentTweet, parentData.media),
           },
           reply: {
             id: replyTweet.id,
@@ -219,7 +228,7 @@ export class LikesFirehose {
             authorProfileImage: replyAuthor?.profile_image_url,
             content: replyTweet.text,
             likes: replyLikes,
-            images: [],
+            images: this.extractImages(replyTweet, replyData.media),
           },
           ratio,
           isBrutalRatio,
@@ -368,6 +377,7 @@ export class LikesFirehose {
         // Try to find parent in referenced tweets
         let parentTweet = referencedTweets.find(t => t.id === parentRef.id);
         let parentUser = parentTweet ? users.find(u => u.id === parentTweet!.author_id) : null;
+        let parentMedia = media; // Use the shared media array from includes
         
         // If not in includes, fetch directly
         if (!parentTweet) {
@@ -377,6 +387,7 @@ export class LikesFirehose {
           
           parentTweet = parentData.data;
           parentUser = parentData.includes?.users?.find(u => u.id === parentTweet!.author_id) || null;
+          parentMedia = parentData.includes?.media || [];
         }
         
         // Skip self-ratios
@@ -407,7 +418,7 @@ export class LikesFirehose {
             content: parentTweet.text,
             likes: parentLikes,
             timestamp: parentTweet.created_at,
-            images: [],
+            images: this.extractImages(parentTweet, parentMedia),
           },
           reply: {
             id: tweet.id,
@@ -416,7 +427,7 @@ export class LikesFirehose {
             authorProfileImage: replyAuthor?.profile_image_url,
             content: tweet.text,
             likes: replyLikes,
-            images: [],
+            images: this.extractImages(tweet, media),
           },
           ratio,
           isBrutalRatio,
@@ -877,15 +888,6 @@ export class LikesFirehose {
     const replyAuthor = event.includes?.users?.find(u => u.id === likedTweet.author_id);
     const parentAuthor = parentData.includes?.users?.find(u => u.id === parentTweet.author_id);
 
-    // Extract media/images if present
-    const getImages = (tweet: any, includes: any): string[] => {
-      if (!tweet.attachments?.media_keys || !includes?.media) return [];
-      return tweet.attachments.media_keys
-        .map((key: string) => includes.media.find((m: any) => m.media_key === key))
-        .filter((m: any) => m && (m.url || m.preview_image_url))
-        .map((m: any) => m.url || m.preview_image_url);
-    };
-
     // Create and store the ratio
     const storedRatio: StoredRatio = {
       id: parentTweet.id,
@@ -897,7 +899,7 @@ export class LikesFirehose {
         content: parentTweet.text,
         likes: parentLikes,
         timestamp: parentTweet.created_at,
-        images: getImages(parentTweet, parentData.includes),
+        images: this.extractImages(parentTweet, parentData.includes?.media),
       },
       reply: {
         id: likedTweet.id,
@@ -906,7 +908,7 @@ export class LikesFirehose {
         authorProfileImage: replyAuthor?.profile_image_url,
         content: likedTweet.text,
         likes: replyLikes,
-        images: [], // Firehose doesn't include media for liked tweet
+        images: this.extractImages(likedTweet, (event.includes as any)?.media),
       },
       ratio,
       isBrutalRatio,
