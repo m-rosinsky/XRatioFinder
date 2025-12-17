@@ -843,7 +843,7 @@ export function App() {
                 Ratio Finder
               </span>
               <a 
-                href="https://console.x.com" 
+                href="https://developer.x.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center gap-0.5 text-[9px] sm:text-[10px] text-white/50 hover:text-white/80 transition-colors leading-tight"
