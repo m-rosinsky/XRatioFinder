@@ -1218,8 +1218,8 @@ export function App() {
                   {activeFeed === 'recents'
                     ? 'Live Feed'
                     : activeFeed === 'victims'
-                    ? 'Hall of Shame'
-                    : 'Hall of Fame'}
+                    ? "This Week's Top Ratio Victims"
+                    : "This Week's Top Ratio-ers"}
                 </h2>
                 <p className="text-white/50 text-sm max-w-xl">
                   {activeFeed === 'recents'
@@ -1292,12 +1292,12 @@ export function App() {
               <div>
                 {victimsLeaderboard.length > 0 ? (
                   <div className="bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden">
-                    {/* Table Header */}
-                    <div className="grid grid-cols-[auto_1fr_auto_auto] sm:grid-cols-[3rem_1fr_5rem_5rem_6rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 bg-white/5 border-b border-white/10 text-xs font-mono text-white/40 uppercase tracking-wider">
+                    {/* Table Header - Desktop only */}
+                    <div className="hidden sm:grid grid-cols-[3rem_1fr_6rem_5rem_6rem] items-center gap-4 px-4 py-3 bg-white/5 border-b border-white/10 text-xs font-mono text-white/40 uppercase tracking-wider">
                       <div className="text-center">#</div>
                       <div>Account</div>
-                      <div className="text-center hidden sm:block">Ratio'd</div>
-                      <div className="text-center hidden sm:block">Worst</div>
+                      <div className="text-right pr-1">Ratios</div>
+                      <div className="text-center">Worst</div>
                       <div></div>
                     </div>
                     
@@ -1305,7 +1305,7 @@ export function App() {
                     {victimsLeaderboard.map((entry, index) => (
                       <div
                         key={entry.username}
-                        className={`grid grid-cols-[auto_1fr_auto_auto] sm:grid-cols-[3rem_1fr_5rem_5rem_6rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 border-b border-white/5 last:border-b-0 transition-colors hover:bg-white/[0.03] ${
+                        className={`grid grid-cols-[2.5rem_1fr_5.5rem_auto] sm:grid-cols-[3rem_1fr_6rem_5rem_6rem] items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 border-b border-white/5 last:border-b-0 transition-colors hover:bg-white/[0.03] ${
                           index === 0 ? 'bg-yellow-500/5' :
                           index === 1 ? 'bg-slate-400/5' :
                           index === 2 ? 'bg-orange-700/5' : ''
@@ -1355,9 +1355,9 @@ export function App() {
                         </a>
                         
                         {/* Ratio Count */}
-                        <div className="text-center">
+                        <div className="text-right pr-1">
                           <span className="text-red-400 font-bold text-sm sm:text-base">{entry.ratioCount}</span>
-                          <span className="text-white/30 text-xs sm:hidden ml-1">×</span>
+                          <span className="text-white/40 text-xs sm:text-sm ml-1">ratios</span>
                         </div>
                         
                         {/* Worst Ratio */}
@@ -1377,13 +1377,13 @@ export function App() {
                             setActiveFeed('recents');
                             handleUsernameClick(entry.username);
                           }}
-                          className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-all cursor-pointer text-xs font-mono"
+                          className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-all cursor-pointer text-xs font-mono"
                           title={`View ${entry.displayName || entry.username}'s ratios in feed`}
                         >
-                          <span className="hidden sm:inline">View ratios</span>
-                          <svg className="w-3 h-3 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <svg className="w-3.5 h-3.5 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M5 12h14M12 5l7 7-7 7"/>
                           </svg>
+                          <span className="hidden sm:inline">View ratios</span>
                         </button>
                       </div>
                     ))}
@@ -1403,12 +1403,12 @@ export function App() {
               <div>
                 {perpetratorsLeaderboard.length > 0 ? (
                   <div className="bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden">
-                    {/* Table Header */}
-                    <div className="grid grid-cols-[auto_1fr_auto_auto] sm:grid-cols-[3rem_1fr_5rem_5rem_6rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 bg-white/5 border-b border-white/10 text-xs font-mono text-white/40 uppercase tracking-wider">
+                    {/* Table Header - Desktop only */}
+                    <div className="hidden sm:grid grid-cols-[3rem_1fr_6rem_5rem_6rem] items-center gap-4 px-4 py-3 bg-white/5 border-b border-white/10 text-xs font-mono text-white/40 uppercase tracking-wider">
                       <div className="text-center">#</div>
                       <div>Account</div>
-                      <div className="text-center hidden sm:block">Ratios</div>
-                      <div className="text-center hidden sm:block">Best</div>
+                      <div className="text-right pr-1">Ratios</div>
+                      <div className="text-center">Best</div>
                       <div></div>
                     </div>
                     
@@ -1416,7 +1416,7 @@ export function App() {
                     {perpetratorsLeaderboard.map((entry, index) => (
                       <div
                         key={entry.username}
-                        className={`grid grid-cols-[auto_1fr_auto_auto] sm:grid-cols-[3rem_1fr_5rem_5rem_6rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 border-b border-white/5 last:border-b-0 transition-colors hover:bg-white/[0.03] ${
+                        className={`grid grid-cols-[2.5rem_1fr_5.5rem_auto] sm:grid-cols-[3rem_1fr_6rem_5rem_6rem] items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 border-b border-white/5 last:border-b-0 transition-colors hover:bg-white/[0.03] ${
                           index === 0 ? 'bg-yellow-500/5' :
                           index === 1 ? 'bg-slate-400/5' :
                           index === 2 ? 'bg-orange-700/5' : ''
@@ -1466,9 +1466,9 @@ export function App() {
                         </a>
                         
                         {/* Ratio Count */}
-                        <div className="text-center">
+                        <div className="text-right pr-1">
                           <span className="text-purple-400 font-bold text-sm sm:text-base">{entry.ratioCount}</span>
-                          <span className="text-white/30 text-xs sm:hidden ml-1">×</span>
+                          <span className="text-white/40 text-xs sm:text-sm ml-1">ratios</span>
                         </div>
                         
                         {/* Best Ratio */}
@@ -1488,13 +1488,13 @@ export function App() {
                             setActiveFeed('recents');
                             handleUsernameClick(entry.username);
                           }}
-                          className="flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 hover:bg-purple-500/20 text-white/40 hover:text-purple-400 transition-all cursor-pointer text-xs font-mono"
+                          className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-white/5 hover:bg-purple-500/20 text-white/40 hover:text-purple-400 transition-all cursor-pointer text-xs font-mono"
                           title={`View ${entry.displayName || entry.username}'s ratios in feed`}
                         >
-                          <span className="hidden sm:inline">View ratios</span>
-                          <svg className="w-3 h-3 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <svg className="w-3.5 h-3.5 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M5 12h14M12 5l7 7-7 7"/>
                           </svg>
+                          <span className="hidden sm:inline">View ratios</span>
                         </button>
                       </div>
                     ))}
