@@ -539,6 +539,138 @@ export function App() {
   const [filterUsername, setFilterUsername] = useState('');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [expandedLeaderboardEntry, setExpandedLeaderboardEntry] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ text: string; isError: boolean } | null>(null);
+  
+  const showToast = (message: string, isError = false) => {
+    setToastMessage({ text: message, isError });
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+  
+  // Generate screenshot image using Canvas (no profile image to avoid CORS)
+  const generateShareImage = async (
+    type: 'victim' | 'perpetrator',
+    username: string,
+    displayName: string,
+    ratioCount: number,
+    bestOrWorstRatio: number | undefined,
+    action: 'copy' | 'download'
+  ) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Use 3x scale for high resolution
+    const scale = 3;
+    const baseWidth = 600;
+    const baseHeight = 280;
+    
+    // Set canvas size at higher resolution
+    canvas.width = baseWidth * scale;
+    canvas.height = baseHeight * scale;
+    
+    // Scale all drawing operations
+    ctx.scale(scale, scale);
+    
+    // Colors based on type
+    const accentColor = type === 'victim' ? '#ef4444' : '#a855f7';
+    const gradientStart = type === 'victim' ? 'rgba(127, 29, 29, 0.4)' : 'rgba(88, 28, 135, 0.4)';
+    const gradientEnd = type === 'victim' ? 'rgba(127, 29, 29, 0.2)' : 'rgba(88, 28, 135, 0.2)';
+    
+    // Background gradient
+    const gradient = ctx.createLinearGradient(0, 0, baseWidth, baseHeight);
+    gradient.addColorStop(0, gradientStart);
+    gradient.addColorStop(0.5, '#0A0A0A');
+    gradient.addColorStop(1, gradientEnd);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, baseWidth, baseHeight);
+    
+    // Border with rounded corners
+    ctx.strokeStyle = accentColor + '50';
+    ctx.lineWidth = 2;
+    const borderRadius = 16;
+    ctx.beginPath();
+    ctx.roundRect(2, 2, baseWidth - 4, baseHeight - 4, borderRadius);
+    ctx.stroke();
+    
+    // Display name
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 28px system-ui, -apple-system, sans-serif';
+    ctx.fillText(displayName || username, 40, 60);
+    
+    // Handle
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.font = '18px system-ui, -apple-system, sans-serif';
+    ctx.fillText(`@${username}`, 40, 90);
+    
+    // Main stat text
+    ctx.fillStyle = accentColor;
+    ctx.font = 'bold 32px system-ui, -apple-system, sans-serif';
+    const statText = type === 'victim' 
+      ? `Got ratio'd ${ratioCount} times this week`
+      : `Ratio'd ${ratioCount} users this week`;
+    ctx.fillText(statText, 40, 150);
+    
+    // Best/Worst ratio
+    if (bestOrWorstRatio) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.font = '20px system-ui, -apple-system, sans-serif';
+      const ratioLabel = type === 'victim' ? 'Worst ratio:' : 'Best ratio:';
+      ctx.fillText(ratioLabel, 40, 190);
+      ctx.fillStyle = accentColor;
+      ctx.font = 'bold 20px monospace';
+      ctx.fillText(`${bestOrWorstRatio.toFixed(1)}×`, 160, 190);
+    }
+    
+    // Footer line
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(40, 230);
+    ctx.lineTo(baseWidth - 40, 230);
+    ctx.stroke();
+    
+    // Branding
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.font = '12px monospace';
+    ctx.fillText('xratio.replit.app', 40, 255);
+    ctx.textAlign = 'right';
+    ctx.fillText('Powered by X API', baseWidth - 40, 255);
+    ctx.textAlign = 'left';
+    
+    // Convert to blob
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, 'image/png');
+    });
+    
+    if (!blob) {
+      showToast('Failed to generate image', true);
+      return;
+    }
+    
+    if (action === 'copy') {
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ]);
+        showToast('Image copied to clipboard!');
+      } catch {
+        // Fallback to download
+        downloadBlob(blob, username);
+      }
+    } else {
+      downloadBlob(blob, username);
+    }
+  };
+  
+  const downloadBlob = (blob: Blob, username: string) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `ratio-${username}-${Date.now()}.png`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast('Image downloaded!');
+  };
 
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
   const [victimsLeaderboard, setVictimsLeaderboard] = useState<VictimLeaderboardEntry[]>([]);
@@ -821,6 +953,17 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white font-sans antialiased selection:bg-white/20 overflow-x-hidden">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded-lg shadow-lg transition-all duration-300 ${
+          toastMessage.isError 
+            ? 'bg-red-500/90 text-white' 
+            : 'bg-white/90 text-black'
+        }`}>
+          <span className="text-sm font-medium">{toastMessage.text}</span>
+        </div>
+      )}
+      
       {/* Background Effects */}
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute inset-0 [background:radial-gradient(100%_120%_at_50%_0%,rgba(0,0,0,0.6),transparent_60%)]"></div>
@@ -1454,6 +1597,47 @@ export function App() {
                       {/* Expanded Screenshot View - Desktop only */}
                         {expandedLeaderboardEntry === `victim-${entry.username}` && (
                           <div className="hidden sm:block px-4 pb-4 pt-2">
+                            {/* Action buttons */}
+                            <div className="flex justify-end gap-2 mb-2">
+                              <button
+                                onClick={() => generateShareImage(
+                                  'victim',
+                                  entry.username,
+                                  entry.displayName || entry.username,
+                                  entry.ratioCount,
+                                  entry.worstRatio?.ratio,
+                                  'copy'
+                                )}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-xs font-medium transition-all"
+                                title="Copy image to clipboard"
+                              >
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                </svg>
+                                Copy
+                              </button>
+                              <button
+                                onClick={() => generateShareImage(
+                                  'victim',
+                                  entry.username,
+                                  entry.displayName || entry.username,
+                                  entry.ratioCount,
+                                  entry.worstRatio?.ratio,
+                                  'download'
+                                )}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-xs font-medium transition-all"
+                                title="Download image"
+                              >
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                  <polyline points="7 10 12 15 17 10"/>
+                                  <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                                Download
+                              </button>
+                            </div>
+                            
                             <div className="bg-gradient-to-br from-red-950/40 via-black to-red-950/20 border border-red-500/30 rounded-2xl p-8 shadow-[0_0_60px_rgba(239,68,68,0.15)]">
                               <div className="flex items-center gap-6">
                                 {/* Large Profile Picture */}
@@ -1633,6 +1817,47 @@ export function App() {
                         {/* Expanded Screenshot View - Desktop only */}
                         {expandedLeaderboardEntry === `perpetrator-${entry.username}` && (
                           <div className="hidden sm:block px-4 pb-4 pt-2">
+                            {/* Action buttons */}
+                            <div className="flex justify-end gap-2 mb-2">
+                              <button
+                                onClick={() => generateShareImage(
+                                  'perpetrator',
+                                  entry.username,
+                                  entry.displayName || entry.username,
+                                  entry.ratioCount,
+                                  entry.bestRatio?.ratio,
+                                  'copy'
+                                )}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-xs font-medium transition-all"
+                                title="Copy image to clipboard"
+                              >
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                </svg>
+                                Copy
+                              </button>
+                              <button
+                                onClick={() => generateShareImage(
+                                  'perpetrator',
+                                  entry.username,
+                                  entry.displayName || entry.username,
+                                  entry.ratioCount,
+                                  entry.bestRatio?.ratio,
+                                  'download'
+                                )}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-xs font-medium transition-all"
+                                title="Download image"
+                              >
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                  <polyline points="7 10 12 15 17 10"/>
+                                  <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                                Download
+                              </button>
+                            </div>
+                            
                             <div className="bg-gradient-to-br from-purple-950/40 via-black to-purple-950/20 border border-purple-500/30 rounded-2xl p-8 shadow-[0_0_60px_rgba(168,85,247,0.15)]">
                               <div className="flex items-center gap-6">
                                 {/* Large Profile Picture */}
