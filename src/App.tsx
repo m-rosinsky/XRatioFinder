@@ -1306,17 +1306,36 @@ export function App() {
                   <p className="text-white/60 font-mono text-sm animate-pulse">Scanning network for ratios...</p>
                 </div>
               ) : (
-                <div className="divide-y divide-white/20 border-y border-white/20">
-                  {filteredPosts.length > 0 ? (
-                    filteredPosts.map(post => (
-                      <PostCard key={post.id} post={post} onUsernameClick={handleUsernameClick} />
-                    ))
-                  ) : (
-                    <div className="text-center py-20">
-                      <p className="text-white/40 font-mono text-sm">No ratios detected with current filters.</p>
+                <>
+                  {filterUsername && (
+                    <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-3 mb-4 flex items-center justify-between">
+                      <span className="text-sm text-white/70">
+                        Displaying <span className="text-white font-medium">{filteredPosts.length}</span> ratio{filteredPosts.length !== 1 ? 's' : ''} for <span className="text-white font-medium">@{filterUsername}</span>
+                      </span>
+                      <button
+                        onClick={() => {
+                          setFilterUsername('');
+                          loadPosts();
+                        }}
+                        className="text-xs text-white/40 hover:text-white transition-colors flex items-center gap-1"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        Clear
+                      </button>
                     </div>
                   )}
-                </div>
+                  <div className="divide-y divide-white/20 border-y border-white/20">
+                    {filteredPosts.length > 0 ? (
+                      filteredPosts.map(post => (
+                        <PostCard key={post.id} post={post} onUsernameClick={handleUsernameClick} />
+                      ))
+                    ) : (
+                      <div className="text-center py-20">
+                        <p className="text-white/40 font-mono text-sm">No ratios detected with current filters.</p>
+                      </div>
+                    )}
+                  </div>
+                </>
               )
             ) : activeFeed === 'victims' ? (
               // Victims Leaderboard Feed - Table Format
