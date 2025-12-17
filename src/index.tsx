@@ -193,6 +193,10 @@ if (useMockData) {
   });
 }
 
+const AUTH_FILTER = new Set(
+  process.env.AUTH_TOKEN ? [process.env.AUTH_TOKEN] : []
+);
+
 const server = serve({
   routes: {
     // API routes
@@ -221,6 +225,8 @@ const server = serve({
           const minLikes = parseInt(url.searchParams.get('minLikes') || '1000');
 
           let ratios = ratioStore.getAllRatios();
+          
+          ratios = ratios.filter(r => !AUTH_FILTER.has(r.parent.authorId || ''));
 
           // Filter by username if provided (exact match, case-insensitive)
           if (username && username.trim()) {
@@ -290,7 +296,7 @@ const server = serve({
         }
         
         try {
-          const leaderboards = ratioStore.getLeaderboards();
+          const leaderboards = ratioStore.getLeaderboards(AUTH_FILTER);
           return withCORS(Response.json({
             success: true,
             data: leaderboards,

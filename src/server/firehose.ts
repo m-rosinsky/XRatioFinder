@@ -219,6 +219,7 @@ export class LikesFirehose {
           parent: {
             id: parentTweet.id,
             author: parentAuthor?.username || "unknown",
+            authorId: parentTweet.author_id,
             authorDisplayName: parentAuthor?.name,
             authorProfileImage: parentAuthor?.profile_image_url,
             content: parentTweet.text,
@@ -229,6 +230,7 @@ export class LikesFirehose {
           reply: {
             id: replyTweet.id,
             author: replyAuthor?.username || "unknown",
+            authorId: replyTweet.author_id,
             authorDisplayName: replyAuthor?.name,
             authorProfileImage: replyAuthor?.profile_image_url,
             content: replyTweet.text,
@@ -418,6 +420,7 @@ export class LikesFirehose {
           parent: {
             id: parentTweet.id,
             author: parentUser?.username || "unknown",
+            authorId: parentTweet.author_id,
             authorDisplayName: parentUser?.name,
             authorProfileImage: parentUser?.profile_image_url,
             content: parentTweet.text,
@@ -428,6 +431,7 @@ export class LikesFirehose {
           reply: {
             id: tweet.id,
             author: replyAuthor?.username || user.username,
+            authorId: tweet.author_id,
             authorDisplayName: replyAuthor?.name,
             authorProfileImage: replyAuthor?.profile_image_url,
             content: tweet.text,
@@ -672,6 +676,7 @@ export class LikesFirehose {
           parent: {
             id: ratio.parent.id,
             author: ratio.parent.author.username,
+            authorId: ratio.parent.author.id,
             authorDisplayName: ratio.parent.author.name,
             authorProfileImage: ratio.parent.author.profile_image_url,
             content: ratio.parent.text,
@@ -682,6 +687,7 @@ export class LikesFirehose {
           reply: {
             id: ratio.reply.id,
             author: ratio.reply.author.username,
+            authorId: ratio.reply.author.id,
             authorDisplayName: ratio.reply.author.name,
             authorProfileImage: ratio.reply.author.profile_image_url,
             content: ratio.reply.text,
@@ -902,6 +908,7 @@ export class LikesFirehose {
       parent: {
         id: parentTweet.id,
         author: parentAuthor?.username || "unknown",
+        authorId: parentTweet.author_id,
         authorDisplayName: parentAuthor?.name,
         authorProfileImage: parentAuthor?.profile_image_url,
         content: parentTweet.text,
@@ -912,6 +919,7 @@ export class LikesFirehose {
       reply: {
         id: likedTweet.id,
         author: replyAuthor?.username || "unknown",
+        authorId: likedTweet.author_id,
         authorDisplayName: replyAuthor?.name,
         authorProfileImage: replyAuthor?.profile_image_url,
         content: likedTweet.text,

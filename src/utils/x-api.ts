@@ -151,6 +151,7 @@ export interface RatioData {
     text: string;
     created_at: string;
     author: {
+      id: string;
       username: string;
       name: string;
       profile_image_url?: string;
@@ -166,6 +167,7 @@ export interface RatioData {
     id: string;
     text: string;
     author: {
+      id: string;
       username: string;
       name: string;
       profile_image_url?: string;
@@ -671,6 +673,7 @@ export async function searchRecentRatios(
             text: parentTweet.text,
             created_at: parentTweet.created_at,
             author: {
+              id: parentUser.id,
               username: parentUser.username,
               name: parentUser.name,
               profile_image_url: parentUser.profile_image_url,
@@ -682,6 +685,7 @@ export async function searchRecentRatios(
             id: reply.id,
             text: reply.text,
             author: {
+              id: replyUser.id,
               username: replyUser.username,
               name: replyUser.name,
               profile_image_url: replyUser.profile_image_url,

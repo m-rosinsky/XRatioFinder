@@ -33,6 +33,7 @@ yarn-error.log*
 
 # tracked ratios
 discovered_ratios.json
+tracked_users.json
 
 # vercel
 .vercel

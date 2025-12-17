@@ -9,10 +9,11 @@ export interface ImageData {
 }
 
 export interface StoredRatio {
-  id: string; // parent post id
+  id: string;
   parent: {
     id: string;
     author: string;
+    authorId?: string;
     authorDisplayName?: string;
     authorProfileImage?: string;
     content: string;
@@ -23,6 +24,7 @@ export interface StoredRatio {
   reply: {
     id: string;
     author: string;
+    authorId?: string;
     authorDisplayName?: string;
     authorProfileImage?: string;
     content: string;
@@ -33,7 +35,7 @@ export interface StoredRatio {
   isBrutalRatio: boolean;
   isLethalRatio: boolean;
   isRatio: boolean;
-  discoveredAt: number; // timestamp when we found this ratio
+  discoveredAt: number;
 }
 
 class RatioStore {
@@ -178,8 +180,7 @@ class RatioStore {
     };
   }
 
-  // Calculate leaderboards from current ratios
-  getLeaderboards() {
+  getLeaderboards(filter?: Set<string>) {
     const ratios = this.getAllRatios();
     
     // Calculate victim counts (who got ratio'd the most)
@@ -189,35 +190,38 @@ class RatioStore {
     const perpetratorCounts = new Map<string, { count: number; totalLikes: number; displayName?: string; profileImage?: string; bestRatio: { ratio: number; postId: string; postContent: string; postLikes: number; postAuthor: string; postAuthorDisplayName?: string; replyId: string; replyContent: string; replyLikes: number } }>();
     
     for (const ratio of ratios) {
-      // Track victims
-      const victim = victimCounts.get(ratio.parent.author) || { count: 0, totalLikes: 0, displayName: undefined, profileImage: undefined, worstRatio: { ratio: 0, postId: '', postContent: '', postLikes: 0, replyId: '', replyContent: '', replyLikes: 0, replyAuthor: '', replyAuthorDisplayName: undefined } };
-      victim.count++;
-      victim.totalLikes += ratio.reply.likes;
+      const isExcluded = filter?.has(ratio.parent.authorId || '');
       
-      // Update display name and profile image if available
-      if (ratio.parent.authorDisplayName) {
-        victim.displayName = ratio.parent.authorDisplayName;
-      }
-      if (ratio.parent.authorProfileImage) {
-        victim.profileImage = ratio.parent.authorProfileImage;
-      }
+      if (!isExcluded) {
+        const victim = victimCounts.get(ratio.parent.author) || { count: 0, totalLikes: 0, displayName: undefined, profileImage: undefined, worstRatio: { ratio: 0, postId: '', postContent: '', postLikes: 0, replyId: '', replyContent: '', replyLikes: 0, replyAuthor: '', replyAuthorDisplayName: undefined } };
+        victim.count++;
+        victim.totalLikes += ratio.reply.likes;
       
-      if (ratio.ratio > victim.worstRatio.ratio) {
-        victim.worstRatio = {
-          ratio: ratio.ratio,
-          postId: ratio.parent.id,
-          postContent: ratio.parent.content,
-          postLikes: ratio.parent.likes,
-          postImages: ratio.parent.images,
-          replyId: ratio.reply.id,
-          replyContent: ratio.reply.content,
-          replyLikes: ratio.reply.likes,
-          replyAuthor: ratio.reply.author,
-          replyAuthorDisplayName: ratio.reply.authorDisplayName,
-          replyImages: ratio.reply.images,
-        };
+        // Update display name and profile image if available
+        if (ratio.parent.authorDisplayName) {
+          victim.displayName = ratio.parent.authorDisplayName;
+        }
+        if (ratio.parent.authorProfileImage) {
+          victim.profileImage = ratio.parent.authorProfileImage;
+        }
+        
+        if (ratio.ratio > victim.worstRatio.ratio) {
+          victim.worstRatio = {
+            ratio: ratio.ratio,
+            postId: ratio.parent.id,
+            postContent: ratio.parent.content,
+            postLikes: ratio.parent.likes,
+            postImages: ratio.parent.images,
+            replyId: ratio.reply.id,
+            replyContent: ratio.reply.content,
+            replyLikes: ratio.reply.likes,
+            replyAuthor: ratio.reply.author,
+            replyAuthorDisplayName: ratio.reply.authorDisplayName,
+            replyImages: ratio.reply.images,
+          };
+        }
+        victimCounts.set(ratio.parent.author, victim);
       }
-      victimCounts.set(ratio.parent.author, victim);
       
       // Track perpetrators
       const perpetrator = perpetratorCounts.get(ratio.reply.author) || { count: 0, totalLikes: 0, displayName: undefined, profileImage: undefined, bestRatio: { ratio: 0, postId: '', postContent: '', postLikes: 0, postAuthor: '', postAuthorDisplayName: undefined, replyId: '', replyContent: '', replyLikes: 0 } };
