@@ -24,6 +24,7 @@ interface ImageData {
 // Type for our post data structure
 interface Post {
   id: string;
+  parentTweetId: string; // The actual tweet ID for clicking through to X
   author: string;
   authorDisplayName?: string;
   authorProfileImage?: string;
@@ -101,6 +102,7 @@ const mockPosts: Post[] = [
   // LETHAL RATIO (100x+) - Purple glow
   {
     id: "1",
+    parentTweetId: "1",
     author: "tech_ceo",
     authorDisplayName: "Tech CEO",
     content: "We're pivoting to AI. Our new chatbot will revolutionize how people interact with technology. This is the future!",
@@ -122,6 +124,7 @@ const mockPosts: Post[] = [
   // BRUTAL RATIO (10x-100x) - Orange glow
   {
     id: "2",
+    parentTweetId: "2",
     author: "fitness_guru",
     authorDisplayName: "Fitness Guru",
     content: "Lost 50lbs in 3 months with this ONE weird trick! No exercise needed!",
@@ -143,6 +146,7 @@ const mockPosts: Post[] = [
   // BRUTAL RATIO (10x-100x) - Orange glow
   {
     id: "3",
+    parentTweetId: "3",
     author: "influencer_pro",
     authorDisplayName: "Lifestyle Influencer",
     content: "Just dropped my new single! Stream it now. I put my heart and soul into this one.",
@@ -164,6 +168,7 @@ const mockPosts: Post[] = [
   // NORMAL RATIO (2x-10x) - Muted slate
   {
     id: "4",
+    parentTweetId: "4",
     author: "design_master",
     authorDisplayName: "Design Master",
     content: "Flat design is officially dead. Brutalism is the future of UI design.",
@@ -185,6 +190,7 @@ const mockPosts: Post[] = [
   // NORMAL RATIO (2x-10x) - Muted slate
   {
     id: "5",
+    parentTweetId: "5",
     author: "startup_founder",
     authorDisplayName: "Startup Founder",
     content: "We just raised $50M Series B! Excited to scale our revolutionary platform to new heights!",
@@ -206,6 +212,7 @@ const mockPosts: Post[] = [
   // NO RATIO - Normal post
   {
     id: "6",
+    parentTweetId: "6",
     author: "crypto_trader",
     authorDisplayName: "Crypto Day Trader",
     content: "This coin is going to 1000x! Buy now before it's too late! Not financial advice.",
@@ -227,6 +234,7 @@ const mockPosts: Post[] = [
   // LETHAL RATIO (100x+) - Purple glow
   {
     id: "7",
+    parentTweetId: "7",
     author: "politician_pro",
     authorDisplayName: "Senator Williams",
     content: "My new tax policy will save the average family $5000 per year! Vote for real change!",
@@ -248,6 +256,7 @@ const mockPosts: Post[] = [
   // NO RATIO - Normal post
   {
     id: "8",
+    parentTweetId: "8",
     author: "celebrity_news",
     authorDisplayName: "Celebrity News Daily",
     content: "BREAKING: Major celebrity announces surprise album drop!",
@@ -284,7 +293,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
       {/* Original Post */}
       <div 
         className="flex gap-3 px-4 pt-4 pb-3 hover:bg-white/[0.02] transition-colors cursor-pointer overflow-hidden"
-        onClick={() => handlePostClick(post.author, post.id)}
+        onClick={() => handlePostClick(post.author, post.parentTweetId)}
       >
         {/* Avatar column with thread line */}
         <div className="flex flex-col items-center">
@@ -385,12 +394,8 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
           }`}
           onClick={() => handlePostClick(reply.author, reply.id)}
         >
-          {/* Avatar column with connecting line for multiple replies */}
+          {/* Avatar column */}
           <div className="flex flex-col items-center">
-            {/* Thread line from previous reply */}
-            {replyIndex > 0 && (
-              <div className="w-0.5 h-2 bg-white/20 -mt-1 mb-1"></div>
-            )}
             <a
               href={`https://x.com/${reply.author}`}
               target="_blank"
@@ -411,10 +416,6 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
                 </div>
               )}
             </a>
-            {/* Thread line to next reply */}
-            {replyIndex < sortedReplies.length - 1 && (
-              <div className="w-0.5 flex-1 mt-1 bg-white/20 min-h-[20px]"></div>
-            )}
           </div>
           
           {/* Content column */}
@@ -436,12 +437,6 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
               {reply.isBrutalRatio && !reply.isLethalRatio && (
                 <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-orange-500/25 text-orange-300 border border-orange-500/40">
                   🔥 Brutal
-                </span>
-              )}
-              {/* Multiple ratio indicator */}
-              {sortedReplies.length > 1 && (
-                <span className="ml-1 text-[10px] text-white/40">
-                  ({replyIndex + 1}/{sortedReplies.length})
                 </span>
               )}
             </div>
@@ -681,11 +676,17 @@ export function App() {
 
   // Convert stored ratios to Post format, grouping multiple ratios on the same post
   const convertRatiosToPosts = (ratios: any[]): Post[] => {
-    // Group ratios by parent post id
-    const postMap = new Map<string, Post>();
+    // Each ratio becomes its own separate card (flat feed)
+    const posts: Post[] = [];
+    const seenRatioIds = new Set<string>();
     
     for (const ratio of ratios) {
-      const parentId = ratio.parent.id;
+      // Use reply ID as unique identifier to avoid duplicates
+      if (seenRatioIds.has(ratio.reply.id)) {
+        continue;
+      }
+      seenRatioIds.add(ratio.reply.id);
+      
       const reply: Reply = {
         id: ratio.reply.id,
         author: ratio.reply.author,
@@ -699,31 +700,22 @@ export function App() {
         isLethalRatio: ratio.isLethalRatio || false
       };
       
-      if (postMap.has(parentId)) {
-        // Add reply to existing post (avoid duplicates)
-        const existingPost = postMap.get(parentId)!;
-        if (!existingPost.replies.some(r => r.id === reply.id)) {
-          existingPost.replies.push(reply);
-          // Sort replies by likes (highest first)
-          existingPost.replies.sort((a, b) => b.likes - a.likes);
-        }
-      } else {
-        // Create new post entry
-        postMap.set(parentId, {
-          id: parentId,
-          author: ratio.parent.author,
-          authorDisplayName: ratio.parent.authorDisplayName,
-          authorProfileImage: ratio.parent.authorProfileImage,
-          content: ratio.parent.content,
-          likes: ratio.parent.likes,
-          timestamp: ratio.parent.timestamp,
-          images: ratio.parent.images,
-          replies: [reply]
-        });
-      }
+      // Create a unique post for each ratio (combining parent + reply IDs)
+      posts.push({
+        id: `${ratio.parent.id}-${ratio.reply.id}`,
+        parentTweetId: ratio.parent.id, // Store actual tweet ID for clicking through
+        author: ratio.parent.author,
+        authorDisplayName: ratio.parent.authorDisplayName,
+        authorProfileImage: ratio.parent.authorProfileImage,
+        content: ratio.parent.content,
+        likes: ratio.parent.likes,
+        timestamp: ratio.parent.timestamp,
+        images: ratio.parent.images,
+        replies: [reply]
+      });
     }
     
-    return Array.from(postMap.values());
+    return posts;
   };
 
 
