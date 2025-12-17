@@ -592,21 +592,23 @@ export function App() {
     
     // Colors based on type
     const accentColor = type === 'victim' ? '#ef4444' : '#a855f7';
-    const gradientStart = type === 'victim' ? 'rgba(127, 29, 29, 0.4)' : 'rgba(88, 28, 135, 0.4)';
-    const gradientEnd = type === 'victim' ? 'rgba(127, 29, 29, 0.2)' : 'rgba(88, 28, 135, 0.2)';
+    const borderRadius = 16;
     
-    // Background gradient
+    // Solid dark base background
+    ctx.fillStyle = '#0d0d0d';
+    ctx.fillRect(0, 0, baseWidth, baseHeight);
+    
+    // Gradient overlay on top of solid background
     const gradient = ctx.createLinearGradient(0, 0, baseWidth, baseHeight);
-    gradient.addColorStop(0, gradientStart);
-    gradient.addColorStop(0.5, '#0A0A0A');
-    gradient.addColorStop(1, gradientEnd);
+    gradient.addColorStop(0, type === 'victim' ? 'rgba(127, 29, 29, 0.35)' : 'rgba(88, 28, 135, 0.35)');
+    gradient.addColorStop(0.5, 'rgba(13, 13, 13, 0)');
+    gradient.addColorStop(1, type === 'victim' ? 'rgba(127, 29, 29, 0.2)' : 'rgba(88, 28, 135, 0.2)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, baseWidth, baseHeight);
     
     // Border with rounded corners
-    ctx.strokeStyle = accentColor + '50';
+    ctx.strokeStyle = accentColor + '60';
     ctx.lineWidth = 2;
-    const borderRadius = 16;
     ctx.beginPath();
     ctx.roundRect(2, 2, baseWidth - 4, baseHeight - 4, borderRadius);
     ctx.stroke();
@@ -641,7 +643,7 @@ export function App() {
     }
     
     // Footer line
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(40, 230);
@@ -649,7 +651,7 @@ export function App() {
     ctx.stroke();
     
     // Branding
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
     ctx.font = '12px monospace';
     ctx.fillText('xratios.app', 40, 255);
     ctx.textAlign = 'right';
@@ -960,7 +962,13 @@ export function App() {
     
     try {
       // Fetch all ratios for this user with low min likes to get all data
-      const response = await apiFetch(`/api/ratios?username=${encodeURIComponent(cleanUsername)}&minLikes=0&limit=100`, { method: 'GET' });
+      // Note: We need to get stats from the leaderboards API which has accurate counts
+      const [ratiosResponse, leaderboardsResponse] = await Promise.all([
+        apiFetch(`/api/ratios?username=${encodeURIComponent(cleanUsername)}&minLikes=0&limit=100`, { method: 'GET' }),
+        apiFetch(`/api/leaderboards`, { method: 'GET' })
+      ]);
+      
+      const response = ratiosResponse;
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -974,44 +982,63 @@ export function App() {
       
       const ratios = result.data;
       
-      // Calculate stats from ratios
-      let timesRatiod = 0;
-      let timesRatioedOthers = 0;
-      let worstRatio: number | undefined;
-      let bestRatio: number | undefined;
-      let displayName: string | undefined;
-      let profileImage: string | undefined;
+      // Try to get accurate counts from leaderboards
+      let leaderboardVictim: VictimLeaderboardEntry | undefined;
+      let leaderboardPerpetrator: PerpetratorLeaderboardEntry | undefined;
       
-      for (const ratio of ratios) {
-        // User was ratio'd (they're the parent author)
-        if (ratio.parent.author.toLowerCase() === cleanUsername) {
-          timesRatiod++;
-          const ratioValue = ratio.reply.likes / Math.max(1, ratio.parent.likes);
-          if (!worstRatio || ratioValue > worstRatio) {
-            worstRatio = ratioValue;
-          }
-          // Get display name and profile image from parent
-          if (!displayName && ratio.parent.authorDisplayName) {
-            displayName = ratio.parent.authorDisplayName;
-          }
-          if (!profileImage && ratio.parent.authorProfileImage) {
-            profileImage = ratio.parent.authorProfileImage;
-          }
+      if (leaderboardsResponse.ok) {
+        const leaderboardResult = await leaderboardsResponse.json();
+        if (leaderboardResult.success) {
+          leaderboardVictim = leaderboardResult.data.victims.find(
+            (v: VictimLeaderboardEntry) => v.username.toLowerCase() === cleanUsername
+          );
+          leaderboardPerpetrator = leaderboardResult.data.perpetrators.find(
+            (p: PerpetratorLeaderboardEntry) => p.username.toLowerCase() === cleanUsername
+          );
         }
-        
-        // User ratio'd someone else (they're the reply author)
-        if (ratio.reply.author.toLowerCase() === cleanUsername) {
-          timesRatioedOthers++;
-          const ratioValue = ratio.reply.likes / Math.max(1, ratio.parent.likes);
-          if (!bestRatio || ratioValue > bestRatio) {
-            bestRatio = ratioValue;
+      }
+      
+      // Calculate stats from ratios as fallback, or use leaderboard data
+      let timesRatiod = leaderboardVictim?.ratioCount ?? 0;
+      let timesRatioedOthers = leaderboardPerpetrator?.ratioCount ?? 0;
+      let worstRatio: number | undefined = leaderboardVictim?.worstRatio?.ratio;
+      let bestRatio: number | undefined = leaderboardPerpetrator?.bestRatio?.ratio;
+      let displayName: string | undefined = leaderboardVictim?.displayName ?? leaderboardPerpetrator?.displayName;
+      let profileImage: string | undefined = leaderboardVictim?.profileImage ?? leaderboardPerpetrator?.profileImage;
+      
+      // If not found in leaderboards, calculate from ratios (capped at 100 but better than nothing)
+      if (!leaderboardVictim && !leaderboardPerpetrator) {
+        for (const ratio of ratios) {
+          // User was ratio'd (they're the parent author)
+          if (ratio.parent.author.toLowerCase() === cleanUsername) {
+            timesRatiod++;
+            const ratioValue = ratio.reply.likes / Math.max(1, ratio.parent.likes);
+            if (!worstRatio || ratioValue > worstRatio) {
+              worstRatio = ratioValue;
+            }
+            // Get display name and profile image from parent
+            if (!displayName && ratio.parent.authorDisplayName) {
+              displayName = ratio.parent.authorDisplayName;
+            }
+            if (!profileImage && ratio.parent.authorProfileImage) {
+              profileImage = ratio.parent.authorProfileImage;
+            }
           }
-          // Get display name and profile image from reply
-          if (!displayName && ratio.reply.authorDisplayName) {
-            displayName = ratio.reply.authorDisplayName;
-          }
-          if (!profileImage && ratio.reply.authorProfileImage) {
-            profileImage = ratio.reply.authorProfileImage;
+          
+          // User ratio'd someone else (they're the reply author)
+          if (ratio.reply.author.toLowerCase() === cleanUsername) {
+            timesRatioedOthers++;
+            const ratioValue = ratio.reply.likes / Math.max(1, ratio.parent.likes);
+            if (!bestRatio || ratioValue > bestRatio) {
+              bestRatio = ratioValue;
+            }
+            // Get display name and profile image from reply
+            if (!displayName && ratio.reply.authorDisplayName) {
+              displayName = ratio.reply.authorDisplayName;
+            }
+            if (!profileImage && ratio.reply.authorProfileImage) {
+              profileImage = ratio.reply.authorProfileImage;
+            }
           }
         }
       }
