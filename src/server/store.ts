@@ -34,9 +34,9 @@ class RatioStore {
   private trackedUsers: Set<string> = new Set(); // Master list of users to track
   private maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-  // Add or update a ratio
+  // Add or update a ratio (keyed by reply.id to support multiple ratios per post)
   addRatio(ratio: StoredRatio) {
-    this.ratios.set(ratio.id, ratio);
+    this.ratios.set(ratio.reply.id, ratio);
 
     // Periodic cleanup to prevent memory bloat (every 100 additions)
     if (this.ratios.size % 100 === 0) {

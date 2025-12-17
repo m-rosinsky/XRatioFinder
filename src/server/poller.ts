@@ -280,7 +280,7 @@ export class RatioPoller {
           isBrutalRatio: ratio.isBrutalRatio,
           isLethalRatio: ratio.isLethalRatio,
           isRatio: ratio.ratio > 1,
-          discoveredAt: isNew ? Date.now() : (ratioStore.getAllRatios().find(r => r.id === ratio.parent.id)?.discoveredAt || Date.now()),
+          discoveredAt: isNew ? Date.now() : (ratioStore.getAllRatios().find(r => r.reply.id === ratio.reply.id)?.discoveredAt || Date.now()),
         };
 
         ratioStore.addRatio(storedRatio);

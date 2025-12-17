@@ -281,7 +281,8 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
   const hasRatio = post.replies.some(reply => reply.likes > post.likes);
   const hasBrutalRatio = post.replies.some(reply => reply.likes >= post.likes * 10);
   const hasLethalRatio = post.replies.some(reply => reply.likes >= post.likes * 100);
-  const reply = post.replies[0]; // Get the first (ratio) reply
+  // Sort replies by likes descending (highest ratio first)
+  const sortedReplies = [...post.replies].sort((a, b) => b.likes - a.likes);
 
   return (
     <div className="relative">
@@ -308,8 +309,8 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
               </div>
             )}
           </a>
-          {/* Thread line connecting to reply */}
-          {reply && (
+          {/* Thread line connecting to replies */}
+          {sortedReplies.length > 0 && (
             <div className="w-0.5 flex-1 mt-1 bg-white/20 min-h-[20px]"></div>
           )}
         </div>
@@ -384,17 +385,22 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
         </div>
       </div>
 
-      {/* Reply Post */}
-      {reply && (
+      {/* Reply Posts - render all ratio replies */}
+      {sortedReplies.map((reply, replyIndex) => (
         <div 
+          key={reply.id}
           className={`flex gap-3 px-4 pt-1 pb-4 hover:bg-white/[0.02] transition-colors ${
-            hasLethalRatio ? 'bg-purple-500/[0.03]' :
-            hasBrutalRatio ? 'bg-orange-500/[0.03]' :
+            reply.isLethalRatio ? 'bg-purple-500/[0.03]' :
+            reply.isBrutalRatio ? 'bg-orange-500/[0.03]' :
             ''
           }`}
         >
-          {/* Avatar column */}
+          {/* Avatar column with connecting line for multiple replies */}
           <div className="flex flex-col items-center">
+            {/* Thread line from previous reply */}
+            {replyIndex > 0 && (
+              <div className="w-0.5 h-2 bg-white/20 -mt-1 mb-1"></div>
+            )}
             <a
               href={`https://x.com/${reply.author}`}
               target="_blank"
@@ -414,6 +420,10 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
                 </div>
               )}
             </a>
+            {/* Thread line to next reply */}
+            {replyIndex < sortedReplies.length - 1 && (
+              <div className="w-0.5 flex-1 mt-1 bg-white/20 min-h-[20px]"></div>
+            )}
           </div>
           
           {/* Content column */}
@@ -436,6 +446,12 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
                 {reply.isBrutalRatio && !reply.isLethalRatio && (
                   <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-orange-500/25 text-orange-300 border border-orange-500/40">
                     🔥 Brutal
+                  </span>
+                )}
+                {/* Multiple ratio indicator */}
+                {sortedReplies.length > 1 && (
+                  <span className="ml-1 text-[10px] text-white/40">
+                    ({replyIndex + 1}/{sortedReplies.length})
                   </span>
                 )}
               </div>
@@ -535,7 +551,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
             </div>
           </div>
         </div>
-      )}
+      ))}
     </div>
   );
 };
@@ -561,18 +577,14 @@ export function App() {
   const [newPostsAvailable, setNewPostsAvailable] = useState(false);
   const [lastKnownCount, setLastKnownCount] = useState<number>(0);
 
-  // Convert stored ratio to Post format
-  const convertRatioToPost = (ratio: any): Post => {
-    return {
-      id: ratio.parent.id,
-      author: ratio.parent.author,
-      authorDisplayName: ratio.parent.authorDisplayName,
-      authorProfileImage: ratio.parent.authorProfileImage,
-      content: ratio.parent.content,
-      likes: ratio.parent.likes,
-      timestamp: ratio.parent.timestamp,
-      images: ratio.parent.images,
-      replies: [{
+  // Convert stored ratios to Post format, grouping multiple ratios on the same post
+  const convertRatiosToPosts = (ratios: any[]): Post[] => {
+    // Group ratios by parent post id
+    const postMap = new Map<string, Post>();
+    
+    for (const ratio of ratios) {
+      const parentId = ratio.parent.id;
+      const reply: Reply = {
         id: ratio.reply.id,
         author: ratio.reply.author,
         authorDisplayName: ratio.reply.authorDisplayName,
@@ -583,8 +595,33 @@ export function App() {
         isRatio: ratio.isRatio,
         isBrutalRatio: ratio.isBrutalRatio,
         isLethalRatio: ratio.isLethalRatio || false
-      }]
-    };
+      };
+      
+      if (postMap.has(parentId)) {
+        // Add reply to existing post (avoid duplicates)
+        const existingPost = postMap.get(parentId)!;
+        if (!existingPost.replies.some(r => r.id === reply.id)) {
+          existingPost.replies.push(reply);
+          // Sort replies by likes (highest first)
+          existingPost.replies.sort((a, b) => b.likes - a.likes);
+        }
+      } else {
+        // Create new post entry
+        postMap.set(parentId, {
+          id: parentId,
+          author: ratio.parent.author,
+          authorDisplayName: ratio.parent.authorDisplayName,
+          authorProfileImage: ratio.parent.authorProfileImage,
+          content: ratio.parent.content,
+          likes: ratio.parent.likes,
+          timestamp: ratio.parent.timestamp,
+          images: ratio.parent.images,
+          replies: [reply]
+        });
+      }
+    }
+    
+    return Array.from(postMap.values());
   };
 
 
@@ -620,8 +657,8 @@ export function App() {
         throw new Error(result.error || "Failed to load ratios");
       }
 
-      // Convert and set the posts
-      const convertedPosts = result.data.map(convertRatioToPost);
+      // Convert and set the posts (grouping multiple ratios on same post)
+      const convertedPosts = convertRatiosToPosts(result.data);
       setPosts(convertedPosts);
       setLastUpdate(Date.now());
       setNewPostsAvailable(false);
