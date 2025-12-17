@@ -538,7 +538,7 @@ export function App() {
   const [showOnlyLethal, setShowOnlyLethal] = useState(false);
   const [filterUsername, setFilterUsername] = useState('');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-
+  const [expandedLeaderboardEntry, setExpandedLeaderboardEntry] = useState<string | null>(null);
 
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
   const [victimsLeaderboard, setVictimsLeaderboard] = useState<VictimLeaderboardEntry[]>([]);
@@ -1343,24 +1343,25 @@ export function App() {
                 {victimsLeaderboard.length > 0 ? (
                   <div className="bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden">
                     {/* Table Header - Desktop only */}
-                    <div className="hidden sm:grid grid-cols-[3rem_1fr_6rem_5rem_6rem] items-center gap-4 px-4 py-3 bg-white/5 border-b border-white/10 text-xs font-mono text-white/40 uppercase tracking-wider">
+                    <div className="hidden sm:grid grid-cols-[3rem_1fr_6rem_5rem_6rem_2.5rem] items-center gap-4 px-4 py-3 bg-white/5 border-b border-white/10 text-xs font-mono text-white/40 uppercase tracking-wider">
                       <div className="text-center">#</div>
                       <div>Account</div>
-                      <div className="text-right pr-1">Ratios</div>
+                      <div className="text-right">Ratios</div>
                       <div className="text-center">Worst</div>
+                      <div></div>
                       <div></div>
                     </div>
                     
                     {/* Table Rows */}
                     {victimsLeaderboard.map((entry, index) => (
-                      <div
-                        key={entry.username}
-                        className={`grid grid-cols-[2rem_1fr_4.5rem_2.5rem] sm:grid-cols-[3rem_1fr_6rem_5rem_6rem] items-center gap-2 sm:gap-4 px-2 sm:px-4 py-3 border-b border-white/5 last:border-b-0 transition-colors hover:bg-white/[0.03] ${
-                          index === 0 ? 'bg-yellow-500/5' :
-                          index === 1 ? 'bg-slate-400/5' :
-                          index === 2 ? 'bg-orange-700/5' : ''
-                        }`}
-                      >
+                      <div key={entry.username} className="border-b border-white/5 last:border-b-0">
+                        <div
+                          className={`grid grid-cols-[2rem_1fr_4.5rem_2.5rem] sm:grid-cols-[3rem_1fr_6rem_5rem_6rem_2.5rem] items-center gap-2 sm:gap-4 px-2 sm:px-4 py-3 transition-colors hover:bg-white/[0.03] ${
+                            index === 0 ? 'bg-yellow-500/5' :
+                            index === 1 ? 'bg-slate-400/5' :
+                            index === 2 ? 'bg-orange-700/5' : ''
+                          }`}
+                        >
                         {/* Rank */}
                         <div className={`font-mono font-bold text-base sm:text-xl text-center ${
                           index === 0 ? 'text-yellow-500' :
@@ -1423,7 +1424,7 @@ export function App() {
                           )}
                         </div>
                         
-                        {/* Filter Button */}
+                        {/* View Ratios Button */}
                         <button
                           onClick={() => {
                             setActiveFeed('recents');
@@ -1437,6 +1438,71 @@ export function App() {
                           </svg>
                           <span className="hidden sm:inline">View ratios</span>
                         </button>
+                        
+                        {/* Expand Button - Desktop only */}
+                        <button
+                          onClick={() => setExpandedLeaderboardEntry(expandedLeaderboardEntry === `victim-${entry.username}` ? null : `victim-${entry.username}`)}
+                          className="hidden sm:flex items-center justify-center w-8 h-8 rounded-md bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-all cursor-pointer"
+                          title="Expand for screenshot"
+                        >
+                          <svg className={`w-4 h-4 transition-transform ${expandedLeaderboardEntry === `victim-${entry.username}` ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m6 9 6 6 6-6"/>
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      {/* Expanded Screenshot View - Desktop only */}
+                        {expandedLeaderboardEntry === `victim-${entry.username}` && (
+                          <div className="hidden sm:block px-4 pb-4 pt-2">
+                            <div className="bg-gradient-to-br from-red-950/40 via-black to-red-950/20 border border-red-500/30 rounded-2xl p-8 shadow-[0_0_60px_rgba(239,68,68,0.15)]">
+                              <div className="flex items-center gap-6">
+                                {/* Large Profile Picture */}
+                                <a
+                                  href={`https://x.com/${entry.username}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex-shrink-0"
+                                >
+                                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.3)]">
+                                    {entry.profileImage ? (
+                                      <img 
+                                        src={entry.profileImage} 
+                                        alt={`@${entry.username}`}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white font-bold text-2xl">
+                                        {entry.username[0].toUpperCase()}
+                                      </div>
+                                    )}
+                                  </div>
+                                </a>
+                                
+                                {/* Stats */}
+                                <div className="flex-1">
+                                  <div className="text-2xl font-bold text-white mb-1">
+                                    {entry.displayName || entry.username}
+                                  </div>
+                                  <div className="text-white/50 mb-4">@{entry.username}</div>
+                                  <div className="text-3xl font-bold text-red-400 mb-2">
+                                    Got ratio'd <span className="text-4xl">{entry.ratioCount}</span> times this week
+                                  </div>
+                                  {entry.worstRatio?.ratio && (
+                                    <div className="text-lg text-white/60">
+                                      Worst ratio: <span className="text-red-400 font-mono font-bold">{entry.worstRatio.ratio.toFixed(1)}×</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {/* Branding */}
+                              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                                <span className="text-xs text-white/30 font-mono">xratio.replit.app</span>
+                                <span className="text-xs text-white/30">Powered by X API</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1456,100 +1522,166 @@ export function App() {
                 {perpetratorsLeaderboard.length > 0 ? (
                   <div className="bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden">
                     {/* Table Header - Desktop only */}
-                    <div className="hidden sm:grid grid-cols-[3rem_1fr_6rem_5rem_6rem] items-center gap-4 px-4 py-3 bg-white/5 border-b border-white/10 text-xs font-mono text-white/40 uppercase tracking-wider">
+                    <div className="hidden sm:grid grid-cols-[3rem_1fr_6rem_5rem_6rem_2.5rem] items-center gap-4 px-4 py-3 bg-white/5 border-b border-white/10 text-xs font-mono text-white/40 uppercase tracking-wider">
                       <div className="text-center">#</div>
                       <div>Account</div>
-                      <div className="text-right pr-1">Ratios</div>
+                      <div className="text-right">Ratios</div>
                       <div className="text-center">Best</div>
+                      <div></div>
                       <div></div>
                     </div>
                     
                     {/* Table Rows */}
                     {perpetratorsLeaderboard.map((entry, index) => (
-                      <div
-                        key={entry.username}
-                        className={`grid grid-cols-[2rem_1fr_4.5rem_2.5rem] sm:grid-cols-[3rem_1fr_6rem_5rem_6rem] items-center gap-2 sm:gap-4 px-2 sm:px-4 py-3 border-b border-white/5 last:border-b-0 transition-colors hover:bg-white/[0.03] ${
-                          index === 0 ? 'bg-yellow-500/5' :
-                          index === 1 ? 'bg-slate-400/5' :
-                          index === 2 ? 'bg-orange-700/5' : ''
-                        }`}
-                      >
-                        {/* Rank */}
-                        <div className={`font-mono font-bold text-base sm:text-xl text-center ${
-                          index === 0 ? 'text-yellow-500' :
-                          index === 1 ? 'text-slate-400' :
-                          index === 2 ? 'text-orange-700' :
-                          'text-white/20'
-                        }`}>
-                          {index + 1}
-                        </div>
-                        
-                        {/* Account */}
-                        <a
-                          href={`https://x.com/${entry.username}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 sm:gap-3 min-w-0 group/user overflow-hidden"
+                      <div key={entry.username} className="border-b border-white/5 last:border-b-0">
+                        <div
+                          className={`grid grid-cols-[2rem_1fr_4.5rem_2.5rem] sm:grid-cols-[3rem_1fr_6rem_5rem_6rem_2.5rem] items-center gap-2 sm:gap-4 px-2 sm:px-4 py-3 transition-colors hover:bg-white/[0.03] ${
+                            index === 0 ? 'bg-yellow-500/5' :
+                            index === 1 ? 'bg-slate-400/5' :
+                            index === 2 ? 'bg-orange-700/5' : ''
+                          }`}
                         >
-                          <div className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 flex-shrink-0 ${
-                            index === 0 ? 'border-yellow-500' :
-                            index === 1 ? 'border-slate-400' :
-                            index === 2 ? 'border-orange-700' :
-                            'border-white/10'
+                          {/* Rank */}
+                          <div className={`font-mono font-bold text-base sm:text-xl text-center ${
+                            index === 0 ? 'text-yellow-500' :
+                            index === 1 ? 'text-slate-400' :
+                            index === 2 ? 'text-orange-700' :
+                            'text-white/20'
                           }`}>
-                            {entry.profileImage ? (
-                              <img 
-                                src={entry.profileImage} 
-                                alt={`@${entry.username}`}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white font-bold text-xs sm:text-sm">
-                                {entry.username[0].toUpperCase()}
+                            {index + 1}
+                          </div>
+                          
+                          {/* Account */}
+                          <a
+                            href={`https://x.com/${entry.username}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 sm:gap-3 min-w-0 group/user overflow-hidden"
+                          >
+                            <div className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 flex-shrink-0 ${
+                              index === 0 ? 'border-yellow-500' :
+                              index === 1 ? 'border-slate-400' :
+                              index === 2 ? 'border-orange-700' :
+                              'border-white/10'
+                            }`}>
+                              {entry.profileImage ? (
+                                <img 
+                                  src={entry.profileImage} 
+                                  alt={`@${entry.username}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white font-bold text-xs sm:text-sm">
+                                  {entry.username[0].toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0 overflow-hidden">
+                              <div className="font-medium text-white text-sm sm:text-base truncate group-hover/user:underline hidden sm:block">
+                                {entry.displayName || entry.username}
                               </div>
+                              <div className="text-xs sm:text-sm text-white sm:text-white/40">
+                                @{entry.username}
+                              </div>
+                            </div>
+                          </a>
+                          
+                          {/* Ratio Count */}
+                          <div className="text-right pr-1 flex-shrink-0">
+                            <span className="text-purple-400 font-bold text-xs sm:text-base">{entry.ratioCount}</span>
+                            <span className="text-white/40 text-xs sm:text-sm ml-1 hidden sm:inline">ratios</span>
+                          </div>
+                          
+                          {/* Best Ratio */}
+                          <div className="text-center hidden sm:block">
+                            {entry.bestRatio?.ratio ? (
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 font-mono border border-purple-500/20">
+                                {entry.bestRatio.ratio.toFixed(1)}×
+                              </span>
+                            ) : (
+                              <span className="text-white/20">—</span>
                             )}
                           </div>
-                          <div className="min-w-0 overflow-hidden">
-                            <div className="font-medium text-white text-sm sm:text-base truncate group-hover/user:underline hidden sm:block">
-                              {entry.displayName || entry.username}
-                            </div>
-                            <div className="text-xs sm:text-sm text-white sm:text-white/40">
-                              @{entry.username}
+                          
+                          {/* View Ratios Button */}
+                          <button
+                            onClick={() => {
+                              setActiveFeed('recents');
+                              handleUsernameClick(entry.username);
+                            }}
+                            className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-white/5 hover:bg-purple-500/20 text-white/40 hover:text-purple-400 transition-all cursor-pointer text-xs font-mono"
+                            title={`View ${entry.displayName || entry.username}'s ratios in feed`}
+                          >
+                            <svg className="w-3.5 h-3.5 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                            <span className="hidden sm:inline">View ratios</span>
+                          </button>
+                          
+                          {/* Expand Button - Desktop only */}
+                          <button
+                            onClick={() => setExpandedLeaderboardEntry(expandedLeaderboardEntry === `perpetrator-${entry.username}` ? null : `perpetrator-${entry.username}`)}
+                            className="hidden sm:flex items-center justify-center w-8 h-8 rounded-md bg-white/5 hover:bg-purple-500/20 text-white/40 hover:text-purple-400 transition-all cursor-pointer"
+                            title="Expand for screenshot"
+                          >
+                            <svg className={`w-4 h-4 transition-transform ${expandedLeaderboardEntry === `perpetrator-${entry.username}` ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="m6 9 6 6 6-6"/>
+                            </svg>
+                          </button>
+                        </div>
+                        
+                        {/* Expanded Screenshot View - Desktop only */}
+                        {expandedLeaderboardEntry === `perpetrator-${entry.username}` && (
+                          <div className="hidden sm:block px-4 pb-4 pt-2">
+                            <div className="bg-gradient-to-br from-purple-950/40 via-black to-purple-950/20 border border-purple-500/30 rounded-2xl p-8 shadow-[0_0_60px_rgba(168,85,247,0.15)]">
+                              <div className="flex items-center gap-6">
+                                {/* Large Profile Picture */}
+                                <a
+                                  href={`https://x.com/${entry.username}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex-shrink-0"
+                                >
+                                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.3)]">
+                                    {entry.profileImage ? (
+                                      <img 
+                                        src={entry.profileImage} 
+                                        alt={`@${entry.username}`}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white font-bold text-2xl">
+                                        {entry.username[0].toUpperCase()}
+                                      </div>
+                                    )}
+                                  </div>
+                                </a>
+                                
+                                {/* Stats */}
+                                <div className="flex-1">
+                                  <div className="text-2xl font-bold text-white mb-1">
+                                    {entry.displayName || entry.username}
+                                  </div>
+                                  <div className="text-white/50 mb-4">@{entry.username}</div>
+                                  <div className="text-3xl font-bold text-purple-400 mb-2">
+                                    Ratio'd <span className="text-4xl">{entry.ratioCount}</span> users this week
+                                  </div>
+                                  {entry.bestRatio?.ratio && (
+                                    <div className="text-lg text-white/60">
+                                      Best ratio: <span className="text-purple-400 font-mono font-bold">{entry.bestRatio.ratio.toFixed(1)}×</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {/* Branding */}
+                              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                                <span className="text-xs text-white/30 font-mono">xratio.replit.app</span>
+                                <span className="text-xs text-white/30">Powered by X API</span>
+                              </div>
                             </div>
                           </div>
-                        </a>
-                        
-                        {/* Ratio Count */}
-                        <div className="text-right pr-1 flex-shrink-0">
-                          <span className="text-purple-400 font-bold text-xs sm:text-base">{entry.ratioCount}</span>
-                          <span className="text-white/40 text-xs sm:text-sm ml-1 hidden sm:inline">ratios</span>
-                        </div>
-                        
-                        {/* Best Ratio */}
-                        <div className="text-center hidden sm:block">
-                          {entry.bestRatio?.ratio ? (
-                            <span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 font-mono border border-purple-500/20">
-                              {entry.bestRatio.ratio.toFixed(1)}×
-                            </span>
-                          ) : (
-                            <span className="text-white/20">—</span>
-                          )}
-                        </div>
-                        
-                        {/* Filter Button */}
-                        <button
-                          onClick={() => {
-                            setActiveFeed('recents');
-                            handleUsernameClick(entry.username);
-                          }}
-                          className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-white/5 hover:bg-purple-500/20 text-white/40 hover:text-purple-400 transition-all cursor-pointer text-xs font-mono"
-                          title={`View ${entry.displayName || entry.username}'s ratios in feed`}
-                        >
-                          <svg className="w-3.5 h-3.5 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M5 12h14M12 5l7 7-7 7"/>
-                          </svg>
-                          <span className="hidden sm:inline">View ratios</span>
-                        </button>
+                        )}
                       </div>
                     ))}
                   </div>
