@@ -1355,14 +1355,14 @@ export function App() {
                     {victimsLeaderboard.map((entry, index) => (
                       <div
                         key={entry.username}
-                        className={`grid grid-cols-[2.5rem_1fr_5.5rem_auto] sm:grid-cols-[3rem_1fr_6rem_5rem_6rem] items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 border-b border-white/5 last:border-b-0 transition-colors hover:bg-white/[0.03] ${
+                        className={`grid grid-cols-[2rem_1fr_4.5rem_2.5rem] sm:grid-cols-[3rem_1fr_6rem_5rem_6rem] items-center gap-2 sm:gap-4 px-2 sm:px-4 py-3 border-b border-white/5 last:border-b-0 transition-colors hover:bg-white/[0.03] ${
                           index === 0 ? 'bg-yellow-500/5' :
                           index === 1 ? 'bg-slate-400/5' :
                           index === 2 ? 'bg-orange-700/5' : ''
                         }`}
                       >
                         {/* Rank */}
-                        <div className={`font-mono font-bold text-lg sm:text-xl text-center ${
+                        <div className={`font-mono font-bold text-base sm:text-xl text-center ${
                           index === 0 ? 'text-yellow-500' :
                           index === 1 ? 'text-slate-400' :
                           index === 2 ? 'text-orange-700' :
@@ -1376,9 +1376,9 @@ export function App() {
                           href={`https://x.com/${entry.username}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 sm:gap-3 min-w-0 group/user"
+                          className="flex items-center gap-2 sm:gap-3 min-w-0 group/user overflow-hidden"
                         >
-                          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 flex-shrink-0 ${
+                          <div className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 flex-shrink-0 ${
                             index === 0 ? 'border-yellow-500' :
                             index === 1 ? 'border-slate-400' :
                             index === 2 ? 'border-orange-700' :
@@ -1396,18 +1396,20 @@ export function App() {
                               </div>
                             )}
                           </div>
-                          <div className="min-w-0">
-                            <div className="font-medium text-white text-sm sm:text-base truncate group-hover/user:underline">
+                          <div className="min-w-0 overflow-hidden">
+                            <div className="font-medium text-white text-sm sm:text-base truncate group-hover/user:underline hidden sm:block">
                               {entry.displayName || entry.username}
                             </div>
-                            <div className="text-xs text-white/40 truncate">@{entry.username}</div>
+                            <div className="text-xs sm:text-sm text-white sm:text-white/40">
+                              @{entry.username}
+                            </div>
                           </div>
                         </a>
                         
                         {/* Ratio Count */}
-                        <div className="text-right pr-1">
-                          <span className="text-red-400 font-bold text-sm sm:text-base">{entry.ratioCount}</span>
-                          <span className="text-white/40 text-xs sm:text-sm ml-1">ratios</span>
+                        <div className="text-right pr-1 flex-shrink-0">
+                          <span className="text-red-400 font-bold text-xs sm:text-base">{entry.ratioCount}</span>
+                          <span className="text-white/40 text-xs sm:text-sm ml-1 hidden sm:inline">ratios</span>
                         </div>
                         
                         {/* Worst Ratio */}
@@ -1466,14 +1468,14 @@ export function App() {
                     {perpetratorsLeaderboard.map((entry, index) => (
                       <div
                         key={entry.username}
-                        className={`grid grid-cols-[2.5rem_1fr_5.5rem_auto] sm:grid-cols-[3rem_1fr_6rem_5rem_6rem] items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 border-b border-white/5 last:border-b-0 transition-colors hover:bg-white/[0.03] ${
+                        className={`grid grid-cols-[2rem_1fr_4.5rem_2.5rem] sm:grid-cols-[3rem_1fr_6rem_5rem_6rem] items-center gap-2 sm:gap-4 px-2 sm:px-4 py-3 border-b border-white/5 last:border-b-0 transition-colors hover:bg-white/[0.03] ${
                           index === 0 ? 'bg-yellow-500/5' :
                           index === 1 ? 'bg-slate-400/5' :
                           index === 2 ? 'bg-orange-700/5' : ''
                         }`}
                       >
                         {/* Rank */}
-                        <div className={`font-mono font-bold text-lg sm:text-xl text-center ${
+                        <div className={`font-mono font-bold text-base sm:text-xl text-center ${
                           index === 0 ? 'text-yellow-500' :
                           index === 1 ? 'text-slate-400' :
                           index === 2 ? 'text-orange-700' :
@@ -1487,9 +1489,9 @@ export function App() {
                           href={`https://x.com/${entry.username}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 sm:gap-3 min-w-0 group/user"
+                          className="flex items-center gap-2 sm:gap-3 min-w-0 group/user overflow-hidden"
                         >
-                          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 flex-shrink-0 ${
+                          <div className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 flex-shrink-0 ${
                             index === 0 ? 'border-yellow-500' :
                             index === 1 ? 'border-slate-400' :
                             index === 2 ? 'border-orange-700' :
@@ -1507,18 +1509,20 @@ export function App() {
                               </div>
                             )}
                           </div>
-                          <div className="min-w-0">
-                            <div className="font-medium text-white text-sm sm:text-base truncate group-hover/user:underline">
+                          <div className="min-w-0 overflow-hidden">
+                            <div className="font-medium text-white text-sm sm:text-base truncate group-hover/user:underline hidden sm:block">
                               {entry.displayName || entry.username}
                             </div>
-                            <div className="text-xs text-white/40 truncate">@{entry.username}</div>
+                            <div className="text-xs sm:text-sm text-white sm:text-white/40">
+                              @{entry.username}
+                            </div>
                           </div>
                         </a>
                         
                         {/* Ratio Count */}
-                        <div className="text-right pr-1">
-                          <span className="text-purple-400 font-bold text-sm sm:text-base">{entry.ratioCount}</span>
-                          <span className="text-white/40 text-xs sm:text-sm ml-1">ratios</span>
+                        <div className="text-right pr-1 flex-shrink-0">
+                          <span className="text-purple-400 font-bold text-xs sm:text-base">{entry.ratioCount}</span>
+                          <span className="text-white/40 text-xs sm:text-sm ml-1 hidden sm:inline">ratios</span>
                         </div>
                         
                         {/* Best Ratio */}
