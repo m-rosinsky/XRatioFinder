@@ -1,12 +1,6 @@
 import "./index.css";
 import React, { useState, useEffect, useCallback } from "react";
-import { AuthButton } from './components/AuthButton';
 import { ShareButton } from './components/ShareButton';
-import { useRatios } from './hooks/useRatios';
-import { useLeaderboards } from './hooks/useLeaderboards';
-import { useAuth } from './hooks/useAuth';
-import { formatRelativeTime, cleanContent } from './utils/formatting';
-import { Post, VictimLeaderboardEntry, PerpetratorLeaderboardEntry, FeedType, SortType } from './types';
 
 // Inline SVG components
 const HeartIcon = ({ className }: { className?: string }) => (
@@ -567,8 +561,6 @@ export function App() {
   const [showOnlyLethal, setShowOnlyLethal] = useState(false);
   const [filterUsername, setFilterUsername] = useState('');
 
-  // Authentication hook
-  const { user: currentUser, isAuthenticated } = useAuth();
 
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
   const [victimsLeaderboard, setVictimsLeaderboard] = useState<VictimLeaderboardEntry[]>([]);
@@ -887,9 +879,6 @@ export function App() {
             </div>
           </div>
 
-          <div className="flex items-center">
-            <AuthButton />
-          </div>
         </div>
       </header>
 
