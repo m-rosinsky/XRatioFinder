@@ -644,6 +644,9 @@ export class LikesFirehose {
     // 4. Hydrate all tracked users (fetch their tweets to find more ratios)
     // This also removes users with no ratios
     await this.hydrateAllTrackedUsers();
+    
+    // 5. Start the enrichment queue processor (runs every 5 minutes)
+    this.startEnrichmentProcessor();
 
     this.isRunning = true;
     console.log("🔥 Starting likes sample10 firehose...");
@@ -1010,6 +1013,73 @@ export class LikesFirehose {
       console.log(`   ⏭️  Not actually ratios: ${this.notActuallyRatio}`);
       console.log(`   🔄 Tweets by ID calls: ${this.tweetByIdCalls} in ${windowElapsed} min (15-min window)\n`);
     }
+  }
+  
+  // Process the enrichment queue - enrich users who have hit 2+ ratios
+  async processEnrichmentQueue(): Promise<void> {
+    const queue = ratioStore.getEnrichmentQueue();
+    
+    if (queue.length === 0) {
+      return;
+    }
+    
+    console.log(`\n🔄 Processing enrichment queue (${queue.length} users)...`);
+    
+    for (const username of queue) {
+      try {
+        // Add user to tracked users and hydrate their ratios
+        const added = await this.addTrackedUser(username);
+        
+        if (added) {
+          // Find the user ID we just added and hydrate
+          for (const [userId, user] of this.trackedUsers.entries()) {
+            if (user.username.toLowerCase() === username.toLowerCase()) {
+              const ratiosFound = await this.hydrateUserRatios(userId);
+              console.log(`   ✅ Enriched @${username}: ${ratiosFound} ratios found`);
+              
+              // If no ratios found, remove from tracked users
+              if (!ratioStore.hasRecentRatios(username)) {
+                this.removeTrackedUser(userId);
+                console.log(`   🗑️ Removed @${username} from tracked users (no recent ratios)`);
+              }
+              break;
+            }
+          }
+        }
+        
+        // Mark user as enriched (even if they weren't added - to prevent re-queuing)
+        ratioStore.markUserEnriched(username);
+        
+        // Small delay between users
+        await this.sleep(500);
+        
+      } catch (error) {
+        console.error(`   ❌ Failed to enrich @${username}:`, error);
+        // Still mark as enriched to prevent infinite retries
+        ratioStore.markUserEnriched(username);
+      }
+    }
+    
+    // Clean up tracked users with no recent ratios
+    ratioStore.cleanupTrackedUsers();
+    
+    console.log(`✅ Enrichment queue processed\n`);
+  }
+  
+  // Start periodic enrichment queue processing
+  startEnrichmentProcessor(): void {
+    // Process every 5 minutes
+    const ENRICHMENT_INTERVAL = 5 * 60 * 1000;
+    
+    console.log(`🔄 Starting enrichment processor (every 5 minutes)`);
+    
+    setInterval(async () => {
+      try {
+        await this.processEnrichmentQueue();
+      } catch (error) {
+        console.error('❌ Enrichment processor error:', error);
+      }
+    }, ENRICHMENT_INTERVAL);
   }
 
   getStats() {

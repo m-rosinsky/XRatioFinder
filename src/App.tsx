@@ -825,55 +825,11 @@ export function App() {
     }
   };
 
-  // Enrich a user when they filter by username
-  const enrichUser = async (username: string) => {
-    if (!username.trim()) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      const cleanUsername = username.trim().replace(/^@/, '');
-
-      console.log(`🔍 Enriching user: ${cleanUsername}`);
-
-      const response = await fetch("/api/enrich-user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username: cleanUsername }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      if (!result.success) {
-        throw new Error(result.error || "Failed to enrich user");
-      }
-
-      console.log(`✅ Enriched ${cleanUsername}: ${result.enrichedRatios} new ratios, ${result.totalTrackedUsers} total tracked users`);
-
-      // User will need to manually refresh to see newly enriched posts
-
-    } catch (err) {
-      console.error("Error enriching user:", err);
-      setError(err instanceof Error ? err.message : "Failed to enrich user");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Handle clicking on usernames to filter by that user
-  const handleUsernameClick = async (username: string) => {
+  const handleUsernameClick = (username: string) => {
     const cleanUsername = username.trim().replace(/^@/, '');
     setFilterUsername(cleanUsername);
-
-    // First enrich the user to ensure we have their data
-    await enrichUser(cleanUsername);
-    // Then load posts filtered by that user
+    // Load posts filtered by that user
     loadPosts(cleanUsername);
   };
 
@@ -1137,9 +1093,8 @@ export function App() {
                   type="text"
                   value={filterUsername}
                   onChange={(e) => setFilterUsername(e.target.value)}
-                  onKeyDown={async (e) => {
+                  onKeyDown={(e) => {
                     if (e.key === 'Enter' && filterUsername.trim()) {
-                      await enrichUser(filterUsername);
                       loadPosts(filterUsername);
                     }
                   }}
@@ -1287,9 +1242,8 @@ export function App() {
                       type="text"
                       value={filterUsername}
                       onChange={(e) => setFilterUsername(e.target.value)}
-                      onKeyDown={async (e) => {
+                      onKeyDown={(e) => {
                         if (e.key === 'Enter' && filterUsername.trim()) {
-                          await enrichUser(filterUsername);
                           loadPosts(filterUsername);
                         }
                       }}

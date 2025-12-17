@@ -16,6 +16,79 @@ const poller = createPoller(useMockData);
 // Create firehose for real-time ratio detection
 const firehose = createFirehose();
 
+// ============================================
+// Rate Limiting & API Protection
+// ============================================
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute window
+const RATE_LIMIT_MAX_REQUESTS = 30; // Max 30 requests per minute per IP
+const MAX_LIMIT_PARAM = 100; // Cap the 'limit' parameter
+
+// In-memory rate limit store (resets on server restart)
+const rateLimitStore = new Map<string, { count: number; windowStart: number }>();
+
+// Clean up old entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of rateLimitStore.entries()) {
+    if (now - data.windowStart > RATE_LIMIT_WINDOW_MS * 2) {
+      rateLimitStore.delete(ip);
+    }
+  }
+}, 5 * 60 * 1000);
+
+// Get client IP from request
+function getClientIP(req: Request): string {
+  // Check common proxy headers
+  const forwarded = req.headers.get('x-forwarded-for');
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  const realIP = req.headers.get('x-real-ip');
+  if (realIP) {
+    return realIP;
+  }
+  // Fallback - in Bun we can try to get the socket address
+  return 'unknown';
+}
+
+// Check rate limit and return true if request should be blocked
+function isRateLimited(req: Request): boolean {
+  const ip = getClientIP(req);
+  const now = Date.now();
+  
+  const existing = rateLimitStore.get(ip);
+  
+  if (!existing || now - existing.windowStart > RATE_LIMIT_WINDOW_MS) {
+    // New window
+    rateLimitStore.set(ip, { count: 1, windowStart: now });
+    return false;
+  }
+  
+  // Within window - increment and check
+  existing.count++;
+  
+  if (existing.count > RATE_LIMIT_MAX_REQUESTS) {
+    console.warn(`⚠️ Rate limit exceeded for IP: ${ip} (${existing.count} requests)`);
+    return true;
+  }
+  
+  return false;
+}
+
+// Create rate limited response
+function rateLimitedResponse(): Response {
+  return new Response(JSON.stringify({ 
+    error: 'Too many requests. Please slow down.',
+    retryAfter: Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)
+  }), {
+    status: 429,
+    headers: { 
+      "Content-Type": "application/json",
+      "Retry-After": String(Math.ceil(RATE_LIMIT_WINDOW_MS / 1000))
+    },
+  });
+}
+
 // CORS headers helper
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -54,9 +127,16 @@ const server = serve({
     // API routes
     "/api/ratios": {
       async GET(req) {
+        // Rate limit check
+        if (isRateLimited(req)) {
+          return withCORS(rateLimitedResponse());
+        }
+        
         try {
           const url = new URL(req.url);
-          const limit = parseInt(url.searchParams.get('limit') || '100');
+          // Cap the limit parameter to prevent abuse
+          const requestedLimit = parseInt(url.searchParams.get('limit') || '100');
+          const limit = Math.min(Math.max(1, requestedLimit), MAX_LIMIT_PARAM);
           const sortBy = url.searchParams.get('sortBy') || 'recency';
           const showOnlyBrutal = url.searchParams.get('showOnlyBrutal') === 'true';
           const showOnlyLethal = url.searchParams.get('showOnlyLethal') === 'true';
@@ -115,7 +195,12 @@ const server = serve({
     },
 
     "/api/leaderboards": {
-      async GET() {
+      async GET(req) {
+        // Rate limit check
+        if (isRateLimited(req)) {
+          return withCORS(rateLimitedResponse());
+        }
+        
         try {
           const leaderboards = ratioStore.getLeaderboards();
           return withCORS(Response.json({
@@ -133,7 +218,12 @@ const server = serve({
     },
     
     "/api/refresh": {
-      async POST() {
+      async POST(req) {
+        // Rate limit check - this triggers X API polling
+        if (isRateLimited(req)) {
+          return withCORS(rateLimitedResponse());
+        }
+        
         try {
           const result = await poller.poll();
           return withCORS(Response.json({
@@ -151,7 +241,12 @@ const server = serve({
     },
     
     "/api/status": {
-      async GET() {
+      async GET(req) {
+        // Rate limit check
+        if (isRateLimited(req)) {
+          return withCORS(rateLimitedResponse());
+        }
+        
         return withCORS(Response.json({
           success: true,
           poller: poller.getStatus(),
@@ -159,70 +254,6 @@ const server = serve({
           stats: ratioStore.getStats(),
           timestamp: Date.now(),
         }));
-      },
-    },
-
-    "/api/enrich-user": {
-      async POST(req) {
-        try {
-          const body = await req.json();
-          const { username } = body;
-
-          if (!username || typeof username !== 'string') {
-            return withCORS(Response.json({
-              success: false,
-              error: 'Username is required'
-            }, { status: 400 }));
-          }
-
-          // Clean the username (remove @ prefix if present)
-          const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
-
-          // First check if the user exists
-          console.log(`🔍 Checking if user ${cleanUsername} exists...`);
-          const { getUserByUsername } = await import("./utils/x-api");
-          const userExists = await getUserByUsername(cleanUsername);
-
-          if (!userExists) {
-            console.log(`⚠️  User ${cleanUsername} not found`);
-            return withCORS(Response.json({
-              success: false,
-              error: `User @${cleanUsername} not found`
-            }, { status: 404 }));
-          }
-
-          // Add to tracked users
-          ratioStore.addTrackedUser(cleanUsername);
-
-          // Filter existing ratios for this user (as victim or perpetrator)
-          const allRatios = ratioStore.getAllRatios();
-          const userRatios = allRatios.filter(r => 
-            r.parent.author.toLowerCase() === cleanUsername || 
-            r.reply.author.toLowerCase() === cleanUsername
-          );
-
-          console.log(`✅ User ${cleanUsername} tracked, found ${userRatios.length} existing ratios`);
-
-          // If no ratios were found in existing data, remove from tracked list
-          if (userRatios.length === 0) {
-            ratioStore.removeTrackedUser(cleanUsername);
-            console.log(`🗑️ No ratios found for ${cleanUsername}, removed from tracked users`);
-          }
-
-          return withCORS(Response.json({
-            success: true,
-            username: cleanUsername,
-            existingRatios: userRatios.length,
-            totalTrackedUsers: ratioStore.getStats().trackedUsers,
-          }));
-
-        } catch (error) {
-          console.error('Enrich user error:', error);
-          return withCORS(Response.json({
-            success: false,
-            error: error instanceof Error ? error.message : 'Failed to track user'
-          }, { status: 500 }));
-        }
       },
     },
 

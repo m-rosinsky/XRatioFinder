@@ -40,15 +40,91 @@ class RatioStore {
   private ratios: Map<string, StoredRatio> = new Map();
   private trackedUsers: Set<string> = new Set(); // Master list of users to track
   private maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+  
+  // Track ratio counts per user (for auto-enrichment trigger)
+  private userRatioCounts: Map<string, number> = new Map();
+  
+  // Queue of users that need enrichment (hit 2+ ratios)
+  private enrichmentQueue: Set<string> = new Set();
+  
+  // Track which users have already been enriched (to avoid repeated enrichment)
+  private enrichedUsers: Set<string> = new Set();
 
   // Add or update a ratio (keyed by reply.id to support multiple ratios per post)
   addRatio(ratio: StoredRatio) {
+    const isNewRatio = !this.ratios.has(ratio.reply.id);
     this.ratios.set(ratio.reply.id, ratio);
+
+    // Track ratio counts and queue for enrichment when user hits 2 ratios
+    if (isNewRatio) {
+      this.trackUserForEnrichment(ratio.parent.author.toLowerCase());
+      this.trackUserForEnrichment(ratio.reply.author.toLowerCase());
+    }
 
     // Periodic cleanup to prevent memory bloat (every 100 additions)
     if (this.ratios.size % 100 === 0) {
       this.cleanup();
     }
+  }
+  
+  // Track a user's ratio count and queue for enrichment at 2 ratios
+  private trackUserForEnrichment(username: string) {
+    const currentCount = (this.userRatioCounts.get(username) || 0) + 1;
+    this.userRatioCounts.set(username, currentCount);
+    
+    // Queue for enrichment when they hit exactly 2 ratios (and haven't been enriched yet)
+    if (currentCount === 2 && !this.enrichedUsers.has(username)) {
+      console.log(`📥 Queuing @${username} for enrichment (${currentCount} ratios)`);
+      this.enrichmentQueue.add(username);
+    }
+  }
+  
+  // Get users queued for enrichment
+  getEnrichmentQueue(): string[] {
+    return Array.from(this.enrichmentQueue);
+  }
+  
+  // Mark a user as enriched and remove from queue
+  markUserEnriched(username: string) {
+    const lowerUsername = username.toLowerCase();
+    this.enrichmentQueue.delete(lowerUsername);
+    this.enrichedUsers.add(lowerUsername);
+  }
+  
+  // Check if a user has any ratios in the past 7 days
+  hasRecentRatios(username: string): boolean {
+    const lowerUsername = username.toLowerCase();
+    const cutoff = Date.now() - this.maxAge;
+    
+    for (const ratio of this.ratios.values()) {
+      if (ratio.discoveredAt >= cutoff) {
+        if (ratio.parent.author.toLowerCase() === lowerUsername || 
+            ratio.reply.author.toLowerCase() === lowerUsername) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  
+  // Clean up users with no recent ratios from tracked users
+  cleanupTrackedUsers(): string[] {
+    const removedUsers: string[] = [];
+    
+    for (const username of this.trackedUsers) {
+      if (!this.hasRecentRatios(username)) {
+        this.trackedUsers.delete(username);
+        this.enrichedUsers.delete(username);
+        this.userRatioCounts.delete(username);
+        removedUsers.push(username);
+      }
+    }
+    
+    if (removedUsers.length > 0) {
+      console.log(`🗑️ Cleaned up ${removedUsers.length} tracked users with no recent ratios`);
+    }
+    
+    return removedUsers;
   }
 
   // Get all ratios
