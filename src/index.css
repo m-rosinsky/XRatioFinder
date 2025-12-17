@@ -5,8 +5,8 @@
     @apply font-sans;
   }
 
-  body {
-    @apply bg-[#0A0A0A] text-white antialiased;
+  html, body {
+    @apply bg-[#0A0A0A] text-white antialiased overflow-x-hidden;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }

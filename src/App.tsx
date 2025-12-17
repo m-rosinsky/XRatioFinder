@@ -280,10 +280,10 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
   };
 
   return (
-    <div className="relative">
+    <div className="relative overflow-hidden">
       {/* Original Post */}
       <div 
-        className="flex gap-3 px-4 pt-4 pb-3 hover:bg-white/[0.02] transition-colors cursor-pointer"
+        className="flex gap-3 px-4 pt-4 pb-3 hover:bg-white/[0.02] transition-colors cursor-pointer overflow-hidden"
         onClick={() => handlePostClick(post.author, post.id)}
       >
         {/* Avatar column with thread line */}
@@ -328,7 +328,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
             <span className="text-[15px] text-white/50">{formatRelativeTime(post.timestamp)}</span>
           </div>
 
-          <p className="text-[17px] text-white leading-normal mt-1 whitespace-pre-wrap break-words">{cleanContent(post.content)}</p>
+          <p className="text-[17px] text-white leading-normal mt-1 whitespace-pre-wrap break-words overflow-hidden">{cleanContent(post.content)}</p>
 
           {/* Images */}
           {post.images && post.images.length > 0 && (
@@ -378,7 +378,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
       {sortedReplies.map((reply, replyIndex) => (
         <div 
           key={reply.id}
-          className={`flex gap-3 px-4 pt-1 pb-4 hover:bg-white/[0.02] transition-colors cursor-pointer ${
+          className={`flex gap-3 px-4 pt-1 pb-4 hover:bg-white/[0.02] transition-colors cursor-pointer overflow-hidden ${
             reply.isLethalRatio ? 'bg-purple-500/[0.03]' :
             reply.isBrutalRatio ? 'bg-orange-500/[0.03]' :
             ''
@@ -451,7 +451,7 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
               Replying to <span className="text-blue-400">@{post.author}</span>
             </div>
 
-            <p className="text-[17px] text-white leading-normal whitespace-pre-wrap break-words">{cleanContent(reply.content)}</p>
+            <p className="text-[17px] text-white leading-normal whitespace-pre-wrap break-words overflow-hidden">{cleanContent(reply.content)}</p>
 
             {/* Reply Images */}
             {reply.images && reply.images.length > 0 && (
@@ -1031,7 +1031,7 @@ export function App() {
         </div>
       </div>
 
-      <div className="flex max-w-[1400px] mx-auto relative z-10">
+      <div className="flex max-w-[1400px] mx-auto relative z-10 overflow-hidden">
         {/* Sidebar - Hidden on mobile */}
         <aside className="hidden md:block w-80 border-r border-white/10 p-6 min-h-[calc(100vh-4rem)] sticky top-16">
           {/* Refresh Button */}
@@ -1198,8 +1198,8 @@ export function App() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-8 pb-20">
-          <div className="max-w-3xl mx-auto">
+        <main className="flex-1 min-w-0 p-4 md:p-8 pb-20 overflow-hidden">
+          <div className="max-w-3xl mx-auto overflow-hidden">
             {/* Feed Tabs */}
             <div className="mb-8">
               <div className="flex items-center gap-6 mb-6 border-b border-white/10">
