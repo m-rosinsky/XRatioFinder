@@ -522,6 +522,17 @@ const PostCard = ({ post, onUsernameClick }: { post: Post; onUsernameClick?: (us
   );
 };
 
+// API helper with required headers (prevents casual scraping)
+const apiFetch = (url: string, options: RequestInit = {}): Promise<Response> => {
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      'X-XRatio-Client': 'web-v1',
+    },
+  });
+};
+
 export function App() {
   const [activeFeed, setActiveFeed] = useState<'recents' | 'victims' | 'perpetrators'>('recents');
   const [minLikes, setMinLikes] = useState(1000);
@@ -739,7 +750,7 @@ export function App() {
         params.append('username', usernameFilter.trim().toLowerCase().replace(/^@/, ''));
       }
 
-      const response = await fetch(`/api/ratios?${params}`, { method: "GET" });
+      const response = await apiFetch(`/api/ratios?${params}`, { method: "GET" });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -784,12 +795,12 @@ export function App() {
       if (activeFeed !== 'recents' || loading) return;
       
       try {
-        const response = await fetch('/api/status', { method: 'GET' });
+        const response = await apiFetch('/api/status', { method: 'GET' });
         if (response.ok) {
           const data = await response.json();
-          if (data.stats && data.stats.total > lastKnownCount && lastKnownCount > 0) {
+          if (data.totalRatios && data.totalRatios > lastKnownCount && lastKnownCount > 0) {
             setNewPostsAvailable(true);
-            console.log(`📬 New posts available: ${data.stats.total - lastKnownCount} new`);
+            console.log(`📬 New posts available: ${data.totalRatios - lastKnownCount} new`);
           }
         }
       } catch (err) {
@@ -804,7 +815,7 @@ export function App() {
   // Load leaderboards from backend
   const loadLeaderboards = async () => {
     try {
-      const response = await fetch("/api/leaderboards", { method: "GET" });
+      const response = await apiFetch("/api/leaderboards", { method: "GET" });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);

@@ -89,16 +89,87 @@ function rateLimitedResponse(): Response {
   });
 }
 
-// CORS headers helper
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
+// Allowed origins for API requests
+const ALLOWED_ORIGINS = [
+  'https://xratios.app',
+  'https://www.xratios.app',
+  'https://xratio.replit.app',
+  'http://localhost:3000',
+  'http://localhost:5173',
+];
+
+// Secret header that frontend must include (blocks casual curl/script attempts)
+const API_SECRET_HEADER = 'X-XRatio-Client';
+const API_SECRET_VALUE = 'web-v1';
+
+// Check if request is from an allowed origin (browser-based)
+function isAllowedOrigin(req: Request): boolean {
+  // First check: Require the secret header from frontend
+  const clientHeader = req.headers.get(API_SECRET_HEADER);
+  if (clientHeader !== API_SECRET_VALUE) {
+    return false;
+  }
+  
+  const origin = req.headers.get('origin');
+  const referer = req.headers.get('referer');
+  
+  // For same-origin requests (no origin header), check referer or allow if secret header is present
+  if (!origin && !referer) {
+    // Secret header is present, allow it (same-origin fetch from our frontend)
+    return true;
+  }
+  
+  // Check origin header
+  if (origin) {
+    if (ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed.replace(/\/$/, '')))) {
+      return true;
+    }
+  }
+  
+  // Check referer header as fallback
+  if (referer) {
+    if (ALLOWED_ORIGINS.some(allowed => referer.startsWith(allowed.replace(/\/$/, '')))) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+// Create forbidden response for blocked origins
+function forbiddenResponse(): Response {
+  return new Response(JSON.stringify({ 
+    error: 'Access denied'
+  }), {
+    status: 403,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+// CORS headers helper - use specific origin instead of wildcard
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('origin');
+  const allowedOrigin = origin && ALLOWED_ORIGINS.some(allowed => 
+    origin.startsWith(allowed.replace(/\/$/, ''))
+  ) ? origin : ALLOWED_ORIGINS[0];
+  
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Credentials": "true",
+  };
+}
 
 // Add CORS headers to any response
-function withCORS(response: Response): Response {
-  Object.entries(corsHeaders).forEach(([key, value]) => {
+function withCORS(response: Response, req?: Request): Response {
+  const headers = req ? getCorsHeaders(req) : {
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS[0],
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
+  
+  Object.entries(headers).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
   return response;
@@ -129,7 +200,13 @@ const server = serve({
       async GET(req) {
         // Rate limit check
         if (isRateLimited(req)) {
-          return withCORS(rateLimitedResponse());
+          return withCORS(rateLimitedResponse(), req);
+        }
+        
+        // Origin check - block requests not from allowed origins
+        if (!isAllowedOrigin(req)) {
+          console.warn(`🚫 Blocked request from unauthorized origin`);
+          return withCORS(forbiddenResponse(), req);
         }
         
         try {
@@ -179,17 +256,22 @@ const server = serve({
           // Limit
           ratios = ratios.slice(0, limit);
           
+          // Only return essential stats, not internal details
+          const publicStats = {
+            total: ratioStore.getStats().total,
+          };
+          
           return withCORS(Response.json({
             success: true,
             data: ratios,
-            stats: ratioStore.getStats(),
-          }));
+            stats: publicStats,
+          }), req);
         } catch (error) {
           console.error('API Error:', error);
           return withCORS(Response.json({
             success: false,
             error: error instanceof Error ? error.message : 'Failed to fetch ratios'
-          }, { status: 500 }));
+          }, { status: 500 }), req);
         }
       },
     },
@@ -198,7 +280,13 @@ const server = serve({
       async GET(req) {
         // Rate limit check
         if (isRateLimited(req)) {
-          return withCORS(rateLimitedResponse());
+          return withCORS(rateLimitedResponse(), req);
+        }
+        
+        // Origin check
+        if (!isAllowedOrigin(req)) {
+          console.warn(`🚫 Blocked leaderboards request from unauthorized origin`);
+          return withCORS(forbiddenResponse(), req);
         }
         
         try {
@@ -206,54 +294,38 @@ const server = serve({
           return withCORS(Response.json({
             success: true,
             data: leaderboards,
-          }));
+          }), req);
         } catch (error) {
           console.error('Leaderboards API Error:', error);
           return withCORS(Response.json({
             success: false,
             error: error instanceof Error ? error.message : 'Failed to fetch leaderboards'
-          }, { status: 500 }));
+          }, { status: 500 }), req);
         }
       },
     },
     
-    "/api/refresh": {
-      async POST(req) {
-        // Rate limit check - this triggers X API polling
-        if (isRateLimited(req)) {
-          return withCORS(rateLimitedResponse());
-        }
-        
-        try {
-          const result = await poller.poll();
-          return withCORS(Response.json({
-            success: true,
-            ...result,
-          }));
-        } catch (error) {
-          console.error('Refresh Error:', error);
-          return withCORS(Response.json({
-            success: false,
-            error: error instanceof Error ? error.message : 'Failed to refresh'
-          }, { status: 500 }));
-        }
-      },
-    },
+    // /api/refresh removed - was a security risk (allowed anyone to trigger X API calls)
     
     "/api/status": {
       async GET(req) {
         // Rate limit check
         if (isRateLimited(req)) {
-          return withCORS(rateLimitedResponse());
+          return withCORS(rateLimitedResponse(), req);
         }
         
+        // Origin check
+        if (!isAllowedOrigin(req)) {
+          return withCORS(forbiddenResponse(), req);
+        }
+        
+        // Only return public-safe information (no internal stats)
+        const stats = ratioStore.getStats();
         return withCORS(Response.json({
           success: true,
-          poller: poller.getStatus(),
-          firehose: firehose.getStats(),
-          stats: ratioStore.getStats(),
+          totalRatios: stats.total,
           timestamp: Date.now(),
-        }));
+        }), req);
       },
     },
 
