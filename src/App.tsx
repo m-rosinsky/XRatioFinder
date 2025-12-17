@@ -1288,206 +1288,111 @@ export function App() {
                 </div>
               )
             ) : activeFeed === 'victims' ? (
-              // Victims Leaderboard Feed
-              <div className="space-y-4">
+              // Victims Leaderboard Feed - Table Format
+              <div>
                 {victimsLeaderboard.length > 0 ? (
-                  <>
-                    <div className="bg-white/5 border border-white/10 rounded-lg p-4 mb-4 flex items-center justify-between text-sm text-white/60 font-mono">
-                      <span>Top {victimsLeaderboard.length} Victims</span>
-                      <span>Based on {totalRatios} total ratios</span>
+                  <div className="bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden">
+                    {/* Table Header */}
+                    <div className="grid grid-cols-[auto_1fr_auto_auto_auto] sm:grid-cols-[3rem_1fr_5rem_5rem_7rem_3rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 bg-white/5 border-b border-white/10 text-xs font-mono text-white/40 uppercase tracking-wider">
+                      <div className="text-center">#</div>
+                      <div>Account</div>
+                      <div className="text-center hidden sm:block">Ratio'd</div>
+                      <div className="text-center hidden sm:block">Worst</div>
+                      <div className="text-right hidden sm:block">Likes Against</div>
+                      <div></div>
                     </div>
                     
+                    {/* Table Rows */}
                     {victimsLeaderboard.map((entry, index) => (
                       <div
                         key={entry.username}
-                        className={`group relative rounded-xl border transition-all p-6 ${
-                          index === 0
-                            ? 'border-yellow-500/50 bg-yellow-500/10 shadow-[0_0_30px_rgba(234,179,8,0.1)]'
-                            : index === 1
-                            ? 'border-slate-400/50 bg-slate-400/10 shadow-[0_0_20px_rgba(148,163,184,0.1)]'
-                            : index === 2
-                            ? 'border-orange-700/50 bg-orange-700/10 shadow-[0_0_20px_rgba(194,65,12,0.1)]'
-                            : 'border-white/10 bg-white/5 hover:bg-white/[0.07]'
+                        className={`grid grid-cols-[auto_1fr_auto_auto_auto] sm:grid-cols-[3rem_1fr_5rem_5rem_7rem_3rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 border-b border-white/5 last:border-b-0 transition-colors hover:bg-white/[0.03] ${
+                          index === 0 ? 'bg-yellow-500/5' :
+                          index === 1 ? 'bg-slate-400/5' :
+                          index === 2 ? 'bg-orange-700/5' : ''
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-6">
-                          <div className="flex items-center gap-4">
-                            <div className={`font-mono font-bold text-2xl w-8 text-center ${
-                              index === 0 ? 'text-yellow-500' :
-                              index === 1 ? 'text-slate-400' :
-                              index === 2 ? 'text-orange-700' :
-                              'text-white/20'
-                            }`}>
-                              {index + 1}
-                            </div>
-
-                            <a
-                              href={`https://x.com/${entry.username}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="relative"
-                              title={`@${entry.username}'s profile`}
-                            >
-                              <div className={`w-12 h-12 rounded-full overflow-hidden border-2 ${
-                                index === 0 ? 'border-yellow-500' :
-                                index === 1 ? 'border-slate-400' :
-                                index === 2 ? 'border-orange-700' :
-                                'border-white/10'
-                              }`}>
-                                {entry.profileImage ? (
-                                  <img 
-                                    src={entry.profileImage} 
-                                    alt={`@${entry.username}`}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white font-bold">
-                                    {entry.username[0].toUpperCase()}
-                                  </div>
-                                )}
-                              </div>
-                              {index < 3 && (
-                                <div className="absolute -top-1 -right-1 text-lg">
-                                  {index === 0 ? '👑' : index === 1 ? '🥈' : '🥉'}
-                                </div>
-                              )}
-                            </a>
-                            
-                            <div>
-                              <a
-                                href={`https://x.com/${entry.username}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-medium text-white text-lg hover:underline"
-                              >
-                                {entry.displayName || entry.username}
-                              </a>
-                              <div className="text-xs text-white/40">@{entry.username}</div>
-                              <div className="text-sm text-white/40 mt-0.5">
-                                Ratio'd <span className="text-red-400 font-bold">{entry.ratioCount}x</span> this week
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="text-right hidden sm:block">
-                            <div className="text-xs text-white/40 uppercase tracking-wider mb-1">Total Damage</div>
-                            <div className="text-xl font-mono font-medium text-red-400">
-                              {entry.totalLikes.toLocaleString()} <span className="text-xs text-white/40">likes against</span>
-                            </div>
-                          </div>
+                        {/* Rank */}
+                        <div className={`font-mono font-bold text-lg sm:text-xl text-center ${
+                          index === 0 ? 'text-yellow-500' :
+                          index === 1 ? 'text-slate-400' :
+                          index === 2 ? 'text-orange-700' :
+                          'text-white/20'
+                        }`}>
+                          {index + 1}
                         </div>
                         
-                        {entry.worstRatio?.ratio && (
-                        <div className="border-t border-white/10 pt-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="text-xs font-mono text-white/40 uppercase tracking-wider">Worst Defeat</span>
-                            <span className="text-xs px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 font-mono border border-red-500/20">
-                              {entry.worstRatio.ratio.toFixed(1)}x Ratio
-                            </span>
-                          </div>
-                          
-                          <div className="flex flex-col gap-4">
-                            {/* Victim's Post */}
-                            <div className="bg-black/20 rounded-lg p-4 border border-white/5">
-                              <p className="text-white/60 text-sm mb-3 line-clamp-2">{cleanContent(entry.worstRatio.postContent)}</p>
-                              {/* Post Images */}
-                              {entry.worstRatio.postImages && entry.worstRatio.postImages.length > 0 && (
-                                <div className="mb-3">
-                                  <div className={`grid gap-1.5 ${
-                                    entry.worstRatio.postImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
-                                  }`}>
-                                    {entry.worstRatio.postImages.slice(0, 4).map((image, imgIndex) => (
-                                      <div
-                                        key={imgIndex}
-                                        className={`relative overflow-hidden rounded-lg border border-white/10 ${
-                                          entry.worstRatio.postImages!.length === 3 && imgIndex === 0 ? 'row-span-2' : ''
-                                        }`}
-                                      >
-                                        <img
-                                          src={image.url}
-                                          alt={`Post image ${imgIndex + 1}`}
-                                          className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
-                                          onClick={() => window.open(image.url, '_blank')}
-                                          style={{
-                                            aspectRatio: image.aspectRatio || (
-                                              entry.worstRatio.postImages!.length === 1 ? 16/9 :
-                                              entry.worstRatio.postImages!.length === 2 ? 4/3 :
-                                              entry.worstRatio.postImages!.length === 3 && imgIndex === 0 ? 0.75 :
-                                              1
-                                            )
-                                          }}
-                                        />
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                              <div className="flex items-center justify-between text-xs text-white/30">
-                                <span className="flex items-center gap-1.5">
-                                  <HeartIcon className="w-3 h-3" />
-                                  {entry.worstRatio.postLikes?.toLocaleString()}
-                                </span>
-                                <a href={`https://x.com/${entry.username}/status/${entry.worstRatio.postId}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">View →</a>
+                        {/* Account */}
+                        <a
+                          href={`https://x.com/${entry.username}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 sm:gap-3 min-w-0 group/user"
+                        >
+                          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 flex-shrink-0 ${
+                            index === 0 ? 'border-yellow-500' :
+                            index === 1 ? 'border-slate-400' :
+                            index === 2 ? 'border-orange-700' :
+                            'border-white/10'
+                          }`}>
+                            {entry.profileImage ? (
+                              <img 
+                                src={entry.profileImage} 
+                                alt={`@${entry.username}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white font-bold text-xs sm:text-sm">
+                                {entry.username[0].toUpperCase()}
                               </div>
-                            </div>
-                            
-                            {/* The Ratio Reply with connecting line */}
-                            <div className="relative sm:ml-12">
-                              {/* Connection Line - positioned to connect from above */}
-                              <div className="absolute left-[-1.5rem] top-[-0.5rem] bottom-0 w-0.5 bg-gradient-to-b from-white/10 to-red-500/20 hidden sm:block"></div>
-                              
-                              <div className="bg-red-500/5 rounded-lg p-4 border border-red-500/10 relative z-10">
-                                <div className="flex items-center justify-between mb-2">
-                                  <span className="text-xs text-red-400 font-medium">{entry.worstRatio.replyAuthorDisplayName || entry.worstRatio.replyAuthor} <span className="text-white/40">@{entry.worstRatio.replyAuthor}</span> replied:</span>
-                                </div>
-                                <p className="text-white/90 text-sm mb-3 line-clamp-3">{cleanContent(entry.worstRatio.replyContent)}</p>
-                                {/* Reply Images */}
-                                {entry.worstRatio.replyImages && entry.worstRatio.replyImages.length > 0 && (
-                                  <div className="mb-3">
-                                    <div className={`grid gap-1.5 ${
-                                      entry.worstRatio.replyImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
-                                    }`}>
-                                      {entry.worstRatio.replyImages.slice(0, 4).map((image, imgIndex) => (
-                                        <div
-                                          key={imgIndex}
-                                          className={`relative overflow-hidden rounded-lg border border-white/10 ${
-                                            entry.worstRatio.replyImages!.length === 3 && imgIndex === 0 ? 'row-span-2' : ''
-                                          }`}
-                                        >
-                                          <img
-                                            src={image.url}
-                                            alt={`Reply image ${imgIndex + 1}`}
-                                            className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
-                                            onClick={() => window.open(image.url, '_blank')}
-                                            style={{
-                                              aspectRatio: image.aspectRatio || (
-                                                entry.worstRatio.replyImages!.length === 1 ? 16/9 :
-                                                entry.worstRatio.replyImages!.length === 2 ? 4/3 :
-                                                entry.worstRatio.replyImages!.length === 3 && imgIndex === 0 ? 0.75 :
-                                                1
-                                              )
-                                            }}
-                                          />
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                                <div className="flex items-center justify-between text-xs">
-                                  <span className="flex items-center gap-1.5 text-red-400">
-                                    <HeartIcon className="w-3 h-3" />
-                                    {entry.worstRatio.replyLikes?.toLocaleString()}
-                                  </span>
-                                  <a href={`https://x.com/${entry.worstRatio.replyAuthor}/status/${entry.worstRatio.replyId}`} target="_blank" rel="noopener noreferrer" className="text-white/30 hover:text-white transition-colors">View →</a>
-                                </div>
-                              </div>
-                            </div>
+                            )}
                           </div>
+                          <div className="min-w-0">
+                            <div className="font-medium text-white text-sm sm:text-base truncate group-hover/user:underline">
+                              {entry.displayName || entry.username}
+                            </div>
+                            <div className="text-xs text-white/40 truncate">@{entry.username}</div>
+                          </div>
+                        </a>
+                        
+                        {/* Ratio Count */}
+                        <div className="text-center">
+                          <span className="text-red-400 font-bold text-sm sm:text-base">{entry.ratioCount}</span>
+                          <span className="text-white/30 text-xs sm:hidden ml-1">×</span>
                         </div>
-                        )}
+                        
+                        {/* Worst Ratio */}
+                        <div className="text-center hidden sm:block">
+                          {entry.worstRatio?.ratio ? (
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 font-mono border border-red-500/20">
+                              {entry.worstRatio.ratio.toFixed(1)}×
+                            </span>
+                          ) : (
+                            <span className="text-white/20">—</span>
+                          )}
+                        </div>
+                        
+                        {/* Total Likes */}
+                        <div className="text-right font-mono text-red-400 text-sm sm:text-base hidden sm:block">
+                          {entry.totalLikes.toLocaleString()}
+                        </div>
+                        
+                        {/* Filter Button */}
+                        <button
+                          onClick={() => {
+                            setActiveFeed('recents');
+                            handleUsernameClick(entry.username);
+                          }}
+                          className="p-1.5 sm:p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all cursor-pointer"
+                          title={`View ${entry.displayName || entry.username}'s ratios`}
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                          </svg>
+                        </button>
                       </div>
                     ))}
-                  </>
+                  </div>
                 ) : (
                   <div className="text-center py-20 border border-dashed border-white/10 rounded-xl bg-white/[0.02]">
                     <div className="text-4xl mb-4 opacity-50">📊</div>
@@ -1499,212 +1404,111 @@ export function App() {
                 )}
               </div>
             ) : (
-              // Perpetrators Leaderboard Feed
-              <div className="space-y-4">
+              // Perpetrators Leaderboard Feed - Table Format
+              <div>
                 {perpetratorsLeaderboard.length > 0 ? (
-                  <>
-                    <div className="bg-white/5 border border-white/10 rounded-lg p-4 mb-4 flex items-center justify-between text-sm text-white/60 font-mono">
-                      <span>Top {perpetratorsLeaderboard.length} Ratio Assassins</span>
-                      <span>From {totalRatios} total ratios</span>
+                  <div className="bg-white/[0.02] border border-white/10 rounded-xl overflow-hidden">
+                    {/* Table Header */}
+                    <div className="grid grid-cols-[auto_1fr_auto_auto_auto] sm:grid-cols-[3rem_1fr_5rem_5rem_7rem_3rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 bg-white/5 border-b border-white/10 text-xs font-mono text-white/40 uppercase tracking-wider">
+                      <div className="text-center">#</div>
+                      <div>Account</div>
+                      <div className="text-center hidden sm:block">Ratios</div>
+                      <div className="text-center hidden sm:block">Best</div>
+                      <div className="text-right hidden sm:block">Likes Earned</div>
+                      <div></div>
                     </div>
                     
+                    {/* Table Rows */}
                     {perpetratorsLeaderboard.map((entry, index) => (
                       <div
                         key={entry.username}
-                        className={`group relative rounded-xl border transition-all p-6 ${
-                          index === 0
-                            ? 'border-yellow-500/50 bg-yellow-500/10 shadow-[0_0_30px_rgba(234,179,8,0.1)]'
-                            : index === 1
-                            ? 'border-slate-400/50 bg-slate-400/10 shadow-[0_0_20px_rgba(148,163,184,0.1)]'
-                            : index === 2
-                            ? 'border-orange-700/50 bg-orange-700/10 shadow-[0_0_20px_rgba(194,65,12,0.1)]'
-                            : 'border-white/10 bg-white/5 hover:bg-white/[0.07]'
+                        className={`grid grid-cols-[auto_1fr_auto_auto_auto] sm:grid-cols-[3rem_1fr_5rem_5rem_7rem_3rem] items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 border-b border-white/5 last:border-b-0 transition-colors hover:bg-white/[0.03] ${
+                          index === 0 ? 'bg-yellow-500/5' :
+                          index === 1 ? 'bg-slate-400/5' :
+                          index === 2 ? 'bg-orange-700/5' : ''
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-6">
-                          <div className="flex items-center gap-4">
-                            <div className={`font-mono font-bold text-2xl w-8 text-center ${
-                              index === 0 ? 'text-yellow-500' :
-                              index === 1 ? 'text-slate-400' :
-                              index === 2 ? 'text-orange-700' :
-                              'text-white/20'
-                            }`}>
-                              {index + 1}
-                            </div>
-
-                            <a
-                              href={`https://x.com/${entry.username}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="relative"
-                              title={`@${entry.username}'s profile`}
-                            >
-                              <div className={`w-12 h-12 rounded-full overflow-hidden border-2 ${
-                                index === 0 ? 'border-yellow-500' :
-                                index === 1 ? 'border-slate-400' :
-                                index === 2 ? 'border-orange-700' :
-                                'border-white/10'
-                              }`}>
-                                {entry.profileImage ? (
-                                  <img 
-                                    src={entry.profileImage} 
-                                    alt={`@${entry.username}`}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white font-bold">
-                                    {entry.username[0].toUpperCase()}
-                                  </div>
-                                )}
-                              </div>
-                              {index < 3 && (
-                                <div className="absolute -top-1 -right-1 text-lg">
-                                  {index === 0 ? '👑' : index === 1 ? '🥈' : '🥉'}
-                                </div>
-                              )}
-                            </a>
-                            
-                            <div>
-                              <a
-                                href={`https://x.com/${entry.username}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-medium text-white text-lg hover:underline"
-                              >
-                                {entry.displayName || entry.username}
-                              </a>
-                              <div className="text-xs text-white/40">@{entry.username}</div>
-                              <div className="text-sm text-white/40 mt-0.5">
-                                Ratio'd <span className="text-purple-400 font-bold">{entry.ratioCount}</span> user{entry.ratioCount !== 1 ? 's' : ''} this week
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="text-right hidden sm:block">
-                            <div className="text-xs text-white/40 uppercase tracking-wider mb-1">Total Likes Earned</div>
-                            <div className="text-xl font-mono font-medium text-purple-400">
-                              {entry.totalLikes.toLocaleString()}
-                            </div>
-                          </div>
+                        {/* Rank */}
+                        <div className={`font-mono font-bold text-lg sm:text-xl text-center ${
+                          index === 0 ? 'text-yellow-500' :
+                          index === 1 ? 'text-slate-400' :
+                          index === 2 ? 'text-orange-700' :
+                          'text-white/20'
+                        }`}>
+                          {index + 1}
                         </div>
                         
-                        <div className="border-t border-white/10 pt-4">
-                          {entry.bestRatio && entry.bestRatio.ratio > 0 ? (
-                            <>
-                              <div className="flex items-center gap-2 mb-3">
-                                <span className="text-xs font-mono text-white/40 uppercase tracking-wider">Best Ratio</span>
-                                <span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 font-mono border border-purple-500/20">
-                                  {entry.bestRatio.ratio.toFixed(1)}x
-                                </span>
+                        {/* Account */}
+                        <a
+                          href={`https://x.com/${entry.username}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 sm:gap-3 min-w-0 group/user"
+                        >
+                          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 flex-shrink-0 ${
+                            index === 0 ? 'border-yellow-500' :
+                            index === 1 ? 'border-slate-400' :
+                            index === 2 ? 'border-orange-700' :
+                            'border-white/10'
+                          }`}>
+                            {entry.profileImage ? (
+                              <img 
+                                src={entry.profileImage} 
+                                alt={`@${entry.username}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white font-bold text-xs sm:text-sm">
+                                {entry.username[0].toUpperCase()}
                               </div>
-                              
-                              <div className="flex flex-col gap-4">
-                                {/* Victim's Post */}
-                                <div className="bg-black/20 rounded-lg p-4 border border-white/5">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs text-white/40">Original post by {entry.bestRatio.postAuthorDisplayName || entry.bestRatio.postAuthor} <span className="text-white/30">@{entry.bestRatio.postAuthor}</span>:</span>
-                                  </div>
-                                  <p className="text-white/60 text-sm mb-3 line-clamp-2">{cleanContent(entry.bestRatio.postContent)}</p>
-                                  {/* Post Images */}
-                                  {entry.bestRatio.postImages && entry.bestRatio.postImages.length > 0 && (
-                                    <div className="mb-3">
-                                      <div className={`grid gap-1.5 ${
-                                        entry.bestRatio.postImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
-                                      }`}>
-                                        {entry.bestRatio.postImages.slice(0, 4).map((image, imgIndex) => (
-                                          <div
-                                            key={imgIndex}
-                                            className={`relative overflow-hidden rounded-lg border border-white/10 ${
-                                              entry.bestRatio.postImages!.length === 3 && imgIndex === 0 ? 'row-span-2' : ''
-                                            }`}
-                                          >
-                                            <img
-                                              src={image.url}
-                                              alt={`Post image ${imgIndex + 1}`}
-                                              className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
-                                              onClick={() => window.open(image.url, '_blank')}
-                                              style={{
-                                                aspectRatio: image.aspectRatio || (
-                                                  entry.bestRatio.postImages!.length === 1 ? 16/9 :
-                                                  entry.bestRatio.postImages!.length === 2 ? 4/3 :
-                                                  entry.bestRatio.postImages!.length === 3 && imgIndex === 0 ? 0.75 :
-                                                  1
-                                                )
-                                              }}
-                                            />
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-                                  <div className="flex items-center justify-between text-xs text-white/30">
-                                    <span className="flex items-center gap-1.5">
-                                      <HeartIcon className="w-3 h-3" />
-                                      {entry.bestRatio.postLikes.toLocaleString()}
-                                    </span>
-                                    <a href={`https://x.com/${entry.bestRatio.postAuthor}/status/${entry.bestRatio.postId}`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">View →</a>
-                                  </div>
-                                </div>
-
-                                {/* The Killer Ratio with connecting line */}
-                                <div className="relative sm:ml-12">
-                                  {/* Connection Line - positioned to connect from above */}
-                                  <div className="absolute left-[-1.5rem] top-[-0.5rem] bottom-0 w-0.5 bg-gradient-to-b from-white/10 to-purple-500/20 hidden sm:block"></div>
-                                  
-                                  <div className="bg-purple-500/5 rounded-lg p-4 border border-purple-500/10 relative z-10">
-                                    <p className="text-white/90 text-sm mb-3 line-clamp-3">{cleanContent(entry.bestRatio.replyContent)}</p>
-                                    {/* Reply Images */}
-                                    {entry.bestRatio.replyImages && entry.bestRatio.replyImages.length > 0 && (
-                                      <div className="mb-3">
-                                        <div className={`grid gap-1.5 ${
-                                          entry.bestRatio.replyImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
-                                        }`}>
-                                          {entry.bestRatio.replyImages.slice(0, 4).map((image, imgIndex) => (
-                                            <div
-                                              key={imgIndex}
-                                              className={`relative overflow-hidden rounded-lg border border-white/10 ${
-                                                entry.bestRatio.replyImages!.length === 3 && imgIndex === 0 ? 'row-span-2' : ''
-                                              }`}
-                                            >
-                                              <img
-                                                src={image.url}
-                                                alt={`Reply image ${imgIndex + 1}`}
-                                                className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
-                                                onClick={() => window.open(image.url, '_blank')}
-                                                style={{
-                                                  aspectRatio: image.aspectRatio || (
-                                                    entry.bestRatio.replyImages!.length === 1 ? 16/9 :
-                                                    entry.bestRatio.replyImages!.length === 2 ? 4/3 :
-                                                    entry.bestRatio.replyImages!.length === 3 && imgIndex === 0 ? 0.75 :
-                                                    1
-                                                  )
-                                                }}
-                                              />
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                    <div className="flex items-center justify-between text-xs">
-                                      <span className="flex items-center gap-1.5 text-purple-400">
-                                        <HeartIcon className="w-3 h-3" />
-                                        {entry.bestRatio.replyLikes.toLocaleString()}
-                                      </span>
-                                      <a href={`https://x.com/${entry.username}/status/${entry.bestRatio.replyId}`} target="_blank" rel="noopener noreferrer" className="text-white/30 hover:text-white transition-colors">View →</a>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </>
-                          ) : (
-                            <div className="text-xs font-mono text-white/30 text-center py-4">
-                              No ratios detected yet
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-medium text-white text-sm sm:text-base truncate group-hover/user:underline">
+                              {entry.displayName || entry.username}
                             </div>
+                            <div className="text-xs text-white/40 truncate">@{entry.username}</div>
+                          </div>
+                        </a>
+                        
+                        {/* Ratio Count */}
+                        <div className="text-center">
+                          <span className="text-purple-400 font-bold text-sm sm:text-base">{entry.ratioCount}</span>
+                          <span className="text-white/30 text-xs sm:hidden ml-1">×</span>
+                        </div>
+                        
+                        {/* Best Ratio */}
+                        <div className="text-center hidden sm:block">
+                          {entry.bestRatio?.ratio ? (
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 font-mono border border-purple-500/20">
+                              {entry.bestRatio.ratio.toFixed(1)}×
+                            </span>
+                          ) : (
+                            <span className="text-white/20">—</span>
                           )}
                         </div>
+                        
+                        {/* Total Likes */}
+                        <div className="text-right font-mono text-purple-400 text-sm sm:text-base hidden sm:block">
+                          {entry.totalLikes.toLocaleString()}
+                        </div>
+                        
+                        {/* Filter Button */}
+                        <button
+                          onClick={() => {
+                            setActiveFeed('recents');
+                            handleUsernameClick(entry.username);
+                          }}
+                          className="p-1.5 sm:p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all cursor-pointer"
+                          title={`View ${entry.displayName || entry.username}'s ratios`}
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                          </svg>
+                        </button>
                       </div>
                     ))}
-                  </>
+                  </div>
                 ) : (
                   <div className="text-center py-20 border border-dashed border-white/10 rounded-xl bg-white/[0.02]">
                     <div className="text-4xl mb-4 opacity-50">📊</div>
