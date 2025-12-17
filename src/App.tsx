@@ -537,6 +537,7 @@ export function App() {
   const [showOnlyBrutal, setShowOnlyBrutal] = useState(false);
   const [showOnlyLethal, setShowOnlyLethal] = useState(false);
   const [filterUsername, setFilterUsername] = useState('');
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
 
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
@@ -862,140 +863,170 @@ export function App() {
       {/* Spacer for fixed header */}
       <div className="h-16"></div>
 
-      {/* Mobile Filters - Show only on mobile */}
-      <div className="md:hidden border-b border-white/10 bg-[#0A0A0A] px-4 py-5 relative z-10">
-        <div className="flex flex-col gap-5">
-          {/* Mobile Refresh Button */}
-          <button
-            onClick={() => loadPosts(filterUsername || undefined)}
-            disabled={loading}
-            className="w-full bg-white hover:bg-white/90 disabled:bg-white/50 disabled:cursor-not-allowed px-4 py-3 rounded-lg text-sm font-mono uppercase tracking-wider text-black transition-colors min-h-[44px]"
+      {/* Mobile Filters - Show only on mobile, collapsible */}
+      <div className="md:hidden border-b border-white/10 bg-[#0A0A0A] relative z-10">
+        {/* Toggle Button */}
+        <button
+          onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+          className="w-full flex items-center justify-between px-4 py-3 text-sm font-mono text-white/60 hover:text-white transition-colors"
+        >
+          <span className="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+            </svg>
+            Filters & Sort
+          </span>
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="16" 
+            height="16" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+            className={`transition-transform duration-200 ${mobileFiltersOpen ? 'rotate-180' : ''}`}
           >
-            {loading ? 'Loading...' : 'Refresh View'}
-          </button>
+            <path d="m18 15-6-6-6 6"/>
+          </svg>
+        </button>
+        
+        {/* Collapsible Content */}
+        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${mobileFiltersOpen ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
+          <div className="px-4 pb-5 pt-2 flex flex-col gap-5 border-t border-white/5">
+            {/* Mobile Refresh Button */}
+            <button
+              onClick={() => loadPosts(filterUsername || undefined)}
+              disabled={loading}
+              className="w-full bg-white hover:bg-white/90 disabled:bg-white/50 disabled:cursor-not-allowed px-4 py-3 rounded-lg text-sm font-mono uppercase tracking-wider text-black transition-colors min-h-[44px]"
+            >
+              {loading ? 'Loading...' : 'Refresh View'}
+            </button>
 
-          {/* Sort */}
-          <div>
-            <h3 className="text-xs font-mono tracking-widest text-white/50 uppercase mb-3 flex items-center gap-2">
-              [<span>Sort</span>]
-            </h3>
-            <div className="relative">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'recency' | 'brutality')}
-                className="w-full appearance-none px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-white/30 cursor-pointer"
-              >
-                <option value="recency">Most Recent</option>
-                <option value="brutality">Most Brutal</option>
-              </select>
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-white/50">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-              </div>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div>
-            <h3 className="text-xs font-mono tracking-widest text-white/50 uppercase mb-3 flex items-center gap-2">
-              [<span>Filters</span>]
-            </h3>
-            
-            {/* Min Likes Slider */}
-            <div className="mb-5">
-              <div className="flex justify-between items-center mb-3">
-                <label className="text-sm text-white/80">Min. Reply Likes</label>
-                <span className="font-mono text-xs text-[#00BA7C]">{minLikes.toLocaleString()}</span>
-              </div>
-              <div className="relative py-2">
-                <input
-                  type="range"
-                  min="1000"
-                  max="10000"
-                  step="100"
-                  value={minLikes}
-                  onChange={(e) => setMinLikes(Number(e.target.value))}
-                  className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer slider accent-white"
-                />
-                <div className="flex justify-between text-[10px] font-mono text-white/30 mt-2">
-                  <span>1K</span>
-                  <span>10K</span>
+            {/* Sort */}
+            <div>
+              <h3 className="text-xs font-mono tracking-widest text-white/50 uppercase mb-3 flex items-center gap-2">
+                [<span>Sort</span>]
+              </h3>
+              <div className="relative">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'recency' | 'brutality')}
+                  className="w-full appearance-none px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-white/30 cursor-pointer"
+                >
+                  <option value="recency">Most Recent</option>
+                  <option value="brutality">Most Brutal</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-white/50">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
               </div>
             </div>
 
-            {/* Checkboxes */}
-            <div className="space-y-3">
-              <label className="flex items-center cursor-pointer group min-h-[44px]">
-                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${showOnlyLethal ? 'bg-white border-white' : 'bg-transparent border-white/30 group-hover:border-white/50'}`}>
-                  {showOnlyLethal && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
-                </div>
-                <input
-                  type="checkbox"
-                  className="hidden"
-                  checked={showOnlyLethal}
-                  onChange={(e) => {
-                    setShowOnlyLethal(e.target.checked);
-                    if (e.target.checked) setShowOnlyBrutal(false);
-                  }}
-                />
-                <span className="ml-3 text-sm text-white/70 group-hover:text-white transition-colors">Lethal ratios only (100x+)</span>
-              </label>
+            {/* Filters */}
+            <div>
+              <h3 className="text-xs font-mono tracking-widest text-white/50 uppercase mb-3 flex items-center gap-2">
+                [<span>Filters</span>]
+              </h3>
               
-              <label className="flex items-center cursor-pointer group min-h-[44px]">
-                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${showOnlyBrutal ? 'bg-white border-white' : 'bg-transparent border-white/30 group-hover:border-white/50'}`}>
-                  {showOnlyBrutal && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+              {/* Min Likes Slider */}
+              <div className="mb-5">
+                <div className="flex justify-between items-center mb-3">
+                  <label className="text-sm text-white/80">Min. Reply Likes</label>
+                  <span className="font-mono text-xs text-[#00BA7C]">{minLikes.toLocaleString()}</span>
+                </div>
+                <div className="relative py-2">
+                  <input
+                    type="range"
+                    min="1000"
+                    max="10000"
+                    step="100"
+                    value={minLikes}
+                    onChange={(e) => setMinLikes(Number(e.target.value))}
+                    className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer slider accent-white"
+                  />
+                  <div className="flex justify-between text-[10px] font-mono text-white/30 mt-2">
+                    <span>1K</span>
+                    <span>10K</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Checkboxes */}
+              <div className="space-y-3">
+                <label className="flex items-center cursor-pointer group min-h-[44px]">
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${showOnlyLethal ? 'bg-white border-white' : 'bg-transparent border-white/30 group-hover:border-white/50'}`}>
+                    {showOnlyLethal && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="hidden"
+                    checked={showOnlyLethal}
+                    onChange={(e) => {
+                      setShowOnlyLethal(e.target.checked);
+                      if (e.target.checked) setShowOnlyBrutal(false);
+                    }}
+                  />
+                  <span className="ml-3 text-sm text-white/70 group-hover:text-white transition-colors">Lethal ratios only (100x+)</span>
+                </label>
+                
+                <label className="flex items-center cursor-pointer group min-h-[44px]">
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${showOnlyBrutal ? 'bg-white border-white' : 'bg-transparent border-white/30 group-hover:border-white/50'}`}>
+                    {showOnlyBrutal && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="hidden"
+                    checked={showOnlyBrutal}
+                    onChange={(e) => {
+                      setShowOnlyBrutal(e.target.checked);
+                      if (e.target.checked) setShowOnlyLethal(false);
+                    }}
+                  />
+                  <span className="ml-3 text-sm text-white/70 group-hover:text-white transition-colors">Brutal ratios only (10x+)</span>
+                </label>
+              </div>
+            </div>
+
+            {/* User Filter */}
+            <div className="pt-2 border-t border-white/5">
+              <label className="block text-sm text-white/80 mb-3">
+                Track Specific User
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-white/30">@</span>
                 </div>
                 <input
-                  type="checkbox"
-                  className="hidden"
-                  checked={showOnlyBrutal}
-                  onChange={(e) => {
-                    setShowOnlyBrutal(e.target.checked);
-                    if (e.target.checked) setShowOnlyLethal(false);
+                  type="text"
+                  value={filterUsername}
+                  onChange={(e) => setFilterUsername(e.target.value)}
+                  onKeyDown={async (e) => {
+                    if (e.key === 'Enter' && filterUsername.trim()) {
+                      await enrichUser(filterUsername);
+                      loadPosts(filterUsername);
+                    }
                   }}
+                  placeholder="username"
+                  className="w-full pl-8 pr-3 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/20 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all text-sm min-h-[44px]"
+                  disabled={loading}
                 />
-                <span className="ml-3 text-sm text-white/70 group-hover:text-white transition-colors">Brutal ratios only (10x+)</span>
-              </label>
-            </div>
-          </div>
-
-          {/* User Filter */}
-          <div className="pt-2 border-t border-white/5">
-            <label className="block text-sm text-white/80 mb-3">
-              Track Specific User
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-white/30">@</span>
               </div>
-              <input
-                type="text"
-                value={filterUsername}
-                onChange={(e) => setFilterUsername(e.target.value)}
-                onKeyDown={async (e) => {
-                  if (e.key === 'Enter' && filterUsername.trim()) {
-                    await enrichUser(filterUsername);
-                    loadPosts(filterUsername);
-                  }
-                }}
-                placeholder="username"
-                className="w-full pl-8 pr-3 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/20 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all text-sm min-h-[44px]"
-                disabled={loading}
-              />
+              {filterUsername && (
+                <button
+                  onClick={() => {
+                    setFilterUsername('');
+                    loadPosts();
+                  }}
+                  className="mt-2 text-xs text-white/50 hover:text-white transition-colors flex items-center gap-1"
+                  disabled={loading}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  Clear filter
+                </button>
+              )}
             </div>
-            {filterUsername && (
-              <button
-                onClick={() => {
-                  setFilterUsername('');
-                  loadPosts();
-                }}
-                className="mt-2 text-xs text-white/50 hover:text-white transition-colors flex items-center gap-1"
-                disabled={loading}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                Clear filter
-              </button>
-            )}
           </div>
         </div>
       </div>
