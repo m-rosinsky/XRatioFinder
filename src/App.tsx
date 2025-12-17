@@ -534,7 +534,7 @@ const apiFetch = (url: string, options: RequestInit = {}): Promise<Response> => 
 };
 
 export function App() {
-  const [activeFeed, setActiveFeed] = useState<'recents' | 'victims' | 'perpetrators'>('recents');
+  const [activeFeed, setActiveFeed] = useState<'recents' | 'victims' | 'perpetrators' | 'usercard'>('recents');
   const [minLikes, setMinLikes] = useState(1000);
   const [sortBy, setSortBy] = useState<'recency' | 'brutality'>('recency');
   const [posts, setPosts] = useState<Post[]>(mockPosts);
@@ -546,6 +546,19 @@ export function App() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [expandedLeaderboardEntry, setExpandedLeaderboardEntry] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ text: string; isError: boolean } | null>(null);
+  
+  // User Card lookup state
+  const [userCardUsername, setUserCardUsername] = useState('');
+  const [userCardLoading, setUserCardLoading] = useState(false);
+  const [userCardData, setUserCardData] = useState<{
+    username: string;
+    displayName?: string;
+    profileImage?: string;
+    timesRatiod: number;
+    timesRatioedOthers: number;
+    worstRatio?: number;
+    bestRatio?: number;
+  } | null>(null);
   
   const showToast = (message: string, isError = false) => {
     setToastMessage({ text: message, isError });
@@ -936,6 +949,90 @@ export function App() {
       loadLeaderboards();
     }
   }, [activeFeed]);
+
+  // Look up user card data
+  const lookupUserCard = async (username: string) => {
+    if (!username.trim()) return;
+    
+    const cleanUsername = username.trim().toLowerCase().replace(/^@/, '');
+    setUserCardLoading(true);
+    setUserCardData(null);
+    
+    try {
+      // Fetch all ratios for this user with low min likes to get all data
+      const response = await apiFetch(`/api/ratios?username=${encodeURIComponent(cleanUsername)}&minLikes=0&limit=100`, { method: 'GET' });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch user data');
+      }
+      
+      const ratios = result.data;
+      
+      // Calculate stats from ratios
+      let timesRatiod = 0;
+      let timesRatioedOthers = 0;
+      let worstRatio: number | undefined;
+      let bestRatio: number | undefined;
+      let displayName: string | undefined;
+      let profileImage: string | undefined;
+      
+      for (const ratio of ratios) {
+        // User was ratio'd (they're the parent author)
+        if (ratio.parent.author.toLowerCase() === cleanUsername) {
+          timesRatiod++;
+          const ratioValue = ratio.reply.likes / Math.max(1, ratio.parent.likes);
+          if (!worstRatio || ratioValue > worstRatio) {
+            worstRatio = ratioValue;
+          }
+          // Get display name and profile image from parent
+          if (!displayName && ratio.parent.authorDisplayName) {
+            displayName = ratio.parent.authorDisplayName;
+          }
+          if (!profileImage && ratio.parent.authorProfileImage) {
+            profileImage = ratio.parent.authorProfileImage;
+          }
+        }
+        
+        // User ratio'd someone else (they're the reply author)
+        if (ratio.reply.author.toLowerCase() === cleanUsername) {
+          timesRatioedOthers++;
+          const ratioValue = ratio.reply.likes / Math.max(1, ratio.parent.likes);
+          if (!bestRatio || ratioValue > bestRatio) {
+            bestRatio = ratioValue;
+          }
+          // Get display name and profile image from reply
+          if (!displayName && ratio.reply.authorDisplayName) {
+            displayName = ratio.reply.authorDisplayName;
+          }
+          if (!profileImage && ratio.reply.authorProfileImage) {
+            profileImage = ratio.reply.authorProfileImage;
+          }
+        }
+      }
+      
+      setUserCardData({
+        username: cleanUsername,
+        displayName,
+        profileImage,
+        timesRatiod,
+        timesRatioedOthers,
+        worstRatio,
+        bestRatio,
+      });
+      
+    } catch (err) {
+      console.error('Error looking up user:', err);
+      showToast(err instanceof Error ? err.message : 'Failed to look up user', true);
+    } finally {
+      setUserCardLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white font-sans antialiased selection:bg-white/20 overflow-x-hidden">
@@ -1369,6 +1466,19 @@ export function App() {
                     <div className="absolute bottom-0 left-0 right-0 h-px bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]"></div>
                   )}
                 </button>
+                <button
+                  onClick={() => setActiveFeed('usercard')}
+                  className={`pb-3 font-mono text-sm tracking-wide uppercase transition-all relative cursor-pointer ${
+                    activeFeed === 'usercard'
+                      ? 'text-white font-medium'
+                      : 'text-white/40 hover:text-white/70'
+                  }`}
+                >
+                  User Card
+                  {activeFeed === 'usercard' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-px bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]"></div>
+                  )}
+                </button>
               </div>
               
               <div className="flex flex-col gap-2">
@@ -1377,14 +1487,18 @@ export function App() {
                     ? 'Live Feed'
                     : activeFeed === 'victims'
                     ? "This Week's Top Ratio Victims"
-                    : "This Week's Top Ratio-ers"}
+                    : activeFeed === 'perpetrators'
+                    ? "This Week's Top Ratio-ers"
+                    : "Generate User Card"}
                 </h2>
                 <p className="text-white/50 text-sm max-w-xl">
                   {activeFeed === 'recents'
                     ? 'Ratio events detected across X. Pull to refresh for the latest.'
                     : activeFeed === 'victims'
                     ? 'Users who have suffered the most devastating ratios in the past 7 days.'
-                    : 'The most ruthless ratio-ers on the platform in the past 7 days.'}
+                    : activeFeed === 'perpetrators'
+                    ? 'The most ruthless ratio-ers on the platform in the past 7 days.'
+                    : 'Look up any user and generate a shareable ratio stats card.'}
                 </p>
               </div>
             </div>
@@ -1698,7 +1812,7 @@ export function App() {
                   </div>
                 )}
               </div>
-            ) : (
+            ) : activeFeed === 'perpetrators' ? (
               // Perpetrators Leaderboard Feed - Table Format
               <div>
                 {perpetratorsLeaderboard.length > 0 ? (
@@ -1928,6 +2042,219 @@ export function App() {
                     <h3 className="text-lg font-medium text-white mb-2">No Data Available</h3>
                     <p className="text-white/40 max-w-md mx-auto">
                       The leaderboard is currently empty. Wait for ratio events to be detected.
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // User Card Lookup Pane
+              <div className="space-y-6">
+                {/* Search Input */}
+                <div className="bg-white/[0.02] border border-white/10 rounded-xl p-6">
+                  <label className="block text-sm font-medium text-white/80 mb-3">
+                    Enter X Username
+                  </label>
+                  <div className="flex gap-3">
+                    <div className="relative flex-1">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <span className="text-white/40 text-lg">@</span>
+                      </div>
+                      <input
+                        type="text"
+                        value={userCardUsername}
+                        onChange={(e) => setUserCardUsername(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && userCardUsername.trim()) {
+                            lookupUserCard(userCardUsername);
+                          }
+                        }}
+                        placeholder="username"
+                        className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/20 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all text-base"
+                        disabled={userCardLoading}
+                      />
+                    </div>
+                    <button
+                      onClick={() => lookupUserCard(userCardUsername)}
+                      disabled={userCardLoading || !userCardUsername.trim()}
+                      className="px-6 py-3 bg-white hover:bg-white/90 disabled:bg-white/30 disabled:cursor-not-allowed text-black font-medium rounded-lg transition-all flex items-center gap-2"
+                    >
+                      {userCardLoading ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Looking up...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                          </svg>
+                          Look Up
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* User Card Result */}
+                {userCardData && (
+                  <div className="space-y-4">
+                    {/* Action Buttons */}
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => generateShareImage(
+                          userCardData.timesRatioedOthers > userCardData.timesRatiod ? 'perpetrator' : 'victim',
+                          userCardData.username,
+                          userCardData.displayName || userCardData.username,
+                          userCardData.timesRatioedOthers > userCardData.timesRatiod ? userCardData.timesRatioedOthers : userCardData.timesRatiod,
+                          userCardData.timesRatioedOthers > userCardData.timesRatiod ? userCardData.bestRatio : userCardData.worstRatio,
+                          'copy'
+                        )}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-sm font-medium transition-all"
+                        title="Share or copy image"
+                      >
+                        <svg className="w-4 h-4 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                        </svg>
+                        <svg className="w-4 h-4 hidden sm:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                        <span className="sm:hidden">Share</span>
+                        <span className="hidden sm:inline">Copy Image</span>
+                      </button>
+                      <button
+                        onClick={() => generateShareImage(
+                          userCardData.timesRatioedOthers > userCardData.timesRatiod ? 'perpetrator' : 'victim',
+                          userCardData.username,
+                          userCardData.displayName || userCardData.username,
+                          userCardData.timesRatioedOthers > userCardData.timesRatiod ? userCardData.timesRatioedOthers : userCardData.timesRatiod,
+                          userCardData.timesRatioedOthers > userCardData.timesRatiod ? userCardData.bestRatio : userCardData.worstRatio,
+                          'download'
+                        )}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-sm font-medium transition-all"
+                        title="Download image"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                          <polyline points="7 10 12 15 17 10"/>
+                          <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Download
+                      </button>
+                    </div>
+
+                    {/* The Card */}
+                    <div className={`border rounded-2xl p-6 sm:p-8 shadow-[0_0_60px_rgba(168,85,247,0.1)] ${
+                      userCardData.timesRatioedOthers > userCardData.timesRatiod
+                        ? 'bg-gradient-to-br from-purple-950/40 via-black to-purple-950/20 border-purple-500/30'
+                        : 'bg-gradient-to-br from-red-950/40 via-black to-red-950/20 border-red-500/30'
+                    }`}>
+                      <div className="flex flex-col sm:flex-row items-center gap-6">
+                        {/* Profile Picture */}
+                        <a
+                          href={`https://x.com/${userCardData.username}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-shrink-0"
+                        >
+                          <div className={`w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 ${
+                            userCardData.timesRatioedOthers > userCardData.timesRatiod
+                              ? 'border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.3)]'
+                              : 'border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.3)]'
+                          }`}>
+                            {userCardData.profileImage ? (
+                              <img 
+                                src={userCardData.profileImage} 
+                                alt={`@${userCardData.username}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white font-bold text-3xl">
+                                {userCardData.username[0].toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                        </a>
+                        
+                        {/* Stats */}
+                        <div className="flex-1 text-center sm:text-left">
+                          <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
+                            {userCardData.displayName || userCardData.username}
+                          </div>
+                          <div className="text-white/50 mb-4">@{userCardData.username}</div>
+                          
+                          {/* Stats Grid */}
+                          <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center">
+                              <div className="text-2xl sm:text-3xl font-bold text-red-400">{userCardData.timesRatiod}</div>
+                              <div className="text-xs text-white/50">times ratio'd</div>
+                            </div>
+                            <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3 text-center">
+                              <div className="text-2xl sm:text-3xl font-bold text-purple-400">{userCardData.timesRatioedOthers}</div>
+                              <div className="text-xs text-white/50">ratios delivered</div>
+                            </div>
+                          </div>
+                          
+                          {/* Best/Worst Ratios */}
+                          <div className="flex flex-wrap justify-center sm:justify-start gap-4 text-sm">
+                            {userCardData.worstRatio && (
+                              <div className="text-white/60">
+                                Worst received: <span className="text-red-400 font-mono font-bold">{userCardData.worstRatio.toFixed(1)}×</span>
+                              </div>
+                            )}
+                            {userCardData.bestRatio && (
+                              <div className="text-white/60">
+                                Best delivered: <span className="text-purple-400 font-mono font-bold">{userCardData.bestRatio.toFixed(1)}×</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* No data message */}
+                      {userCardData.timesRatiod === 0 && userCardData.timesRatioedOthers === 0 && (
+                        <div className="mt-6 pt-4 border-t border-white/10 text-center">
+                          <p className="text-white/40 text-sm">No ratio events found for this user in our database.</p>
+                        </div>
+                      )}
+                      
+                      {/* Branding */}
+                      <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                        <span className="text-xs text-white/30 font-mono">xratios.app</span>
+                        <span className="text-xs text-white/30">Powered by the X API</span>
+                      </div>
+                    </div>
+
+                    {/* View in Feed Button */}
+                    {(userCardData.timesRatiod > 0 || userCardData.timesRatioedOthers > 0) && (
+                      <button
+                        onClick={() => {
+                          setActiveFeed('recents');
+                          handleUsernameClick(userCardData.username);
+                        }}
+                        className="w-full py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/70 hover:text-white text-sm font-medium transition-all flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                        View all ratios in feed
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Empty State */}
+                {!userCardData && !userCardLoading && (
+                  <div className="text-center py-16 border border-dashed border-white/10 rounded-xl bg-white/[0.02]">
+                    <div className="text-5xl mb-4 opacity-40">🔍</div>
+                    <h3 className="text-lg font-medium text-white mb-2">Look Up Any User</h3>
+                    <p className="text-white/40 max-w-sm mx-auto">
+                      Enter a username above to see their ratio stats and generate a shareable card.
                     </p>
                   </div>
                 )}
