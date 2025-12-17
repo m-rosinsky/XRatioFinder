@@ -638,9 +638,9 @@ export function App() {
     // Branding
     ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
     ctx.font = '12px monospace';
-    ctx.fillText('xratio.replit.app', 40, 255);
+    ctx.fillText('xratios.app', 40, 255);
     ctx.textAlign = 'right';
-    ctx.fillText('Powered by X API', baseWidth - 40, 255);
+    ctx.fillText('Powered by the X API', baseWidth - 40, 255);
     ctx.textAlign = 'left';
     
     // Convert to blob
@@ -1646,8 +1646,8 @@ export function App() {
                               
                               {/* Branding */}
                               <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                                <span className="text-xs text-white/30 font-mono">xratio.replit.app</span>
-                                <span className="text-xs text-white/30">Powered by X API</span>
+                                <span className="text-xs text-white/30 font-mono">xratios.app</span>
+                                <span className="text-xs text-white/30">Powered by the X API</span>
                               </div>
                             </div>
                           </div>
@@ -1874,8 +1874,8 @@ export function App() {
                               
                               {/* Branding */}
                               <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                                <span className="text-xs text-white/30 font-mono">xratio.replit.app</span>
-                                <span className="text-xs text-white/30">Powered by X API</span>
+                                <span className="text-xs text-white/30 font-mono">xratios.app</span>
+                                <span className="text-xs text-white/30">Powered by the X API</span>
                               </div>
                             </div>
                           </div>
